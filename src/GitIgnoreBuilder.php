@@ -77,6 +77,7 @@ class GitIgnoreBuilder
 
         $ignore[] = "/{$this->base}/composer/";
         $ignore[] = "/{$this->base}/autoload.php";
+        $ignore[] = "node_modules/";
 
         $ignore = array_unique(array_filter($ignore));
 
