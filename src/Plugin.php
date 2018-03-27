@@ -157,10 +157,6 @@ class Plugin implements PluginInterface, EventSubscriberInterface, Capable, Comm
         $this->wpDownloader = new WpDownloader($this->wpDownloaderConfig, $composer, $this->io);
         $composer->getInstallationManager()->addInstaller($this->installer);
 
-        if (($this->flags & self::NO_GIT) === self::NO_GIT) {
-            return;
-        }
-
         $this->git = new VipGit(
             $this->io,
             $this->dirs->targetPath(),
