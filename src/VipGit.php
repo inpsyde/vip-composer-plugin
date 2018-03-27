@@ -97,8 +97,6 @@ class VipGit
             return false;
         }
 
-        $filesystem->removeDirectory($this->targetPath);
-        $filesystem->ensureDirectoryExists($this->targetPath);
         list($success) = $this->git("clone {$url} .");
 
         $success and $this->io->write('     <comment>Repository initialized.</comment>');
