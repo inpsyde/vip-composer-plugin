@@ -296,17 +296,14 @@ class VipGit
         foreach ($finder as $item) {
             $source = $filesystem->normalizePath((string)$item);
             $target = "{$this->mirrorDir}/" . $item->getBasename();
-            $isDir = $item->isDir();
-            if ($source === $vendorSource && $isDir) {
+            if ($source === $vendorSource && $item->isDir()) {
                 $vendorTarget = $target;
                 $filesystem->ensureDirectoryExists($vendorTarget);
                 continue;
             }
 
-            $copied = $copier->copy($source, $target);
-            if ($copied && $isDir && !scandir($source, SCANDIR_SORT_NONE)) {
-                touch("{$source}/.gitkeep");
-            }
+            $copier->copy($source, $target);
+            $this->handleGitKeep($target);
         }
 
         return $vendorTarget;
@@ -329,7 +326,7 @@ class VipGit
         $toCopy = $packages->noDevPackages();
 
         if (!$toCopy) {
-            touch("{$vendorTarget}/.gitkeep");
+            $this->handleGitKeep($vendorTarget);
 
             return true;
         }
@@ -357,7 +354,31 @@ class VipGit
             $copier->copy($autoloadSource, $autoloadTarget) and $done++;
         }
 
+        $this->handleGitKeep($vendorTarget);
+
         return $all === $done;
+    }
+
+    /**
+     * @param string $dir
+     */
+    private function handleGitKeep(string $dir)
+    {
+        if (!is_dir($dir)) {
+            return;
+        }
+
+        $files = array_diff(scandir($dir, SCANDIR_SORT_NONE), ['.', '..']);
+        $count = count($files);
+        $hasKeep = in_array('.gitkeep', array_map('basename', $files), true);
+        if ($count > 1 && $hasKeep) {
+            @unlink("{$dir}/.gitkeep");
+            return;
+        }
+
+        if ($count === 0) {
+            @touch("{$dir}/.gitkeep");
+        }
     }
 
     /**
@@ -457,13 +478,13 @@ class VipGit
     {
         list($success, $output) = $this->git('diff-tree --no-commit-id --name-status -r HEAD');
         if (!$success) {
-            $this->io->write($messages);
+            $this->io->write('    <info>Changes merged but not pushed.</info>');
             return;
         }
 
         $files = array_filter(array_map('trim', explode("\n", $output)));
         if (!$files) {
-            $this->io->write($messages);
+            $this->io->write('    <info>Changes merged but not pushed.</info>');
             return;
         }
 
@@ -482,14 +503,14 @@ class VipGit
             }
         );
 
-        $messages[] = '    ' . str_repeat('-.-~~', 8) . '-.-';
+        $messages[] = '    ' . str_repeat('_', 40);
         $messages[] = '    <info>Changes merged but not pushed.</info>';
         $messages[] = "    Involved a total of {$total} files:";
         $messages[] = "     - <fg=green>{$counts['A']} added</>;";
         $messages[] = "     - <fg=cyan>{$counts['M']} modified</>;";
         $messages[] = "     - <fg=red>{$counts['D']} deleted</>.";
         $messages[] = "    The folder <info>{$this->mirrorDir}</info> is ready to be pushed.";
-        $messages[] = '    ' . str_repeat('-.-~~', 8) . '-.-';
+        $messages[] = '    ' . str_repeat('_', 40);
 
         $this->io->write($messages);
     }

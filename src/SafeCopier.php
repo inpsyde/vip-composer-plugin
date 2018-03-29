@@ -32,6 +32,10 @@ class SafeCopier
      */
     public static function accept(string $path): bool
     {
+        if (basename($path) === '.gitkeep') {
+            return true;
+        }
+
         return
             strpos($path, 'node_modules/') === false
             && strpos($path, '/.git') === false;
