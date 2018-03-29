@@ -150,7 +150,7 @@ class VipGit
             $filesystem->removeDirectory($this->mirrorDir);
         }
 
-        $this->io->write('<info>VIP: Done!</info>');
+        $this->io->write("<info>VIP: {$operation} done successfully!</info>");
 
         return $success;
     }
