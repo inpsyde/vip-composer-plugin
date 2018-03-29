@@ -156,15 +156,6 @@ class Plugin implements PluginInterface, EventSubscriberInterface, Capable, Comm
         $this->wpDownloaderConfig = $this->wpDownloaderConfig();
         $this->wpDownloader = new WpDownloader($this->wpDownloaderConfig, $composer, $this->io);
         $composer->getInstallationManager()->addInstaller($this->installer);
-
-        /*$this->git = new VipGit(
-            $this->io,
-            $this->dirs->targetPath(),
-            $this->extra,
-            $this->remoteUrl
-        );
-
-        $this->git->init(new Filesystem());*/
     }
 
     /**
@@ -203,22 +194,37 @@ class Plugin implements PluginInterface, EventSubscriberInterface, Capable, Comm
 
         $basePath = getcwd();
         $filesystem = new Filesystem();
+        $config = $this->composer->getConfig();
 
         $customPathCopier = new CustomPathCopier($filesystem, $basePath, $this->extra);
         $customPathCopier->copy($this->dirs, $this->io);
 
-        $this->io->write('<info>VIP: Building production autoload...</info>');
-        $autoload = new VipAutoloadGenerator();
+        $packages = new InstalledPackages($this->composer);
+
+        $autoload = new VipAutoloadGenerator($packages);
         $autoload->generate($this->composer, $this->io);
+
+        $gitIgnoreBuilder = new GitIgnoreBuilder($packages, $config, $this->io);
+        $gitIgnoreBuilder->build();
 
         $configSync = new ConfigSynchronizer($this->dirs, $this->io, $basePath, $this->extra);
         $configSync->sync($filesystem, $this->wpDownloaderConfig['target-dir']);
 
-        if (($this->flags & self::NO_GIT) !== self::NO_GIT) {
-            $this->io->write('<info>VIP: Starting Git sync...</info>');
-            $push = ($this->flags & self::DO_PUSH) === self::DO_PUSH;
-            $push ? $this->git->push($filesystem) : $this->git->sync($filesystem);
+        if (($this->flags & self::NO_GIT) === self::NO_GIT) {
+            return;
         }
+
+        $this->git = new VipGit(
+            $this->io,
+            $config,
+            $this->dirs->targetPath(),
+            $this->extra,
+            $this->remoteUrl
+        );
+
+        $this->io->write('<info>VIP: Starting Git sync...</info>');
+        $push = ($this->flags & self::DO_PUSH) === self::DO_PUSH;
+        $push ? $this->git->push($filesystem, $packages) : $this->git->sync($filesystem, $packages);
     }
 
     /**

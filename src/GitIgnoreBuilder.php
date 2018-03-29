@@ -15,8 +15,14 @@ use Composer\Util\Filesystem;
 
 class GitIgnoreBuilder
 {
+
     /**
-     * @var mixed
+     * @var string
+     */
+    private $vendor;
+
+    /**
+     * @var string
      */
     private $target;
 
@@ -36,67 +42,28 @@ class GitIgnoreBuilder
     private $io;
 
     /**
-     * @var Filesystem
+     * @var InstalledPackages
      */
-    private $filesystem;
+    private $installedPackages;
 
     /**
-     * @param Config $config
-     * @param IOInterface $io
-     */
-    public function __construct(Config $config, IOInterface $io)
-    {
-        $vendor = $config->get('vendor-dir');
-        $this->filesystem = new Filesystem();
-        $this->target = $this->filesystem->normalizePath(dirname($vendor));
-        $this->base = basename($vendor);
-        $this->bin = $this->filesystem->normalizePath($config->get('bin-dir'));
-        $this->io = $io;
-    }
-
-    /**
-     * @param array $paths
-     */
-    public function build(array $paths)
-    {
-        $ignore = [];
-        $currentIgnore = [];
-        if (file_exists("{$this->target}/.gitignore")) {
-            $this->io->write('<comment>VIP: found .gitignore for vendors.</comment>');
-            $currentIgnore = file("{$this->target}/.gitignore", FILE_IGNORE_NEW_LINES);
-            $ignore = $currentIgnore;
-        }
-
-        foreach ($paths as $path) {
-            $toIgnore = "/{$this->base}/{$path}/";
-            in_array($toIgnore, $ignore, true) or $ignore[] = $toIgnore;
-        }
-
-        $bin = $this->binToIgnore();
-        $bin and $ignore[] = $bin;
-
-        $ignore[] = "/{$this->base}/composer/";
-        $ignore[] = "/{$this->base}/autoload.php";
-        $ignore[] = "node_modules/";
-
-        $ignore = array_unique(array_filter($ignore));
-
-        if ($ignore !== $currentIgnore) {
-            $this->io->write('<comment>VIP: updating .gitignore...</comment>');
-            file_put_contents("{$this->target}/.gitignore", implode("\n", $ignore));
-        }
-    }
-
-    /**
+     * @param string $binDir
+     * @param string $vendorDir
      * @return string
      */
-    private function binToIgnore(): string
+    public static function binToIgnore(string $binDir, string $vendorDir): string
     {
-        if (strpos($this->bin, $this->target) !== 0) {
+        static $filesystem;
+        $filesystem or $filesystem = new Filesystem();
+
+        $target = $filesystem->normalizePath(dirname($vendorDir));
+        $binDir = $filesystem->normalizePath($binDir);
+
+        if (strpos($binDir, $target) !== 0) {
             return '';
         }
 
-        $shortest = $this->filesystem->findShortestPath($this->target, $this->bin, true);
+        $shortest = $filesystem->findShortestPath($target, $binDir, true);
         $isDot = ($shortest[0] ?? '') === '.';
         if ($isDot && ($shortest[1] ?? '') === '.') {
             return '';
@@ -108,5 +75,56 @@ class GitIgnoreBuilder
         }
 
         return rtrim($shortest, '/') . '/';
+    }
+
+    /**
+     * @param InstalledPackages $installedPackages
+     * @param Config $config
+     * @param IOInterface $io
+     */
+    public function __construct(InstalledPackages $installedPackages, Config $config, IOInterface $io)
+    {
+        $this->installedPackages = $installedPackages;
+        $filesystem = new Filesystem();
+        $this->vendor = $filesystem->normalizePath($config->get('vendor-dir'));
+        $this->bin = $filesystem->normalizePath($config->get('bin-dir'));
+        $this->target = dirname($this->vendor);
+        $this->base = basename($this->vendor);
+        $this->io = $io;
+    }
+
+    /**
+     * Build .gitignore for VIP
+     */
+    public function build()
+    {
+        $ignore = [];
+        $currentIgnore = [];
+        if (file_exists("{$this->target}/.gitignore")) {
+            $this->io->write('<comment>VIP: found .gitignore for vendors.</comment>');
+            $currentIgnore = file("{$this->target}/.gitignore", FILE_IGNORE_NEW_LINES);
+            $ignore = $currentIgnore;
+        }
+
+        $packages = $this->installedPackages->devPackageNames();
+
+        foreach ($packages as $package) {
+            $toIgnore = "/{$this->base}/{$package}/";
+            in_array($toIgnore, $ignore, true) or $ignore[] = $toIgnore;
+        }
+
+        $bin = self::binToIgnore($this->bin, $this->vendor);
+        $bin and $ignore[] = $bin;
+
+        $ignore[] = "/{$this->base}/composer/";
+        $ignore[] = "/{$this->base}/autoload.php";
+        $ignore[] = 'node_modules/';
+
+        $ignore = array_unique(array_filter($ignore));
+
+        if ($ignore !== $currentIgnore) {
+            $this->io->write('<comment>VIP: updating .gitignore...</comment>');
+            file_put_contents("{$this->target}/.gitignore", implode("\n", $ignore));
+        }
     }
 }

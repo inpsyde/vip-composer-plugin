@@ -12,16 +12,23 @@ namespace Uefa\VipComposer;
 use Composer\Autoload\AutoloadGenerator;
 use Composer\Composer;
 use Composer\IO\IOInterface;
-use Composer\Package\PackageInterface;
-use Composer\Repository\InstalledFilesystemRepository;
-use Composer\Repository\InstalledRepositoryInterface;
-use Composer\Repository\RepositoryInterface;
 
 class VipAutoloadGenerator
 {
     const PROD_AUTOLOAD_DIR = 'vip-autoload';
 
-    private $devPackages = [];
+    /**
+     * @var InstalledPackages
+     */
+    private $installedPackages;
+
+    /**
+     * @param InstalledPackages $devPackages
+     */
+    public function __construct(InstalledPackages $devPackages)
+    {
+        $this->installedPackages = $devPackages;
+    }
 
     /**
      * @param Composer $composer
@@ -30,9 +37,10 @@ class VipAutoloadGenerator
      */
     public function generate(Composer $composer, IOInterface $io)
     {
+        $io->write('<info>VIP: Building production autoload...</info>');
+
         $composerPath = $composer->getConfig()->get('vendor-dir') . '/autoload.php';
         $composerContent = file_get_contents($composerPath);
-        $this->devPackages = [];
 
         $autoloader = new AutoloadGenerator($composer->getEventDispatcher());
         $autoloader->setDevMode(false);
@@ -44,7 +52,7 @@ class VipAutoloadGenerator
 
         $autoloader->dump(
             $composer->getConfig(),
-            $this->noDevRepository($composer),
+            $this->installedPackages->noDevRepository(),
             $composer->getPackage(),
             $composer->getInstallationManager(),
             self::PROD_AUTOLOAD_DIR,
@@ -58,88 +66,5 @@ class VipAutoloadGenerator
 
         file_put_contents("{$path}/autoload.php", $autoloadEntrypoint);
         file_put_contents($composerPath, $composerContent);
-
-        if ($this->devPackages) {
-            $gitIgnoreBuilder = new GitIgnoreBuilder($composer->getConfig(), $io);
-            $gitIgnoreBuilder->build($this->devPackages);
-            $this->devPackages = [];
-        }
-    }
-
-    /**
-     * @param Composer $composer
-     * @return InstalledRepositoryInterface
-     */
-    private function noDevRepository(Composer $composer): InstalledRepositoryInterface
-    {
-        /** @var InstalledFilesystemRepository $repository */
-        $repository = clone $composer->getRepositoryManager()->getLocalRepository();
-
-        $devRequires = $composer->getPackage()->getDevRequires();
-        $devPackages = $this->findDevPackages($devRequires, $repository, []);
-        $devPackages and $devPackages = array_unique($devPackages);
-
-        $this->devPackages = $devPackages;
-
-        $all = $repository->getPackages();
-        foreach ($all as $package) {
-            $name = $package->getName();
-            if (array_key_exists($name, $devPackages) || $name === Plugin::NAME) {
-                $repository->removePackage($package);
-            }
-
-            $dependents = $repository->getDependents($name);
-            if (!$dependents) {
-                continue;
-            }
-
-            $found = $this->parseDependents($dependents);
-            if (array_intersect($found, $devPackages) === $found) {
-                $repository->removePackage($package);
-            }
-        }
-
-        $repository->removePackage($composer->getPackage());
-
-        return $repository;
-    }
-
-    /**
-     * @param array $requires
-     * @param RepositoryInterface $repository
-     * @param array $found
-     * @return string[]
-     */
-    private function findDevPackages(
-        array $requires,
-        RepositoryInterface $repository,
-        array $found = []
-    ): array {
-
-        foreach ($requires as $link) {
-            $package = $repository->findPackage($link->getTarget(), '*');
-            if ($package) {
-                $found[] = $package->getName();
-                $found = $this->findDevPackages($package->getRequires(), $repository, $found);
-            }
-        }
-
-        return $found;
-    }
-
-    /**
-     * @param array $dependents
-     * @return string[]
-     */
-    private function parseDependents(array $dependents)
-    {
-        $because = [];
-        foreach ($dependents as list($package)) {
-            if ($package instanceof PackageInterface) {
-                $because[] = $package->getName();
-            }
-        }
-
-        return $because;
     }
 }
