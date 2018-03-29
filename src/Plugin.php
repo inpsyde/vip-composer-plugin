@@ -204,9 +204,6 @@ class Plugin implements PluginInterface, EventSubscriberInterface, Capable, Comm
         $autoload = new VipAutoloadGenerator($packages);
         $autoload->generate($this->composer, $this->io);
 
-        $gitIgnoreBuilder = new GitIgnoreBuilder($packages, $config, $this->io);
-        $gitIgnoreBuilder->build();
-
         $configSync = new ConfigSynchronizer($this->dirs, $this->io, $basePath, $this->extra);
         $configSync->sync($filesystem, $this->wpDownloaderConfig['target-dir']);
 
