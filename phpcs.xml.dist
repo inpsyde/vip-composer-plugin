@@ -5,13 +5,10 @@
 
     <rule ref="Inpsyde">
         <exclude name="WordPress" />
-        <exclude name="Inpsyde.CodeQuality.ArgumentTypeDeclaration" />
-        <exclude name="Inpsyde.CodeQuality.ReturnTypeDeclaration" />
-        <exclude name="Inpsyde.CodeQuality.NoAccessors" />
     </rule>
     <rule ref="Inpsyde.CodeQuality.Psr4">
         <properties>
-            <property name="psr4" type="array" value="Uefa\VipComposer=>src"/>
+            <property name="psr4" type="array" value="Inpsyde\VipComposer=>src"/>
         </properties>
     </rule>
     <rule ref="Inpsyde.CodeQuality.ElementNameMinimalLength">

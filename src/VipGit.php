@@ -2,12 +2,15 @@
 /*
  * This file is part of the vip-composer-plugin package.
  *
- * (c) © 2018 UEFA. All rights reserved.
+ * (c) Inpsyde GmbH
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
  */
 
 declare(strict_types=1);
 
-namespace Uefa\VipComposer;
+namespace Inpsyde\VipComposer;
 
 use Composer\Config;
 use Composer\IO\IOInterface;
@@ -72,6 +75,7 @@ class VipGit
 
     /**
      * @param IOInterface $io
+     * @param Config $config
      * @param string $targetPath
      * @param array $extra
      * @param string|null $remoteGitUrl
@@ -90,7 +94,7 @@ class VipGit
         $this->extra = $extra[Plugin::VIP_GIT_KEY] ?? [];
         $this->remoteUrl = $remoteGitUrl;
         $this->executor = new ProcessExecutor($io);
-        $this->out = function ($type = '', $buffer = '') {
+        $this->out = function (string $type = '', string $buffer = '') {
             $this->captured = [$type, $buffer];
         };
     }
@@ -195,7 +199,7 @@ class VipGit
             ->ignoreDotFiles(false)
             ->depth(0)
             ->directories()
-            ->filter(function (\SplFileInfo $info) use ($filesystem) {
+            ->filter(function (\SplFileInfo $info): bool {
                 return strpos($info->getBasename(), self::MIRROR_PREFIX) === 0;
             });
 
@@ -286,7 +290,7 @@ class VipGit
             ->ignoreVCS(true)
             ->ignoreDotFiles(false)
             ->depth(0)
-            ->filter(function (\SplFileInfo $info) {
+            ->filter(function (\SplFileInfo $info): bool {
                 return strpos($info->getBasename(), self::MIRROR_PREFIX) !== 0;
             });
 
@@ -347,10 +351,10 @@ class VipGit
             }
         }
 
-        $autoloadSource = "{$vendorSource}/" . VipAutoloadGenerator::PROD_AUTOLOAD_DIR;
+        $autoloadSource = "{$vendorSource}/" . AutoloadGenerator::PROD_AUTOLOAD_DIR;
         if (is_dir($autoloadSource)) {
             $all++;
-            $autoloadTarget = "{$vendorTarget}/" . VipAutoloadGenerator::PROD_AUTOLOAD_DIR;
+            $autoloadTarget = "{$vendorTarget}/" . AutoloadGenerator::PROD_AUTOLOAD_DIR;
             $copier->copy($autoloadSource, $autoloadTarget) and $done++;
         }
 
@@ -401,7 +405,7 @@ class VipGit
      * @param string $target
      * @return bool
      */
-    private function maybeCreateBranch(string $target)
+    private function maybeCreateBranch(string $target): bool
     {
         list($success, $output) = $this->git('branch -a');
         if (!$success) {
@@ -446,6 +450,7 @@ class VipGit
     {
         list($success, $output) = $this->git('branch');
         if (!$success) {
+            $this->io->writeError('    <error>Failed reading branches.</error>');
             return false;
         }
 
@@ -462,30 +467,64 @@ class VipGit
         $currentBranch === $targetBranch or $commands[] = "checkout {$targetBranch}";
         $commands[] = 'add .';
         $commands[] = 'commit -am "Merge-bot upstream sync."';
-        $push and $commands[] = 'push origin';
 
-        list($success) = $this->git(...$commands);
+        list($success,, $outputs) = $this->git(...$commands);
+        $output = implode("\n", $outputs);
 
-        (!$push && $success) and $this->gitNotPushedStatus();
+        $nothingToDo = strpos($output, 'up-to-date') !== false
+            || strpos($output, 'working tree clean') !== false
+            || strpos($output, 'nothing to commit') !== false;
+
+        if (!$success) {
+            $nothingToDo
+                ? $this->nothingToDoMessage($push)
+                : $this->io->writeError("    <error>{$output}</error>");
+
+            return $nothingToDo;
+        }
+
+        if ($nothingToDo) {
+            $this->nothingToDoMessage($push);
+
+            return true;
+        }
+
+        $changes = $this->gitStats($push);
+        if ($changes < 0 && $push) {
+            $this->io->write('    <comment>Sorry, failed determining git status.</comment>');
+            $push
+                ? $this->io->write('    <comment>Will try to push anyway.</comment>')
+                : $this->io->write("    <comment>Please check {$this->mirrorDir}.</comment>");
+        }
+
+        if (!$changes || !$push) {
+            return true;
+        }
+
+        $this->io->write("    <comment>Pushing to <<<{$this->remoteUrl}>>>...</comment>");
+        list($success) = $this->git('push origin');
 
         return $success;
     }
 
     /**
-     * @return void
+     * @param bool $push
+     * @return int
      */
-    private function gitNotPushedStatus()
+    private function gitStats(bool $push): int
     {
         list($success, $output) = $this->git('diff-tree --no-commit-id --name-status -r HEAD');
         if (!$success) {
-            $this->io->write('    <info>Changes merged but not pushed.</info>');
-            return;
+            $push or $this->io->write('    <info>Changes merged but not pushed.</info>');
+
+            return -1;
         }
 
         $files = array_filter(array_map('trim', explode("\n", $output)));
         if (!$files) {
-            $this->io->write('    <info>Changes merged but not pushed.</info>');
-            return;
+            $push or $this->io->write('    <info>Changes merged but not pushed.</info>');
+
+            return -1;
         }
 
         $total = count($files);
@@ -503,8 +542,14 @@ class VipGit
             }
         );
 
+        if ($total < 1) {
+            $this->nothingToDoMessage($push);
+
+            return 0;
+        }
+
         $messages[] = '    ' . str_repeat('_', 40);
-        $messages[] = '    <info>Changes merged but not pushed.</info>';
+        $push or $messages[] = '    <info>Changes merged but not pushed.</info>';
         $messages[] = "    Involved a total of {$total} files:";
         $messages[] = "     - <fg=green>{$counts['A']} added</>;";
         $messages[] = "     - <fg=cyan>{$counts['M']} modified</>;";
@@ -513,6 +558,17 @@ class VipGit
         $messages[] = '    ' . str_repeat('_', 40);
 
         $this->io->write($messages);
+
+        return $total;
+    }
+
+    /**
+     * @param bool $push
+     */
+    private function nothingToDoMessage(bool $push)
+    {
+        $this->io->write('     <info>Everything is already up-to-date!</info>');
+        $push and $this->io->write('     <info>Nothing to push.</info>');
     }
 
     /**

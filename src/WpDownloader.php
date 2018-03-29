@@ -2,12 +2,15 @@
 /*
  * This file is part of the vip-composer-plugin package.
  *
- * (c) © 2018 UEFA. All rights reserved.
+ * (c) Inpsyde GmbH
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
  */
 
 declare(strict_types=1);
 
-namespace Uefa\VipComposer;
+namespace Inpsyde\VipComposer;
 
 use Composer\Composer;
 use Composer\DependencyResolver\Operation\InstallOperation;
@@ -164,10 +167,8 @@ class WpDownloader
         $version = $this->resolveTargetVersion($targetVersion);
 
         if (!$this->shouldInstall($targetVersion, $installedVersion)) {
-            $this->write([
-                "\n<info>VIP: No need to download WordPress:</info>",
-                "<info>    installed version matches required version.</info>\n",
-            ]);
+            $this->write("\n<info>VIP: No need to download WordPress:</info>");
+            $this->write("<info>    installed version matches required version.</info>\n");
 
             list($target) = $this->preparePaths($version);
             $this->copyWpConfig($target);
@@ -246,7 +247,7 @@ class WpDownloader
             );
 
             return;
-        };
+        }
 
         $this->write(
             "\n<info>VIP: wp-config.php copied, you probably need to configure it.</info>",
@@ -356,7 +357,7 @@ class WpDownloader
      * @see WpDownloader::queryLastVersion()
      * @see WpDownloader::discoverWpPackageVersion()
      */
-    private function discoverTargetVersion()
+    private function discoverTargetVersion(): string
     {
         $version = trim((string)($this->config['version'] ?? ''));
 
@@ -417,7 +418,7 @@ class WpDownloader
      *
      * @see WpDownloader::queryVersions()
      */
-    private function queryLastVersion()
+    private function queryLastVersion(): string
     {
         $versions = $this->queryVersions();
         if (!$versions) {
@@ -448,7 +449,9 @@ class WpDownloader
             return [];
         }
 
-        $extractVer = function ($package) {
+        // phpcs:disable Inpsyde.CodeQuality.ArgumentTypeDeclaration
+        $extractVer = function ($package): string {
+            // phpcs:enable
             if (!is_array($package) || empty($package['version'])) {
                 return '';
             }
@@ -479,7 +482,7 @@ class WpDownloader
      * @param string $installedVersion
      * @return bool
      */
-    private function shouldInstall($targetVersion, $installedVersion): bool
+    private function shouldInstall(string $targetVersion, string $installedVersion): bool
     {
         if (!$installedVersion) {
             return true;
@@ -507,7 +510,7 @@ class WpDownloader
      *
      * @return string
      */
-    private function resolveTargetVersion($version): string
+    private function resolveTargetVersion(string $version): string
     {
         static $resolved = [];
 
@@ -555,7 +558,7 @@ class WpDownloader
      * @param string $version
      * @return string
      */
-    private function normalizeVersionWp($version): string
+    private function normalizeVersionWp(string $version): string
     {
         $beta = explode('-', trim($version, ". \t\n\r\0\x0B"), 2);
         $stable = $beta[0];
@@ -583,10 +586,10 @@ class WpDownloader
      * Wrapper around Composer `IO::write`, only write give message IO is verbose or
      * `$force` param is true.
      *
-     * @param string|array $message
+     * @param string $message
      * @param bool $force
      */
-    private function write($message, $force = false)
+    private function write(string $message, bool $force = false)
     {
         if ($force || $this->io->isVerbose()) {
             $this->io->write($message);

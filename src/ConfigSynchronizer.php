@@ -2,12 +2,15 @@
 /*
  * This file is part of the vip-composer-plugin package.
  *
- * (c) © 2018 UEFA. All rights reserved.
+ * (c) Inpsyde GmbH
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
  */
 
 declare(strict_types=1);
 
-namespace Uefa\VipComposer;
+namespace Inpsyde\VipComposer;
 
 use Composer\IO\IOInterface;
 use Composer\Util\Filesystem;
@@ -16,7 +19,7 @@ use Composer\Util\Platform;
 class ConfigSynchronizer
 {
     /**
-     * @var VipSkeleton
+     * @var Directories
      */
     private $dirs;
 
@@ -31,22 +34,15 @@ class ConfigSynchronizer
     private $extra;
 
     /**
-     * @var string
-     */
-    private $basePath;
-
-    /**
-     * @param VipSkeleton $dirs
+     * @param Directories $dirs
      * @param IOInterface $io
-     * @param string $basePath
      * @param array $extra
      */
-    public function __construct(VipSkeleton $dirs, IOInterface $io, string $basePath, array $extra)
+    public function __construct(Directories $dirs, IOInterface $io, array $extra)
     {
         $this->dirs = $dirs;
         $this->io = $io;
         $this->extra = $extra;
-        $this->basePath = $basePath;
     }
 
     /**
@@ -75,7 +71,7 @@ class ConfigSynchronizer
 
         $configPath = $filesystem->isAbsolutePath($configDir)
             ? $configDir
-            : "{$this->basePath}/{$configDir}";
+            : $this->dirs->basePath() . "/{$configDir}";
 
         if (!is_dir($configPath)) {
             return [];
@@ -115,7 +111,7 @@ class ConfigSynchronizer
         Filesystem $filesystem
     ) {
 
-        $wpConfig = dirname("{$this->basePath}/{$wpDir}") . '/wp-config.php';
+        $wpConfig = dirname($this->dirs->basePath() . "/{$wpDir}") . '/wp-config.php';
         if (!file_exists($wpConfig)) {
             return;
         }
@@ -162,7 +158,7 @@ class ConfigSynchronizer
 
         $fileContent .= "\n\n/* VIP Config START */\n";
         foreach ($files as $file) {
-            $path = $filesystem->findShortestPath($this->basePath, $file);
+            $path = $filesystem->findShortestPath($this->dirs->basePath(), $file);
             $fileContent .= "require_once __DIR__ . '/{$path}';\n";
         }
         $fileContent .= "/* VIP Config END */\n\n";

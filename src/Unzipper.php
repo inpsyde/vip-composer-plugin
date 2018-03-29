@@ -2,12 +2,15 @@
 /*
  * This file is part of the vip-composer-plugin package.
  *
- * (c) © 2018 UEFA. All rights reserved.
+ * (c) Inpsyde GmbH
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
  */
 
 declare(strict_types=1);
 
-namespace Uefa\VipComposer;
+namespace Inpsyde\VipComposer;
 
 use Composer\Config;
 use Composer\Downloader\ZipDownloader;
@@ -39,7 +42,7 @@ final class Unzipper extends ZipDownloader
      * @param string $zipPath
      * @param string $target
      */
-    public function unzip($zipPath, $target)
+    public function unzip(string $zipPath, string $target)
     {
         $this->checkLibrary($zipPath);
         parent::extract($zipPath, $target); // phpcs:ignore
@@ -52,9 +55,12 @@ final class Unzipper extends ZipDownloader
      * @param string $path
      * @param bool $output
      * @return string|void
+     *
+     * phpcs:disable Inpsyde.CodeQuality.ArgumentTypeDeclaration
      */
     public function download(PackageInterface $package, $path, $output = true)
     {
+        // phpcs:enable
     }
 
     /**
@@ -65,7 +71,7 @@ final class Unzipper extends ZipDownloader
      *
      * @param string $zipPath
      */
-    private function checkLibrary($zipPath)
+    private function checkLibrary(string $zipPath)
     {
         $hasSystemUnzip = (new ExecutableFinder())->find('unzip');
 

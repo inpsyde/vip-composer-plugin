@@ -1,8 +1,8 @@
 {
-    "name": "uefa/vip-composer-plugin",
-    "description": "A composer plugin to ease deployment VIP besides Composer-based development.",
+    "name": "inpsyde/vip-composer-plugin",
+    "description": "A Composer plugin to ease deployment to wordpress.com VIP servers alongside Composer-based development.",
     "type": "composer-plugin",
-    "license": "proprietary",
+    "license": "MIT",
     "minimum-stability": "stable",
     "authors": [
         {
@@ -24,7 +24,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Uefa\\VipComposer\\": "src/"
+            "Inpsyde\\VipComposer\\": "src/"
         }
     },
     "require-dev": {
@@ -32,6 +32,6 @@
         "inpsyde/php-coding-standards": "^0.11"
     },
     "extra": {
-        "class": "Uefa\\VipComposer\\Plugin"
+        "class": "Inpsyde\\VipComposer\\Plugin"
     }
 }

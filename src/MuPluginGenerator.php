@@ -2,12 +2,14 @@
 /*
  * This file is part of the vip-composer-plugin package.
  *
- * (c) © 2018 UEFA. All rights reserved.
+ * (c) Inpsyde GmbH
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
  */
-
 declare(strict_types=1);
 
-namespace Uefa\VipComposer;
+namespace Inpsyde\VipComposer;
 
 use Composer\Package\PackageInterface;
 
@@ -15,9 +17,9 @@ class MuPluginGenerator
 {
 
     /**
-     * @var VipSkeleton
+     * @var Directories
      */
-    private $skeleton;
+    private $directories;
 
     /**
      * @var PluginFileFinder
@@ -25,12 +27,12 @@ class MuPluginGenerator
     private $finder;
 
     /**
-     * @param VipSkeleton $skeleton
+     * @param Directories $directories
      * @param PluginFileFinder $finder
      */
-    public function __construct(VipSkeleton $skeleton, PluginFileFinder $finder)
+    public function __construct(Directories $directories, PluginFileFinder $finder)
     {
-        $this->skeleton = $skeleton;
+        $this->directories = $directories;
         $this->finder = $finder;
     }
 
@@ -43,7 +45,7 @@ class MuPluginGenerator
         $muContent = "<?php\n";
         $muContent .= $this->autoloadLoader();
         $muContent .= $this->vipLoadPluginFunction();
-        $muPluginPath = $this->skeleton->muPluginsDir();
+        $muPluginPath = $this->directories->muPluginsDir();
 
         foreach ($packages as $package) {
             $packageName = $package->getName();

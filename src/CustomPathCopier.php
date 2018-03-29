@@ -2,12 +2,15 @@
 /*
  * This file is part of the vip-composer-plugin package.
  *
- * (c) © 2018 UEFA. All rights reserved.
+ * (c) Inpsyde GmbH
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
  */
 
 declare(strict_types=1);
 
-namespace Uefa\VipComposer;
+namespace Inpsyde\VipComposer;
 
 use Composer\IO\IOInterface;
 use Composer\Util\Filesystem;
@@ -43,16 +46,16 @@ class CustomPathCopier
     }
 
     /**
-     * @param VipSkeleton $skeleton
+     * @param Directories $directories
      * @param IOInterface $io
      */
-    public function copy(VipSkeleton $skeleton, IOInterface $io)
+    public function copy(Directories $directories, IOInterface $io)
     {
-        $this->copyCustomPaths(Plugin::CUSTOM_MUPLUGINS_KEY, $skeleton, $io);
-        $this->copyCustomPaths(Plugin::CUSTOM_PLUGINS_KEY, $skeleton, $io);
-        $this->copyCustomPaths(Plugin::CUSTOM_THEMES_KEY, $skeleton, $io);
+        $this->copyCustomPaths(Plugin::CUSTOM_MUPLUGINS_KEY, $directories, $io);
+        $this->copyCustomPaths(Plugin::CUSTOM_PLUGINS_KEY, $directories, $io);
+        $this->copyCustomPaths(Plugin::CUSTOM_THEMES_KEY, $directories, $io);
 
-        $index = $skeleton->pluginsDir() . '/index.php';
+        $index = $directories->pluginsDir() . '/index.php';
         if (!file_exists($index)) {
             file_put_contents($index, "<?php\n// Silence is golden.\n");
         }
@@ -60,17 +63,17 @@ class CustomPathCopier
 
     /**
      * @param string $key
-     * @param VipSkeleton $skeleton
+     * @param Directories $directories
      * @param IOInterface $io
      */
-    private function copyCustomPaths(string $key, VipSkeleton $skeleton, IOInterface $io)
+    private function copyCustomPaths(string $key, Directories $directories, IOInterface $io)
     {
         $validPaths = $this->customPathsForKey($key);
         if (!$validPaths) {
             return;
         }
 
-        list($what, $target, $forceDir) = $this->pathInfoForKey($key, $skeleton);
+        list($what, $target, $forceDir) = $this->pathInfoForKey($key, $directories);
 
         $io->write("<info>VIP: Copying custom {$what} to deploy folder...</info>");
 
@@ -86,24 +89,24 @@ class CustomPathCopier
 
     /**
      * @param string $key
-     * @param VipSkeleton $skeleton
+     * @param Directories $directories
      * @return array
      */
-    private function pathInfoForKey(string $key, VipSkeleton $skeleton): array
+    private function pathInfoForKey(string $key, Directories $directories): array
     {
         $what = 'plugins';
         $target = null;
         $forceDir = false;
         if ($key === Plugin::CUSTOM_MUPLUGINS_KEY) {
             $what = 'MU plugins';
-            $target = $skeleton->muPluginsDir();
+            $target = $directories->muPluginsDir();
         } elseif ($key === Plugin::CUSTOM_THEMES_KEY) {
             $what = 'themes';
-            $target = $skeleton->themesDir();
+            $target = $directories->themesDir();
             $forceDir = true;
         }
 
-        return [$what, $target ?: $skeleton->pluginsDir(), $forceDir];
+        return [$what, $target ?: $directories->pluginsDir(), $forceDir];
     }
 
     /**
@@ -175,7 +178,7 @@ class CustomPathCopier
      * @param array $validPaths
      * @return array
      */
-    private function expandCustomPath(string $customPath, array $validPaths)
+    private function expandCustomPath(string $customPath, array $validPaths): array
     {
         $toLoop = substr_count($customPath, '*')
             ? glob("{$this->basePath}/$customPath")

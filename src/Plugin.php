@@ -2,12 +2,19 @@
 /*
  * This file is part of the vip-composer-plugin package.
  *
- * (c) © 2018 UEFA. All rights reserved.
+ * (c) Inpsyde GmbH
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ *
+ * phpcs:disable Inpsyde.CodeQuality.ReturnTypeDeclaration
+ * phpcs:disable Inpsyde.CodeQuality.ArgumentTypeDeclaration
+ * phpcs:disable Inpsyde.CodeQuality.NoAccessors
  */
 
 declare(strict_types=1);
 
-namespace Uefa\VipComposer;
+namespace Inpsyde\VipComposer;
 
 use Composer\Composer;
 use Composer\DependencyResolver\Operation\InstallOperation;
@@ -19,13 +26,14 @@ use Composer\Plugin\Capability\CommandProvider;
 use Composer\Plugin\Capable;
 use Composer\Plugin\PluginInterface;
 use Composer\Installer\PackageEvents;
+use Composer\Script\Event;
 use Composer\Script\ScriptEvents;
 use Composer\Util\Filesystem;
 use Composer\Util\Platform;
 
 class Plugin implements PluginInterface, EventSubscriberInterface, Capable, CommandProvider
 {
-    const NAME = 'uefa/vip-composer-plugin';
+    const NAME = 'inpsyde/vip-composer-plugin';
     const CONFIG_KEY = 'vip-composer';
     const VIP_TARGET_DIR_KEY = 'vip-dir';
     const VIP_CONFIG_KEY = 'vip-config';
@@ -59,7 +67,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface, Capable, Comm
     private $extra;
 
     /**
-     * @var VipSkeleton
+     * @var Directories
      */
     private $dirs;
 
@@ -151,10 +159,11 @@ class Plugin implements PluginInterface, EventSubscriberInterface, Capable, Comm
 
         $vipDir = $this->extra[self::VIP_TARGET_DIR_KEY] ?? self::DEFAULT_VIP_TARGET;
 
-        $this->dirs = new VipSkeleton(new Filesystem(), Platform::expandPath($vipDir), getcwd());
+        $this->dirs = new Directories(new Filesystem(), Platform::expandPath($vipDir), getcwd());
         $this->installer = new Installer($this->dirs, $composer, $this->io);
         $this->wpDownloaderConfig = $this->wpDownloaderConfig();
         $this->wpDownloader = new WpDownloader($this->wpDownloaderConfig, $composer, $this->io);
+
         $composer->getInstallationManager()->addInstaller($this->installer);
     }
 
@@ -175,14 +184,24 @@ class Plugin implements PluginInterface, EventSubscriberInterface, Capable, Comm
     }
 
     /**
-     * @throws \Exception
+     * @param Event|null $event
+     * @return int
      */
-    public function run()
+    public function run(Event $event = null): int
     {
+        if (!file_exists($this->dirs->basePath() . '/composer.lock')) {
+            $this->io->writeError('<error>VIP: "composer.lock" not found.</error>');
+            if (!$event) {
+                $this->io->writeError('<error>Please install or update via Composer first.</error>');
+            }
+
+            return 1;
+        }
+
         $this->dirs->createDirs();
 
         $contentDir = "/{$this->wpDownloaderConfig['target-dir']}/wp-content/";
-        $contentDirPath = getcwd() . $contentDir;
+        $contentDirPath = $this->dirs->basePath() . $contentDir;
         $this->io->write("<info>VIP: Symlinking content to {$contentDirPath}...</info>");
         $this->dirs->symlink($contentDirPath);
 
@@ -192,23 +211,22 @@ class Plugin implements PluginInterface, EventSubscriberInterface, Capable, Comm
         $muGenerator = new MuPluginGenerator($this->dirs, new PluginFileFinder($this->installer));
         $muGenerator->generate(...$packages);
 
-        $basePath = getcwd();
         $filesystem = new Filesystem();
         $config = $this->composer->getConfig();
 
-        $customPathCopier = new CustomPathCopier($filesystem, $basePath, $this->extra);
+        $customPathCopier = new CustomPathCopier($filesystem, $this->dirs->basePath(), $this->extra);
         $customPathCopier->copy($this->dirs, $this->io);
 
         $packages = new InstalledPackages($this->composer);
 
-        $autoload = new VipAutoloadGenerator($packages);
+        $autoload = new AutoloadGenerator($packages, $this->dirs);
         $autoload->generate($this->composer, $this->io);
 
-        $configSync = new ConfigSynchronizer($this->dirs, $this->io, $basePath, $this->extra);
+        $configSync = new ConfigSynchronizer($this->dirs, $this->io, $this->extra);
         $configSync->sync($filesystem, $this->wpDownloaderConfig['target-dir']);
 
         if (($this->flags & self::NO_GIT) === self::NO_GIT) {
-            return;
+            return 0;
         }
 
         $this->git = new VipGit(
@@ -222,6 +240,8 @@ class Plugin implements PluginInterface, EventSubscriberInterface, Capable, Comm
         $this->io->write('<info>VIP: Starting Git sync...</info>');
         $push = ($this->flags & self::DO_PUSH) === self::DO_PUSH;
         $push ? $this->git->push($filesystem, $packages) : $this->git->sync($filesystem, $packages);
+
+        return 0;
     }
 
     /**

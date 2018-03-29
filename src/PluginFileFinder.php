@@ -2,10 +2,15 @@
 /*
  * This file is part of the vip-composer-plugin package.
  *
- * (c) © 2018 UEFA. All rights reserved.
+ * (c) Inpsyde GmbH
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
  */
 
-namespace Uefa\VipComposer;
+declare(strict_types=1);
+
+namespace Inpsyde\VipComposer;
 
 use Composer\Package\PackageInterface;
 
@@ -54,7 +59,7 @@ class PluginFileFinder
      * @param $file
      * @return bool
      */
-    private function isPluginFile($file): bool
+    private function isPluginFile(string $file): bool
     {
         $handle = @fopen($file, 'r');
         $data = @fread($handle, 8192);

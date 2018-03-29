@@ -2,17 +2,20 @@
 /*
  * This file is part of the vip-composer-plugin package.
  *
- * (c) © 2018 UEFA. All rights reserved.
+ * (c) Inpsyde GmbH
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
  */
 
 declare(strict_types=1);
 
-namespace Uefa\VipComposer;
+namespace Inpsyde\VipComposer;
 
 use Composer\Util\Filesystem;
 use Composer\Util\Platform;
 
-class VipSkeleton
+class Directories
 {
 
     const PLUGINS_DIR = 'plugins';
@@ -162,6 +165,14 @@ class VipSkeleton
     public function targetPath(): string
     {
         return "{$this->basePath}/{$this->targetPath}";
+    }
+
+    /**
+     * @return string
+     */
+    public function basePath(): string
+    {
+        return $this->basePath;
     }
 
     /**
