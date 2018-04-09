@@ -90,7 +90,7 @@ class AutoloadGenerator
      */
     private function replaceVipPaths(string $path)
     {
-        $vendorDir = '$vendorDir = rtrim(WPCOM_VIP_PRIVATE_DIR, \'/\');';
+        $vendorDir = '$vendorDir = WPCOM_VIP_PRIVATE_DIR;';
         $staticLoader = '$useStaticLoader = false;';
         $vipDir = basename($this->directories->targetPath());
 
