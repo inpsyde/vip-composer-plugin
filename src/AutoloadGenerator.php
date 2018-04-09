@@ -81,5 +81,40 @@ class AutoloadGenerator
 
         file_put_contents("{$path}/autoload.php", $autoloadEntrypoint);
         file_put_contents($composerPath, $composerContent);
+
+        $this->replaceVipPaths($path);
+    }
+
+    /**
+     * @param string $path
+     */
+    private function replaceVipPaths(string $path)
+    {
+        $vendorDir = '$vendorDir = rtrim(WPCOM_VIP_PRIVATE_DIR, \'/\');';
+        $staticLoader = '$useStaticLoader = false;';
+        $vipDir = basename($this->directories->targetPath());
+
+        $toReplace = [
+            'autoload_classmap.php',
+            'autoload_files.php',
+            'autoload_namespaces.php',
+            'autoload_namespaces.php',
+            'autoload_psr4.php',
+        ];
+
+        foreach ($toReplace as $file) {
+            $content = file_get_contents("{$path}/{$file}");
+            $content = preg_replace('~\$vendorDir(?:\s*=\s*)[^;]+;~', $vendorDir, $content, 1);
+            $content = preg_replace(
+                '~\$baseDir\s*\.\s*\'/' . $vipDir . '/(plugins|themes)/~',
+                'WP_CONTENT_DIR . \'/$1/',
+                $content
+            );
+            file_put_contents("{$path}/{$file}", $content);
+        }
+
+        $real = file_get_contents("{$path}/autoload_real.php");
+        $real = preg_replace('~\$useStaticLoader(?:\s*=\s*)[^;]+;~', $staticLoader, $real, 1);
+        file_put_contents("{$path}/autoload_real.php", $real);
     }
 }
