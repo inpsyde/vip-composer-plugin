@@ -80,9 +80,13 @@ class MuPluginGenerator
     private function autoloadLoader(): string
     {
         $php = <<<'PHP'
-$autoloaderDir = defined('VIP_GO_ENV') ? '/private/vip-autoload' : '/private';
-require_once dirname(__DIR__) . "{$autoloaderDir}/autoload.php";
-unset($autoloaderDir);
+if (defined('VIP_GO_ENV')) {
+    require_once WPCOM_VIP_PRIVATE_DIR . '/vip-autoload/autoload.php';
+    
+    return;
+}
+
+require_once dirname(__DIR__) . "/private/autoload.php";
 
 PHP;
         return $php;
