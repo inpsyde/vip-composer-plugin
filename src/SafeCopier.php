@@ -61,15 +61,28 @@ class SafeCopier
     {
         $source = $this->filesystem->normalizePath($source);
         $target = $this->filesystem->normalizePath($target);
+        if (!self::accept($source)) {
+            return false;
+        }
         if (!is_dir($source)) {
-            return self::accept($source) ? copy($source, $target) : false;
+            return copy($source, $target);
         }
 
         $this->filesystem->ensureDirectoryExists($target);
-        $iterator = $this->copySourceIterator($source, $this->filesystem);
+
+        /** @var \RecursiveDirectoryIterator $iterator */
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($source, \RecursiveDirectoryIterator::SKIP_DOTS),
+            \RecursiveIteratorIterator::SELF_FIRST
+        );
+
+        $this->filesystem->ensureDirectoryExists($target);
 
         /** @var \SplFileInfo $file */
         foreach ($iterator as $file) {
+            if (!self::accept($this->filesystem->normalizePath((string)$file))) {
+                continue;
+            }
             $targetPath = "{$target}/" . $iterator->getSubPathname();
             if ($file->isDir()) {
                 $this->filesystem->ensureDirectoryExists($targetPath);
@@ -83,52 +96,5 @@ class SafeCopier
         }
 
         return true;
-    }
-
-    /**
-     * @param string $source
-     * @param Filesystem $filesystem
-     * @return \Iterator|\RecursiveDirectoryIterator
-     */
-    private function copySourceIterator(string $source, Filesystem $filesystem): \Iterator
-    {
-        return new class(
-            new \RecursiveIteratorIterator(
-                new \RecursiveDirectoryIterator($source, \RecursiveDirectoryIterator::SKIP_DOTS),
-                \RecursiveIteratorIterator::SELF_FIRST
-            ),
-            $filesystem
-        ) extends \FilterIterator {
-
-            /**
-             * @var Filesystem
-             */
-            private $filesystem;
-
-            /**
-             * @param \Iterator $iterator
-             * @param Filesystem $filesystem
-             */
-            public function __construct(\Iterator $iterator, Filesystem $filesystem)
-            {
-                parent::__construct($iterator);
-                $this->filesystem = $filesystem;
-            }
-
-            /**
-             * @return bool
-             *
-             * phpcs:disable Inpsyde.CodeQuality.ReturnTypeDeclaration
-             */
-            public function accept()
-            {
-                // phpcs:enable
-
-                /** @var \RecursiveDirectoryIterator $it */
-                $it = $this->getInnerIterator();
-
-                return SafeCopier::accept($this->filesystem->normalizePath($it->getSubPathname()));
-            }
-        };
     }
 }

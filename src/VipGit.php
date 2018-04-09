@@ -34,9 +34,9 @@ class VipGit
     private $config;
 
     /**
-     * @var string
+     * @var Directories
      */
-    private $targetPath;
+    private $directories;
 
     /**
      * @var array
@@ -76,21 +76,21 @@ class VipGit
     /**
      * @param IOInterface $io
      * @param Config $config
-     * @param string $targetPath
+     * @param Directories $directories
      * @param array $extra
      * @param string|null $remoteGitUrl
      */
     public function __construct(
         IOInterface $io,
         Config $config,
-        string $targetPath,
+        Directories $directories,
         array $extra,
         string $remoteGitUrl = null
     ) {
 
         $this->io = $io;
         $this->config = $config;
-        $this->targetPath = $targetPath;
+        $this->directories = $directories;
         $this->extra = $extra[Plugin::VIP_GIT_KEY] ?? [];
         $this->remoteUrl = $remoteGitUrl;
         $this->executor = new ProcessExecutor($io);
@@ -194,7 +194,7 @@ class VipGit
     private function cleanupOrphanMirrors(Filesystem $filesystem)
     {
         $finder = Finder::create()
-            ->in($this->targetPath)
+            ->in($this->directories->targetPath())
             ->ignoreVCS(true)
             ->ignoreDotFiles(false)
             ->depth(0)
@@ -240,7 +240,7 @@ class VipGit
     private function mirrorDir(Filesystem $filesystem): string
     {
         $mirror = uniqid(self::MIRROR_PREFIX, false);
-        $mirrorPath = "{$this->targetPath}/{$mirror}";
+        $mirrorPath = $this->directories->targetPath() . "/{$mirror}";
         $filesystem->ensureDirectoryExists($mirrorPath);
 
         $this->mirrorDir = $mirrorPath;
@@ -256,77 +256,81 @@ class VipGit
     private function fillMirror(Filesystem $filesystem, InstalledPackages $packages): bool
     {
         $copier = SafeCopier::create();
-        $vendorSource = $filesystem->normalizePath($this->config->get('vendor-dir'));
-        $vendorTarget = $this->fillMirrorDirs($vendorSource, $filesystem, $copier);
-        if (!$vendorTarget) {
-            return false;
-        }
+        $this->fillMirrorDirs($filesystem, $copier);
 
         $toCopy = $packages->noDevPackages();
 
         if (!$toCopy) {
-            touch("{$vendorTarget}/.gitkeep");
-
             return true;
         }
 
-        return $this->fillMirrorVendor($vendorSource, $vendorTarget, $packages, $copier);
+        return $this->fillMirrorVendor($packages, $copier, $filesystem);
     }
 
     /**
-     * @param string $vendorSource
      * @param Filesystem $filesystem
      * @param SafeCopier $copier
-     * @return string
      */
-    private function fillMirrorDirs(
-        string $vendorSource,
-        Filesystem $filesystem,
-        SafeCopier $copier
-    ): string {
+    private function fillMirrorDirs(Filesystem $filesystem, SafeCopier $copier)
+    {
+        $paths = [
+            $this->directories->languagesDir(),
+            $this->directories->pluginsDir(),
+            $this->directories->privateDir(),
+            $this->directories->themesDir(),
+            $this->directories->configDir(),
+            $this->directories->imagesDir(),
+        ];
 
-        $finder = Finder::create()
-            ->in($this->targetPath)
-            ->ignoreVCS(true)
-            ->ignoreDotFiles(false)
-            ->depth(0)
-            ->filter(function (\SplFileInfo $info): bool {
-                return strpos($info->getBasename(), self::MIRROR_PREFIX) !== 0;
-            });
-
-        $vendorTarget = '';
-
-        /** @var \SplFileInfo $item */
-        foreach ($finder as $item) {
-            $source = $filesystem->normalizePath((string)$item);
-            $target = "{$this->mirrorDir}/" . $item->getBasename();
-            if ($source === $vendorSource && $item->isDir()) {
-                $vendorTarget = $target;
-                $filesystem->ensureDirectoryExists($vendorTarget);
-                continue;
-            }
-
+        foreach ($paths as $source) {
+            $target = "{$this->mirrorDir}/" . basename($source);
             $copier->copy($source, $target);
             $this->handleGitKeep($target);
         }
 
-        return $vendorTarget;
+        $muSource = $this->directories->muPluginsDir();
+        $vendorSource = $filesystem->normalizePath($this->config->get('vendor-dir'));
+
+        $finder = Finder::create()
+            ->in($muSource)
+            ->ignoreVCS(true)
+            ->ignoreDotFiles(true)
+            ->depth(0);
+
+        $muTarget = "{$this->mirrorDir}/" . basename($muSource) . '/';
+        $filesystem->ensureDirectoryExists($muTarget);
+
+        /** @var \SplFileInfo $info */
+        foreach ($finder as $info) {
+            $source = $filesystem->normalizePath((string)$info);
+            if ($source === $vendorSource) {
+                continue;
+            }
+            $target = $muTarget . $info->getBasename();
+            $copier->copy($source, $target);
+        }
+
+        $this->handleGitKeep($muTarget);
     }
 
     /**
-     * @param string $vendorSource
-     * @param string $vendorTarget
      * @param InstalledPackages $packages
      * @param SafeCopier $copier
+     * @param Filesystem $filesystem
      * @return bool
      */
     private function fillMirrorVendor(
-        string $vendorSource,
-        string $vendorTarget,
         InstalledPackages $packages,
-        SafeCopier $copier
+        SafeCopier $copier,
+        Filesystem $filesystem
     ): bool {
 
+        $vendorSource = $filesystem->normalizePath($this->config->get('vendor-dir'));
+        $targetPath = $this->directories->targetPath();
+        $subdir = $filesystem->findShortestPath($targetPath, $vendorSource, true);
+
+        $vendorTarget = $this->mirrorDir . "/{$subdir}";
+        $filesystem->ensureDirectoryExists($vendorTarget);
         $toCopy = $packages->noDevPackages();
 
         if (!$toCopy) {
@@ -479,7 +483,7 @@ class VipGit
         $commands[] = 'add .';
         $commands[] = 'commit -am "Merge-bot upstream sync."';
 
-        list($success,, $outputs) = $this->git(...$commands);
+        list($success, , $outputs) = $this->git(...$commands);
         $output = implode("\n", $outputs);
 
         $nothingToDo = strpos($output, 'up-to-date') !== false
@@ -549,7 +553,7 @@ class VipGit
             $files,
             function (string $file) use (&$counts) {
                 $letter = strtoupper($file[0] ?? '');
-                array_key_exists($letter, $counts) and $counts[$letter] ++;
+                array_key_exists($letter, $counts) and $counts[$letter]++;
             }
         );
 

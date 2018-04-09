@@ -133,6 +133,14 @@ class Directories
     }
 
     /**
+     * @return string
+     */
+    public function imagesDir(): string
+    {
+        return $this->dir(self::IMAGES_DIR);
+    }
+
+    /**
      * @param string $contentDir
      */
     public function symlink(string $contentDir)

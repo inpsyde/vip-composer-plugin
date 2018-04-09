@@ -11,7 +11,9 @@ declare(strict_types=1);
 
 namespace Inpsyde\VipComposer;
 
+use Composer\Config;
 use Composer\Package\PackageInterface;
+use Composer\Util\Filesystem;
 
 class MuPluginGenerator
 {
@@ -25,19 +27,25 @@ class MuPluginGenerator
      * @var PluginFileFinder
      */
     private $finder;
+    /**
+     * @var Config
+     */
+    private $config;
 
     /**
      * @param Directories $directories
+     * @param Config $config
      * @param PluginFileFinder $finder
      */
-    public function __construct(Directories $directories, PluginFileFinder $finder)
+    public function __construct(Directories $directories, Config $config, PluginFileFinder $finder)
     {
         $this->directories = $directories;
+        $this->config = $config;
         $this->finder = $finder;
     }
 
     /**
-     * @param PackageInterface[] ...$packages
+     * @param PackageInterface ...$packages
      * @return bool
      */
     public function generate(PackageInterface ...$packages): bool
@@ -79,17 +87,15 @@ class MuPluginGenerator
      */
     private function autoloadLoader(): string
     {
-        $php = <<<'PHP'
-if (defined('VIP_GO_ENV')) {
-    require_once WPCOM_VIP_PRIVATE_DIR . '/vip-autoload/autoload.php';
-    
-    return;
-}
+        $filesystem = new Filesystem();
+        $vendorBase = basename($filesystem->normalizePath($this->config->get('vendor-dir')));
 
-require_once dirname(__DIR__) . "/private/autoload.php";
-
+        $php = <<<PHP
+defined('VIP_GO_ENV')
+    ? require_once __DIR__ . '/$vendorBase/vip-autoload/autoload.php'
+    : require_once __DIR__ . '/$vendorBase/autoload.php';
 PHP;
-        return $php;
+        return "{$php}\n\n";
     }
 
     /**
@@ -103,8 +109,7 @@ if (!function_exists('wpcom_vip_load_plugin')) {
         return $pluginPath;
     }
 }
-
 PHP;
-        return $php;
+        return "{$php}\n";
     }
 }

@@ -77,22 +77,26 @@ class AutoloadGenerator
 
         $autoloadEntrypoint = "<?php\nrequire_once __DIR__ . '/autoload_real.php';\n";
         $autoloadEntrypoint .= "ComposerAutoloaderInit{$suffix}::getLoader();\n";
-        $path = $composer->getConfig()->get('vendor-dir') . '/' . self::PROD_AUTOLOAD_DIR;
+        $vendorDir = $composer->getConfig()->get('vendor-dir');
+        $path = "{$vendorDir}/" . self::PROD_AUTOLOAD_DIR;
 
         file_put_contents("{$path}/autoload.php", $autoloadEntrypoint);
         file_put_contents($composerPath, $composerContent);
 
-        $this->replaceVipPaths($path);
+        $this->replaceVipPaths($path, $vendorDir);
     }
 
     /**
      * @param string $path
+     * @param string $vendorDir
      */
-    private function replaceVipPaths(string $path)
+    private function replaceVipPaths(string $path, string $vendorDir)
     {
-        $vendorDir = '$vendorDir = WPCOM_VIP_PRIVATE_DIR;';
+        //$vendorBase = basename($vendorDir);
+        //$vendorDirPath = "\$vendorDir = WPMU_PLUGIN_DIR . '/{$vendorBase}';";
+        $baseDirPath = '$baseDir = ABSPATH;';
         $staticLoader = '$useStaticLoader = false;';
-        $vipDir = basename($this->directories->targetPath());
+        $vipDirBase = basename($this->directories->targetPath());
 
         $toReplace = [
             'autoload_classmap.php',
@@ -104,9 +108,10 @@ class AutoloadGenerator
 
         foreach ($toReplace as $file) {
             $content = file_get_contents("{$path}/{$file}");
-            $content = preg_replace('~\$vendorDir(?:\s*=\s*)[^;]+;~', $vendorDir, $content, 1);
+            //$content = preg_replace('~\$vendorDir(?:\s*=\s*)[^;]+;~', $vendorDirPath, $content, 1);
+            $content = preg_replace('~\$baseDir(?:\s*=\s*)[^;]+;~', $baseDirPath, $content, 1);
             $content = preg_replace(
-                '~\$baseDir\s*\.\s*\'/' . $vipDir . '/(plugins|themes)/~',
+                '~\$baseDir\s*\.\s*\'/' . $vipDirBase . '/(plugins|themes)/~',
                 'WP_CONTENT_DIR . \'/$1/',
                 $content
             );

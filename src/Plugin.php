@@ -206,13 +206,14 @@ class Plugin implements PluginInterface, EventSubscriberInterface, Capable, Comm
         $this->dirs->symlink($contentDirPath);
 
         $this->io->write('<info>VIP: Building MU plugin...</info>');
-        /** @var \Composer\Package\PackageInterface[] $package */
-        $packages = $this->composer->getRepositoryManager()->getLocalRepository()->getPackages();
-        $muGenerator = new MuPluginGenerator($this->dirs, new PluginFileFinder($this->installer));
-        $muGenerator->generate(...$packages);
 
         $filesystem = new Filesystem();
         $config = $this->composer->getConfig();
+
+        /** @var \Composer\Package\PackageInterface[] $package */
+        $packages = $this->composer->getRepositoryManager()->getLocalRepository()->getPackages();
+        $muGenerator = new MuPluginGenerator($this->dirs, $config, new PluginFileFinder($this->installer));
+        $muGenerator->generate(...$packages);
 
         $customPathCopier = new CustomPathCopier($filesystem, $this->dirs->basePath(), $this->extra);
         $customPathCopier->copy($this->dirs, $this->io);
@@ -232,7 +233,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface, Capable, Comm
         $this->git = new VipGit(
             $this->io,
             $config,
-            $this->dirs->targetPath(),
+            $this->dirs,
             $this->extra,
             $this->remoteUrl
         );
