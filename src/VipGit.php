@@ -330,7 +330,7 @@ class VipGit
         $toCopy = $packages->noDevPackages();
 
         if (!$toCopy) {
-            $this->handleGitKeep($vendorTarget);
+            $this->handleGitKeep($vendorTarget, true);
 
             return true;
         }
@@ -358,15 +358,16 @@ class VipGit
             $copier->copy($autoloadSource, $autoloadTarget) and $done++;
         }
 
-        $this->handleGitKeep($vendorTarget);
+        $this->handleGitKeep($vendorTarget, true);
 
         return $all === $done;
     }
 
     /**
      * @param string $dir
+     * @param bool $isVendor
      */
-    private function handleGitKeep(string $dir)
+    private function handleGitKeep(string $dir, bool $isVendor = false)
     {
         if (!is_dir($dir)) {
             return;
@@ -375,13 +376,23 @@ class VipGit
         $files = array_diff(scandir($dir, SCANDIR_SORT_NONE), ['.', '..']);
         $count = count($files);
         $hasKeep = in_array('.gitkeep', array_map('basename', $files), true);
+        $keepPath = "{$dir}/.gitkeep";
+
+        if (!$isVendor) {
+            if (!$hasKeep) {
+                file_put_contents($keepPath, '# Important: This directory cannot be empty.');
+            }
+
+            return;
+        }
+
         if ($count > 1 && $hasKeep) {
-            @unlink("{$dir}/.gitkeep");
+            @unlink($keepPath);
             return;
         }
 
         if ($count === 0) {
-            @touch("{$dir}/.gitkeep");
+            @touch($keepPath);
         }
     }
 
