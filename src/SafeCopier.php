@@ -35,12 +35,33 @@ class SafeCopier
      */
     public static function accept(string $path): bool
     {
-        if (basename($path) === '.gitkeep') {
+        $basename = basename($path);
+        if ($basename === '.gitkeep') {
             return true;
         }
 
+        $exclude = [
+            'bitbucket-pipelines.yml',
+            'phpcs.xml.dist',
+            'phpcs.xml',
+            'phpunit.xml.dist',
+            'phpunit.xml',
+            'README.md',
+            '._compiled-resources',
+        ];
+
+        $excludeExt = [
+            'lock',
+            'log',
+            'error',
+            'tmp',
+            'temp',
+        ];
+
         return
-            strpos($path, 'node_modules/') === false
+            !in_array($basename, $exclude, true)
+            && !in_array(pathinfo($path, PATHINFO_EXTENSION), $excludeExt, true)
+            && strpos($path, 'node_modules/') === false
             && strpos($path, '/.git') === false;
     }
 

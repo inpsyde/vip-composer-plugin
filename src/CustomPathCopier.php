@@ -17,6 +17,12 @@ use Composer\Util\Filesystem;
 
 class CustomPathCopier
 {
+    const DEFAULT_CONFIG = [
+        Plugin::CUSTOM_MUPLUGINS_KEY => 'mu-plugins',
+        Plugin::CUSTOM_PLUGINS_KEY => 'plugins',
+        Plugin::CUSTOM_THEMES_KEY => 'themes',
+        Plugin::CUSTOM_LANGUAGES_KEY => 'languages',
+    ];
 
     /**
      * @var Filesystem
@@ -31,18 +37,17 @@ class CustomPathCopier
     /**
      * @var array
      */
-    private $extra;
+    private $config;
 
     /**
      * @param Filesystem $filesystem
-     * @param string $basePath
      * @param array $extra
      */
-    public function __construct(Filesystem $filesystem, string $basePath, array $extra)
+    public function __construct(Filesystem $filesystem, array $extra)
     {
         $this->filesystem = $filesystem;
-        $this->basePath = $basePath;
-        $this->extra = (array)($extra[Plugin::CUSTOM_PATHS_KEY] ?? []);
+        $config = (array)($extra[Plugin::CUSTOM_PATHS_KEY] ?? []);
+        $this->config = array_merge(self::DEFAULT_CONFIG, $config);
     }
 
     /**
@@ -54,6 +59,7 @@ class CustomPathCopier
         $this->copyCustomPaths(Plugin::CUSTOM_MUPLUGINS_KEY, $directories, $io);
         $this->copyCustomPaths(Plugin::CUSTOM_PLUGINS_KEY, $directories, $io);
         $this->copyCustomPaths(Plugin::CUSTOM_THEMES_KEY, $directories, $io);
+        $this->copyCustomPaths(Plugin::CUSTOM_LANGUAGES_KEY, $directories, $io);
 
         $index = $directories->pluginsDir() . '/index.php';
         if (!file_exists($index)) {
@@ -68,22 +74,20 @@ class CustomPathCopier
      */
     private function copyCustomPaths(string $key, Directories $directories, IOInterface $io)
     {
-        $validPaths = $this->customPathsForKey($key);
-        if (!$validPaths) {
+        list($what, $target, $pattern, $flags) = $this->pathInfoForKey($key, $directories);
+        if (!$what || !$target || !$pattern) {
             return;
         }
 
-        list($what, $target, $forceDir) = $this->pathInfoForKey($key, $directories);
-
         $io->write("<info>VIP: Copying custom {$what} to deploy folder...</info>");
 
-        foreach ($validPaths as $validPath) {
-            if ($this->shouldCopyPath($validPath, $forceDir, $io, $what)) {
-                $targetPath = "{$target}/" . basename($validPath);
-                $this->filesystem->copy($validPath, $targetPath)
-                    ?  $this->write($io, "  - Copied {$validPath} to {$targetPath}")
-                    :  $io->writeError("  - ERROR: Copy from {$validPath} to {$targetPath} failed.");
-            }
+        $sourcePaths = glob($pattern, $flags);
+
+        foreach ($sourcePaths as $sourcePath) {
+            $targetPath = "{$target}/" . basename($sourcePath);
+            $this->filesystem->copy($sourcePath, $targetPath)
+                ?  $this->write($io, "  - Copied {$sourcePath} to {$targetPath}")
+                :  $io->writeError("  - ERROR: Copy from {$sourcePath} to {$targetPath} failed.");
         }
     }
 
@@ -94,99 +98,44 @@ class CustomPathCopier
      */
     private function pathInfoForKey(string $key, Directories $directories): array
     {
-        $what = 'plugins';
-        $target = null;
-        $forceDir = false;
-        if ($key === Plugin::CUSTOM_MUPLUGINS_KEY) {
-            $what = 'MU plugins';
-            $target = $directories->muPluginsDir();
-        } elseif ($key === Plugin::CUSTOM_THEMES_KEY) {
-            $what = 'themes';
-            $target = $directories->themesDir();
-            $forceDir = true;
+        $path = $directories->basePath() . "/{$this->config[$key]}";
+        if (!is_dir($path)) {
+            return ['', '', '', null];
         }
 
-        return [$what, $target ?: $directories->pluginsDir(), $forceDir];
-    }
-
-    /**
-     * @param string $path
-     * @param bool $onlyDir
-     * @param IOInterface $io
-     * @param string $what
-     * @return bool
-     */
-    private function shouldCopyPath(string $path, bool $onlyDir, IOInterface $io, string $what): bool
-    {
-        $isDir = is_dir($path);
-        if ($onlyDir && !$isDir) {
-            $this->write(
-                $io,
-                sprintf(
-                    '    - Skipping "%s" because it is not a directory and only directory are allowed for %s.',
-                    $path,
-                    $what
-                )
-            );
-
-            return false;
+        switch ($key) {
+            case Plugin::CUSTOM_PLUGINS_KEY:
+                $what = 'plugins';
+                $target = $directories->pluginsDir();
+                $pattern = "{$path}/*.*";
+                $flags = GLOB_NOSORT;
+                break;
+            case Plugin::CUSTOM_THEMES_KEY:
+                $what = 'themes';
+                $target = $directories->themesDir();
+                $pattern = "{$path}/*";
+                $flags = GLOB_ONLYDIR|GLOB_NOSORT;
+                break;
+            case Plugin::CUSTOM_MUPLUGINS_KEY:
+                $what = 'MU plugins';
+                $target = $directories->muPluginsDir();
+                $pattern = "{$path}/*.*";
+                $flags = GLOB_NOSORT;
+                break;
+            case Plugin::CUSTOM_LANGUAGES_KEY:
+                $what = 'languages';
+                $target = $directories->languagesDir();
+                $pattern = "{$path}/*.{mo,po}";
+                $flags = GLOB_BRACE|GLOB_NOSORT;
+                break;
+            default:
+                $what = '';
+                $target = '';
+                $pattern = '';
+                $flags = null;
         }
 
-        if (!$isDir && strtolower((string)pathinfo($path, PATHINFO_EXTENSION)) !== 'php') {
-            $this->write($io, "    - Skipping \"{$path}\" because it is a file without PHP extension.");
-
-            return false;
-        }
-
-        if (!$isDir) {
-            return true;
-        }
-
-        if (!glob("{$path}/*.php", GLOB_NOSORT)) {
-            $this->write($io, "    - Skipping \"{$path}\" because looks like it contains no PHP files.");
-
-            return false;
-        }
-
-        return true;
-    }
-
-    /**
-     * @param string $key
-     * @return array
-     */
-    private function customPathsForKey(string $key): array
-    {
-        $customPaths = $this->extra[$key] ?? null;
-        is_string($customPaths) and $customPaths = [$customPaths];
-        if (!$customPaths) {
-            return [];
-        }
-
-        $validPaths = [];
-        foreach ($customPaths as $customPath) {
-            if (is_string($customPath)) {
-                $validPaths = $this->expandCustomPath($customPath, $validPaths);
-            }
-        }
-
-        return $validPaths;
-    }
-
-    /**
-     * @param string $customPath
-     * @param array $validPaths
-     * @return array
-     */
-    private function expandCustomPath(string $customPath, array $validPaths): array
-    {
-        $toLoop = substr_count($customPath, '*')
-            ? glob("{$this->basePath}/$customPath")
-            : ["{$this->basePath}/$customPath"];
-
-        $valid = array_filter((array)$toLoop, 'is_readable');
-
-        return $valid ? array_merge($validPaths, $valid) : $validPaths;
+        return [$what, $target, $pattern, $flags];
     }
 
     /**

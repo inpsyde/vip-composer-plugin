@@ -36,17 +36,18 @@ class Plugin implements PluginInterface, EventSubscriberInterface, Capable, Comm
     const NAME = 'inpsyde/vip-composer-plugin';
     const CONFIG_KEY = 'vip-composer';
     const VIP_TARGET_DIR_KEY = 'vip-dir';
-    const VIP_CONFIG_KEY = 'vip-config';
+    const DEFAULT_VIP_TARGET = 'vip';
+    const VIP_CONFIG_KEY = 'config-files';
     const VIP_CONFIG_DIR_KEY = 'dir';
     const VIP_CONFIG_LOAD_KEY = 'load';
-    const VIP_GIT_KEY = 'vip-git';
+    const VIP_GIT_KEY = 'git';
     const VIP_GIT_URL_KEY = 'url';
     const VIP_GIT_BRANCH_KEY = 'branch';
     const CUSTOM_PATHS_KEY = 'content-dev';
     const CUSTOM_MUPLUGINS_KEY = 'muplugins';
     const CUSTOM_PLUGINS_KEY = 'plugins';
-    const CUSTOM_THEMES_KEY = 'plugins-dir';
-    const DEFAULT_VIP_TARGET = '.vip';
+    const CUSTOM_THEMES_KEY = 'themes';
+    const CUSTOM_LANGUAGES_KEY = 'languages';
     const NO_GIT = 1;
     const DO_GIT = 2;
     const DO_PUSH = 4;
@@ -168,7 +169,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface, Capable, Comm
         $this->installer = new Installer($this->dirs, $composer, $this->io);
         $this->wpDownloaderConfig = $this->wpDownloaderConfig();
         $this->wpDownloader = new WpDownloader($this->wpDownloaderConfig, $composer, $this->io);
-        $this->vipMuDownloader = new VipGoMuDownloader($this->io);
+        $this->vipMuDownloader = new VipGoMuDownloader($this->io, $this->dirs);
 
         $composer->getInstallationManager()->addInstaller($this->installer);
     }
@@ -206,23 +207,21 @@ class Plugin implements PluginInterface, EventSubscriberInterface, Capable, Comm
         }
 
         $this->dirs->createDirs();
+        $this->vipMuDownloader->download();
 
         $contentDir = "/{$this->wpDownloaderConfig['target-dir']}/wp-content/";
         $contentDirPath = $this->dirs->basePath() . $contentDir;
         $this->io->write("<info>VIP: Symlinking content to {$contentDirPath}...</info>");
         $this->dirs->symlink($contentDirPath);
 
-        $this->io->write('<info>VIP: Building MU plugin...</info>');
-
         $filesystem = new Filesystem();
         $config = $this->composer->getConfig();
-
         /** @var \Composer\Package\PackageInterface[] $package */
         $packages = $this->composer->getRepositoryManager()->getLocalRepository()->getPackages();
         $muGenerator = new MuPluginGenerator($this->dirs, $config, new PluginFileFinder($this->installer));
         $muGenerator->generate(...$packages);
 
-        $customPathCopier = new CustomPathCopier($filesystem, $this->dirs->basePath(), $this->extra);
+        $customPathCopier = new CustomPathCopier($filesystem, $this->extra);
         $customPathCopier->copy($this->dirs, $this->io);
 
         $packages = new InstalledPackages($this->composer);

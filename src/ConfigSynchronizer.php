@@ -18,6 +18,11 @@ use Composer\Util\Platform;
 
 class ConfigSynchronizer
 {
+    const DEFAULT_CONFIG = [
+        Plugin::VIP_CONFIG_DIR_KEY => 'config',
+        Plugin::VIP_CONFIG_LOAD_KEY => true,
+    ];
+
     /**
      * @var Directories
      */
@@ -31,7 +36,7 @@ class ConfigSynchronizer
     /**
      * @var array
      */
-    private $extra;
+    private $config;
 
     /**
      * @param Directories $dirs
@@ -42,7 +47,12 @@ class ConfigSynchronizer
     {
         $this->dirs = $dirs;
         $this->io = $io;
-        $this->extra = $extra;
+        $config = (array)($extra[Plugin::VIP_CONFIG_KEY] ?? []);
+        $dir = $config[Plugin::VIP_CONFIG_DIR_KEY] ?? '';
+        if ($dir) {
+            $config[Plugin::VIP_CONFIG_DIR_KEY] = Platform::expandPath($dir);
+        }
+        $this->config = array_merge(self::DEFAULT_CONFIG, $config);
     }
 
     /**
@@ -51,34 +61,31 @@ class ConfigSynchronizer
      */
     public function sync(Filesystem $filesystem, string $wpDir)
     {
-        $configData = (array)($this->extra[Plugin::VIP_CONFIG_KEY] ?? []);
-        $files = $this->syncFiles($configData, $filesystem);
-        $this->updateWpConfig($configData, $wpDir, $files, $filesystem);
+        $files = $this->syncFiles($filesystem);
+        $this->updateWpConfig($wpDir, $files, $filesystem);
     }
 
     /**
-     * @param array $configData
      * @param Filesystem $filesystem
      * @return array
      */
-    private function syncFiles(array $configData, Filesystem $filesystem): array
+    private function syncFiles(Filesystem $filesystem): array
     {
-        $configDir = $configData[Plugin::VIP_CONFIG_DIR_KEY] ?? '';
-        $configDir and $configDir = Platform::expandPath($configDir);
+        $configDir = $this->config[Plugin::VIP_CONFIG_DIR_KEY];
         if (!$configDir) {
             return [];
         }
 
-        $configPath = $filesystem->isAbsolutePath($configDir)
+        $sourcePath = $filesystem->isAbsolutePath($configDir)
             ? $configDir
             : $this->dirs->basePath() . "/{$configDir}";
 
-        if (!is_dir($configPath)) {
+        if (!is_dir($sourcePath)) {
             return [];
         }
 
         $this->io->write('<info>VIP: Syncing config files...</info>');
-        $configs = glob("{$configPath}/*.php");
+        $configs = glob("{$sourcePath}/*.php");
 
         $targetDir = $this->dirs->configDir() . '/';
         $filesystem->emptyDirectory($targetDir);
@@ -99,13 +106,11 @@ class ConfigSynchronizer
     }
 
     /**
-     * @param array $config
      * @param string $wpDir
      * @param array $files
      * @param Filesystem $filesystem
      */
     private function updateWpConfig(
-        array $config,
         string $wpDir,
         array $files,
         Filesystem $filesystem
@@ -116,7 +121,7 @@ class ConfigSynchronizer
             return;
         }
 
-        $configLoad = $config[Plugin::VIP_CONFIG_LOAD_KEY] ?? true;
+        $configLoad = $this->config[Plugin::VIP_CONFIG_LOAD_KEY];
         $files or $configLoad = false;
 
         $this->io->write("<info>VIP: Updating 'wp-config.php'...</info>");
