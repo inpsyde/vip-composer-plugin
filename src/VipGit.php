@@ -15,9 +15,7 @@ namespace Inpsyde\VipComposer;
 use Composer\Config;
 use Composer\IO\IOInterface;
 use Composer\Util\Filesystem;
-use Composer\Util\ProcessExecutor;
 use Symfony\Component\Finder\Finder;
-use Symfony\Component\Process\Process;
 
 class VipGit
 {
@@ -44,19 +42,9 @@ class VipGit
     private $extra;
 
     /**
-     * @var callable
+     * @var GitProcess
      */
-    private $out;
-
-    /**
-     * @var array
-     */
-    private $captured = ['', ''];
-
-    /**
-     * @var ProcessExecutor
-     */
-    private $executor;
+    private $git;
 
     /**
      * @var null|string
@@ -98,10 +86,6 @@ class VipGit
         $this->directories = $directories;
         $this->extra = $extra[Plugin::VIP_GIT_KEY] ?? [];
         $this->remoteUrl = $remoteGitUrl;
-        $this->executor = new ProcessExecutor($io);
-        $this->out = function (string $type = '', string $buffer = '') {
-            $this->captured = [$type, $buffer];
-        };
     }
 
     /**
@@ -126,6 +110,7 @@ class VipGit
         $push = $this->doPush;
         $this->doPush = false;
         $this->mirrorDir = '';
+        $this->git = new GitProcess($this->io, $this->mirrorDir($filesystem));
 
         if (!$this->init($filesystem)) {
             $this->mirrorDir = '';
@@ -182,7 +167,7 @@ class VipGit
             return false;
         }
 
-        list($success) = $this->git("clone {$url} .");
+        list($success) = $this->git->exec("clone {$url} .");
 
         $success and $this->io->write('     <comment>Repository initialized.</comment>');
         if ($success) {
@@ -437,7 +422,7 @@ class VipGit
      */
     private function maybeCreateBranch(string $target): bool
     {
-        list($success, $output) = $this->git('branch -a');
+        list($success, $output) = $this->git->exec('branch -a');
         if (!$success) {
             return false;
         }
@@ -455,19 +440,19 @@ class VipGit
         }
 
         if ($branchIsThere) {
-            $branchIsCurrent or $this->git("checkout {$target}");
+            $branchIsCurrent or $this->git->exec("checkout {$target}");
 
             return true;
         }
 
         $this->io->write("     <comment>Branch {$target} not on remote. Pushing...</comment>");
 
-        list($success) = $this->git("checkout -b {$target}");
+        list($success) = $this->git->exec("checkout -b {$target}");
         if (!$success) {
             return false;
         }
 
-        list($success) = $this->git("push -u origin {$target}");
+        list($success) = $this->git->exec("push -u origin {$target}");
 
         return $success;
     }
@@ -478,7 +463,7 @@ class VipGit
      */
     private function mergeAndPush(bool $push): bool
     {
-        list($success, $output) = $this->git('branch');
+        list($success, $output) = $this->git->exec('branch');
         if (!$success) {
             $this->io->writeError('    <error>Failed reading branches.</error>');
             return false;
@@ -498,7 +483,7 @@ class VipGit
         $commands[] = 'add .';
         $commands[] = 'commit -am "Merge-bot upstream sync."';
 
-        list($success, , $outputs) = $this->git(...$commands);
+        list($success, , $outputs) = $this->git->exec(...$commands);
         $output = implode("\n", $outputs);
 
         $nothingToDo = strpos($output, 'up-to-date') !== false
@@ -532,7 +517,7 @@ class VipGit
         }
 
         $this->io->write("    <comment>Pushing to <<<{$this->remoteUrl}>>>...</comment>");
-        list($success) = $this->git('push origin');
+        list($success) = $this->git->exec('push origin');
 
         return $success;
     }
@@ -543,7 +528,7 @@ class VipGit
      */
     private function gitStats(bool $push): int
     {
-        list($success, $output) = $this->git('diff-tree --no-commit-id --name-status -r HEAD');
+        list($success, $output) = $this->git->exec('diff-tree --no-commit-id --name-status -r HEAD');
         if (!$success) {
             $push or $this->io->write('    <info>Changes merged but not pushed.</info>');
 
@@ -599,35 +584,5 @@ class VipGit
     {
         $this->io->write('     <info>Everything is already up-to-date!</info>');
         $push and $this->io->write('     <info>Nothing to push.</info>');
-    }
-
-    /**
-     * @param string[] $commands
-     * @return array
-     */
-    private function git(string ...$commands): array
-    {
-        if (!$this->mirrorDir || !is_dir($this->mirrorDir)) {
-            throw new \RuntimeException('Error building directory for VIP git cloning.');
-        }
-
-        $outputs = [];
-        $lastOutput = '';
-        $code = 0;
-        $vvv = $this->io->isVeryVerbose();
-
-        while ($code === 0 && $commands) {
-            $command = array_shift($commands);
-            $vvv and $this->io->write("     <comment>Executing </comment>`git {$command}`");
-            $code = $this->executor->execute("git {$command}", $this->out, $this->mirrorDir);
-            list($type, $lastOutput) = $this->captured;
-            $this->captured = ['', ''];
-            $outputs[] = $lastOutput;
-            if ($code !== 0 && $type === Process::ERR) {
-                $this->io->writeError("<error>{$lastOutput}</error>");
-            }
-        }
-
-        return [$code === 0, $lastOutput, $outputs];
     }
 }
