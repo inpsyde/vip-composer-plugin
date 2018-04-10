@@ -110,7 +110,13 @@ class VipGit
         $push = $this->doPush;
         $this->doPush = false;
         $this->mirrorDir = '';
-        $this->git = new GitProcess($this->io, $this->mirrorDir($filesystem));
+
+        if (!$this->mirrorDir($filesystem)) {
+            $this->mirrorDir and $filesystem->removeDirectory($this->mirrorDir);
+            return false;
+        }
+
+        $this->git = new GitProcess($this->io, $this->mirrorDir);
 
         if (!$this->init($filesystem)) {
             $this->mirrorDir = '';
@@ -159,11 +165,6 @@ class VipGit
 
         $url = $this->repoUrl();
         if (!$url) {
-            return false;
-        }
-
-        if (!$this->mirrorDir($filesystem)) {
-            $this->mirrorDir and $filesystem->removeDirectory($this->mirrorDir);
             return false;
         }
 
