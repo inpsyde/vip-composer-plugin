@@ -122,7 +122,7 @@ class ConfigSynchronizer
         }
 
         $configLoad = $this->config[Plugin::VIP_CONFIG_LOAD_KEY];
-        $files or $configLoad = false;
+        $configLoad or $files = [];
 
         $this->io->write("<info>VIP: Updating 'wp-config.php'...</info>");
 
@@ -153,20 +153,20 @@ class ConfigSynchronizer
 
         $fileContent = rtrim($contentPartsStart[0]);
 
-        if (!$configLoad) {
-            $fileContent .= "\n\n{$wpComment}\n\n";
-            $fileContent .= ltrim($contentPartsEnd[1]);
-            $this->saveFile($wpConfig, $fileContent);
-
-            return;
-        }
-
         $fileContent .= "\n\n/* VIP Config START */\n";
+
+        $muPath = Directories::VIP_GO_MUPLUGINS_DIR;
+        $fileContent .= <<<PHP
+if (is_dir(__DIR__ . '/{$muPath}')) {
+    define( 'WPMU_PLUGIN_DIR',__DIR__ . '/vip-go-mu-plugins' );
+}
+PHP;
         foreach ($files as $file) {
             $path = $filesystem->findShortestPath($this->dirs->basePath(), $file);
-            $fileContent .= "require_once __DIR__ . '/{$path}';\n";
+            $fileContent .= "\nrequire_once __DIR__ . '/{$path}';";
         }
-        $fileContent .= "/* VIP Config END */\n\n";
+
+        $fileContent .= "\n/* VIP Config END */\n\n";
         $fileContent .= "\n{$wpComment}\n\n";
         $fileContent .= ltrim($contentPartsEnd[1]);
 
