@@ -111,6 +111,8 @@ class VipGit
         $this->doPush = false;
         $this->mirrorDir = '';
 
+        $this->cleanupOrphanMirrors($filesystem);
+
         if (!$this->mirrorDir($filesystem)) {
             $this->mirrorDir and $filesystem->removeDirectory($this->mirrorDir);
             return false;
@@ -161,8 +163,6 @@ class VipGit
      */
     private function init(Filesystem $filesystem): bool
     {
-        $this->cleanupOrphanMirrors($filesystem);
-
         $url = $this->repoUrl();
         if (!$url) {
             return false;

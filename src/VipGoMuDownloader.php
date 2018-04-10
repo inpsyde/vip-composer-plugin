@@ -14,6 +14,7 @@ namespace Inpsyde\VipComposer;
 
 use Composer\IO\IOInterface;
 use Composer\Util\Filesystem;
+use Composer\Util\ProcessExecutor;
 
 /**
  * @author  Giuseppe Mazzapica <giuseppe.mazzapica@gmail.com>
@@ -21,7 +22,7 @@ use Composer\Util\Filesystem;
  */
 class VipGoMuDownloader
 {
-    const GIT_URL = 'https://github.com/Automattic/vip-go-mu-plugins';
+    const GIT_URL = 'git@github.com:Automattic/vip-go-mu-plugins.git';
 
     private static $done = false;
 
@@ -31,16 +32,23 @@ class VipGoMuDownloader
     private $io;
 
     /**
+     * @var Directories
+     */
+    private $directories;
+
+    /**
      * @var GitProcess
      */
     private $git;
 
     /**
      * @param IOInterface $io
+     * @param Directories $directories
      */
-    public function __construct(IOInterface $io)
+    public function __construct(IOInterface $io, Directories $directories)
     {
         $this->io = $io;
+        $this->directories = $directories;
     }
 
     public function download()
@@ -50,33 +58,41 @@ class VipGoMuDownloader
         }
 
         self::$done = true;
+
+        $targetDir = $this->directories->vipMuPluginsDir();
+        if ($this->alreadyInstalled()) {
+            $this->io->write('<info>VIP: VIP MU plugins already there.</info>');
+
+            return;
+        }
+
+        $this->io->write('<info>VIP: Pulling VIP MU plugins...</info>');
+
         $filesystem = new Filesystem();
-        $muTarget = $filesystem->normalizePath(getcwd() . '/mu-plugins');
-        $cloneDir = 'vip-go-mu-plugins';
-        $filesystem->ensureDirectoryExists($muTarget);
-        $this->git = new GitProcess($this->io);
-        list($code, $output) = $this->git->exec('clone ' . self::GIT_URL . " {$cloneDir}");
-        if ($code !== 0) {
-            $this->io->writeError('VIP: Failed cloning VIP GO MU plugins repository.');
-            $this->io->writeError($output);
+        $filesystem->emptyDirectory($targetDir, true);
 
-            return;
-        }
+        $timeout = ProcessExecutor::getTimeout();
+        ProcessExecutor::setTimeout(0);
+        $this->git = new GitProcess($this->io, $targetDir);
+        list(, , $outputs) = $this->git->exec('clone  --recursive ' . self::GIT_URL . ' .');
+        ProcessExecutor::setTimeout($timeout);
 
-        list($code, , $outputs) = $this->git
-            ->cd($cloneDir)
-            ->exec(
-                'pull origin master',
-                'submodule update --init --recursive'
-            );
-
-        if ($code !== 0) {
-            $this->io->writeError('VIP: Failed pulling VIP GO MU plugins repository.');
+        if (!$this->alreadyInstalled()) {
+            $this->io->writeError('<error>VIP: Failed cloning VIP GO MU plugins repository.</error>');
             $this->io->writeError($outputs);
-
-            return;
         }
+    }
 
-        $filesystem->copyThenRemove(getcwd() . "/{$cloneDir}", $muTarget);
+    /**
+     * @return bool
+     */
+    private function alreadyInstalled(): bool
+    {
+        $targetDir = $this->directories->vipMuPluginsDir();
+
+        return is_dir($targetDir)
+            && is_dir("{$targetDir}/vip-support")
+            && file_exists("{$targetDir}/z-client-mu-plugins.php")
+            && file_exists("{$targetDir}/vip-support/vip-support.php");
     }
 }

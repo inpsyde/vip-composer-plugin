@@ -25,6 +25,7 @@ class Directories
     const CONFIG_DIR = 'vip-config';
     const PRIVATE_DIR = 'private';
     const IMAGES_DIR = 'images';
+    const VIP_GO_MUPLUGINS_DIR = 'vip-go-mu-plugins';
 
     const DIRS = [
         self::PLUGINS_DIR => self::PLUGINS_DIR,
@@ -141,6 +142,17 @@ class Directories
     }
 
     /**
+     * @return string
+     */
+    public function vipMuPluginsDir(): string
+    {
+        self::$created or self::$created = $this->createDirs();
+        $this->filesystem->ensureDirectoryExists("{$this->basePath}/" . self::VIP_GO_MUPLUGINS_DIR);
+
+        return "{$this->basePath}/" . self::VIP_GO_MUPLUGINS_DIR;
+    }
+
+    /**
      * @param string $contentDir
      */
     public function symlink(string $contentDir)
@@ -150,7 +162,8 @@ class Directories
 
         $map = [
             $this->pluginsDir() => "{$contentDir}/plugins",
-            $this->muPluginsDir() => "{$contentDir}/mu-plugins",
+            $this->muPluginsDir() => "{$contentDir}/client-mu-plugins",
+            $this->vipMuPluginsDir() => "{$contentDir}/mu-plugins",
             $this->themesDir() => "{$contentDir}/themes",
             $this->languagesDir() => "{$contentDir}/languages",
         ];
@@ -158,6 +171,10 @@ class Directories
         $windows = Platform::isWindows();
 
         foreach ($map as $target => $link) {
+            if (is_dir($link)) {
+                $this->filesystem->removeDirectory($link);
+            }
+
             if ($windows) {
                 $this->filesystem->junction($target, $link);
                 continue;
