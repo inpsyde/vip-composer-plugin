@@ -66,6 +66,11 @@ class VipGit
     /**
      * @var null|string
      */
+    private $sshRemoteUrl;
+
+    /**
+     * @var null|string
+     */
     private $mirrorDir;
 
     /**
@@ -214,7 +219,6 @@ class VipGit
     private function repoUrl(): string
     {
         $url = $this->remoteUrl ?: (string)($this->extra[Plugin::VIP_GIT_URL_KEY] ?? '');
-        $this->remoteUrl = $url;
 
         if (!$url
             || !filter_var($url, FILTER_VALIDATE_URL)
@@ -226,11 +230,22 @@ class VipGit
             return '';
         }
 
-        if (pathinfo(basename($url), PATHINFO_EXTENSION) !== 'git') {
-            $url .= '.git';
+        $path = parse_url($url, PHP_URL_PATH);
+        if (!$path || $path === '/') {
+            $this->io->writeError("<error>VIP: Git repo URL '{$url}' looks wrong.</error>");
+
+            return '';
         }
 
-        return $url;
+        if (pathinfo(basename($url), PATHINFO_EXTENSION) !== 'git') {
+            $url .= '.git';
+            $path .= '.git';
+        }
+
+        $this->remoteUrl = $url;
+        $this->sshRemoteUrl = 'git@github.com:' . ltrim($path, '/');
+
+        return $this->sshRemoteUrl;
     }
 
     /**
