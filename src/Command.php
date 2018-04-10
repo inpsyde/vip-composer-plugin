@@ -42,6 +42,12 @@ class Command extends BaseCommand
                         'Do not sync to VIP git repo.'
                     ),
                     new InputOption(
+                        'no-vip-mu',
+                        null,
+                        InputOption::VALUE_NONE,
+                        'Do not download to VIP MU plugins.'
+                    ),
+                    new InputOption(
                         'push',
                         'p',
                         InputOption::VALUE_NONE,
@@ -70,6 +76,10 @@ class Command extends BaseCommand
         }
 
         $url = $input->hasArgument('remote') ? $input->getArgument('remote') : null;
+
+        $flags |= $input->hasOption('no-vip-mu') && $input->getOption('no-vip-mu')
+                ? Plugin::NO_VIP_MU
+                : Plugin::DO_VIP_MU;
 
         try {
             $plugin = Plugin::forCommand($flags, $url);

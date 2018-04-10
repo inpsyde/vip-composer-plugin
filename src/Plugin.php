@@ -51,6 +51,8 @@ class Plugin implements PluginInterface, EventSubscriberInterface, Capable, Comm
     const NO_GIT = 1;
     const DO_GIT = 2;
     const DO_PUSH = 4;
+    const NO_VIP_MU = 128;
+    const DO_VIP_MU = 256;
 
     /**
      * @var Composer
@@ -187,7 +189,6 @@ class Plugin implements PluginInterface, EventSubscriberInterface, Capable, Comm
         if ($package && $package->getType() !== 'composer-plugin') {
             $event->getComposer()->getInstallationManager()->addInstaller($this->installer);
             $this->wpDownloader->prePackage($event);
-            $this->vipMuDownloader->download();
         }
     }
 
@@ -207,12 +208,12 @@ class Plugin implements PluginInterface, EventSubscriberInterface, Capable, Comm
         }
 
         $this->dirs->createDirs();
-        $this->vipMuDownloader->download();
 
         $contentDir = "/{$this->wpDownloaderConfig['target-dir']}/wp-content/";
         $contentDirPath = $this->dirs->basePath() . $contentDir;
         $this->io->write("<info>VIP: Symlinking content to {$contentDirPath}...</info>");
-        $this->dirs->symlink($contentDirPath);
+
+        $this->dirs->symlink($contentDirPath, $this->shouldDownloadVipMu($event));
 
         $filesystem = new Filesystem();
         $config = $this->composer->getConfig();
@@ -253,20 +254,26 @@ class Plugin implements PluginInterface, EventSubscriberInterface, Capable, Comm
 
     /**
      * Download WP on installation.
+     * @param Event|null $event
      */
-    public function wpInstall()
+    public function wpInstall(Event $event = null)
     {
         $this->wpDownloader->install();
-        $this->vipMuDownloader->download();
+        if ($this->shouldDownloadVipMu($event)) {
+            $this->vipMuDownloader->download();
+        }
     }
 
     /**
      * Download WP on update.
+     * @param Event $event
      */
-    public function wpUpdate()
+    public function wpUpdate(Event $event = null)
     {
         $this->wpDownloader->update();
-        $this->vipMuDownloader->download();
+        if ($this->shouldDownloadVipMu($event)) {
+            $this->vipMuDownloader->download();
+        }
     }
 
     /**
@@ -283,5 +290,14 @@ class Plugin implements PluginInterface, EventSubscriberInterface, Capable, Comm
         $config = array_merge($default, $config);
 
         return $config;
+    }
+
+    /**
+     * @param Event|null $event
+     * @return bool
+     */
+    private function shouldDownloadVipMu(Event $event = null): bool
+    {
+        return ($event && $event->isDevMode()) || (($this->flags & self::DO_GIT) === self::DO_GIT);
     }
 }

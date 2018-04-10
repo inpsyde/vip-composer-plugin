@@ -154,19 +154,25 @@ class Directories
 
     /**
      * @param string $contentDir
+     * @param bool $hasVipMu
      */
-    public function symlink(string $contentDir)
+    public function symlink(string $contentDir, bool $hasVipMu)
     {
         $this->filesystem->ensureDirectoryExists($contentDir);
         $this->filesystem->emptyDirectory($contentDir);
 
         $map = [
             $this->pluginsDir() => "{$contentDir}/plugins",
-            $this->muPluginsDir() => "{$contentDir}/client-mu-plugins",
-            $this->vipMuPluginsDir() => "{$contentDir}/mu-plugins",
             $this->themesDir() => "{$contentDir}/themes",
             $this->languagesDir() => "{$contentDir}/languages",
+            $this->muPluginsDir() => $hasVipMu
+                ? "{$contentDir}/client-mu-plugins"
+                : "{$contentDir}/mu-plugins",
         ];
+
+        if ($hasVipMu) {
+            $map[$this->vipMuPluginsDir()] = "{$contentDir}/mu-plugins";
+        }
 
         $windows = Platform::isWindows();
 
@@ -174,6 +180,8 @@ class Directories
             if (is_dir($link)) {
                 $this->filesystem->removeDirectory($link);
             }
+
+            $this->filesystem->ensureDirectoryExists($target);
 
             if ($windows) {
                 $this->filesystem->junction($target, $link);
