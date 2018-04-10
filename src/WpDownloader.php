@@ -23,19 +23,6 @@ use Composer\Semver\Semver;
 use Composer\Util\Filesystem;
 use Composer\Util\RemoteFilesystem;
 
-/**
- * This plugins allows to install themes and plugin inside WordPress `/wp-content` folder by
- * not treating WordPress as a Composer package, but downloading it as zip from wp.org releases.
- *
- * This plugin also prevent that Composer packages of type `worpdress-core` are installed into the
- * system, to avoid issues and unnecessary downloads.
- *
- * See README for more information.
- *
- * @author  Giuseppe Mazzapica <giuseppe.mazzapica@gmail.com>
- * @package wp-downloader
- * @license http://opensource.org/licenses/MIT MIT
- */
 class WpDownloader
 {
     const RELEASES_URL = 'https://api.wordpress.org/core/version-check/1.7/';

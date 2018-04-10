@@ -74,7 +74,7 @@ class Command extends BaseCommand
         try {
             $plugin = Plugin::forCommand($flags, $url);
             $plugin->activate($this->getComposer(false, false), $this->getIO());
-            $plugin->wpDownloaderUpdate();
+            $plugin->wpUpdate();
             $plugin->run();
 
             return 0;

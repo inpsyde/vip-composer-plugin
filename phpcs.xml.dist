@@ -13,7 +13,7 @@
     </rule>
     <rule ref="Inpsyde.CodeQuality.ElementNameMinimalLength">
         <properties>
-            <property name="allowedShortNames" type="array" value="io,it,to"/>
+            <property name="allowedShortNames" type="array" value="io,it,to,cd"/>
         </properties>
     </rule>
     <rule ref="WordPress.PHP.StrictInArray"/>

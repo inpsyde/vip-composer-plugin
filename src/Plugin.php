@@ -82,6 +82,11 @@ class Plugin implements PluginInterface, EventSubscriberInterface, Capable, Comm
     private $wpDownloader;
 
     /**
+     * @var VipGoMuDownloader
+     */
+    private $vipMuDownloader;
+
+    /**
      * @var array
      */
     private $wpDownloaderConfig = [];
@@ -107,8 +112,8 @@ class Plugin implements PluginInterface, EventSubscriberInterface, Capable, Comm
     public static function getSubscribedEvents()
     {
         return [
-            ScriptEvents::PRE_INSTALL_CMD => 'wpDownloaderInstall',
-            ScriptEvents::PRE_UPDATE_CMD => 'wpDownloaderUpdate',
+            ScriptEvents::PRE_INSTALL_CMD => 'wpInstall',
+            ScriptEvents::PRE_UPDATE_CMD => 'wpUpdate',
             ScriptEvents::POST_INSTALL_CMD => 'run',
             ScriptEvents::POST_UPDATE_CMD => 'run',
             PackageEvents::PRE_PACKAGE_INSTALL => ['prePackage', PHP_INT_MAX],
@@ -163,6 +168,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface, Capable, Comm
         $this->installer = new Installer($this->dirs, $composer, $this->io);
         $this->wpDownloaderConfig = $this->wpDownloaderConfig();
         $this->wpDownloader = new WpDownloader($this->wpDownloaderConfig, $composer, $this->io);
+        $this->vipMuDownloader = new VipGoMuDownloader($this->io);
 
         $composer->getInstallationManager()->addInstaller($this->installer);
     }
@@ -180,6 +186,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface, Capable, Comm
         if ($package && $package->getType() !== 'composer-plugin') {
             $event->getComposer()->getInstallationManager()->addInstaller($this->installer);
             $this->wpDownloader->prePackage($event);
+            $this->vipMuDownloader->download();
         }
     }
 
@@ -248,17 +255,19 @@ class Plugin implements PluginInterface, EventSubscriberInterface, Capable, Comm
     /**
      * Download WP on installation.
      */
-    public function wpDownloaderInstall()
+    public function wpInstall()
     {
         $this->wpDownloader->install();
+        $this->vipMuDownloader->download();
     }
 
     /**
      * Download WP on update.
      */
-    public function wpDownloaderUpdate()
+    public function wpUpdate()
     {
         $this->wpDownloader->update();
+        $this->vipMuDownloader->download();
     }
 
     /**
