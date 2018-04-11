@@ -496,17 +496,17 @@ class VipGit
 
         $changes = $this->gitStats($push);
         if ($changes < 0 && $push) {
-            $this->io->write('    <comment>Sorry, failed determining git status.</comment>');
+            $this->io->write('     <comment>Sorry, failed determining git status.</comment>');
             $push
-                ? $this->io->write('    <comment>Will try to push anyway.</comment>')
-                : $this->io->write("    <comment>Please check {$this->mirrorDir}.</comment>");
+                ? $this->io->write('     <comment>Will try to push anyway.</comment>')
+                : $this->io->write("     <comment>Please check {$this->mirrorDir}.</comment>");
         }
 
         if (!$changes || !$push) {
             return true;
         }
 
-        $this->io->write("    <comment>Pushing to <<<{$this->remoteUrl}>>>...</comment>");
+        $this->io->write("     <comment>Pushing to <<<{$this->remoteUrl}>>>...</comment>");
         list($success) = $this->git->exec('push origin');
 
         return $success;
