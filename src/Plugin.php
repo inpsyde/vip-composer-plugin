@@ -17,6 +17,7 @@ declare(strict_types=1);
 namespace Inpsyde\VipComposer;
 
 use Composer\Composer;
+use Composer\Config;
 use Composer\DependencyResolver\Operation\InstallOperation;
 use Composer\DependencyResolver\Operation\UpdateOperation;
 use Composer\EventDispatcher\EventSubscriberInterface;
@@ -85,29 +86,19 @@ class Plugin implements PluginInterface, EventSubscriberInterface, Capable, Comm
     private $wpDownloader;
 
     /**
-     * @var VipGoMuDownloader
-     */
-    private $vipMuDownloader;
-
-    /**
      * @var array
      */
     private $wpDownloaderConfig = [];
 
     /**
-     * @var VipGit
-     */
-    private $git;
-
-    /**
      * @var int
      */
-    private $flags = self::NO_GIT;
+    private $flags = self::NO_GIT | self::NO_VIP_MU;
 
     /**
-     * @var string
+     * @var array
      */
-    private $remoteUrl;
+    private $commandConfig = [];
 
     /**
      * @inheritdoc
@@ -127,14 +118,14 @@ class Plugin implements PluginInterface, EventSubscriberInterface, Capable, Comm
 
     /**
      * @param int $flags
-     * @param string|null $remoteUrl
+     * @param array $config
      * @return Plugin
      */
-    public static function forCommand(int $flags = self::DO_GIT, string $remoteUrl = null): Plugin
+    public static function forCommand(int $flags = self::DO_GIT, array $config = []): Plugin
     {
         $instance = new static();
         $instance->flags = $flags;
-        $instance->remoteUrl = $remoteUrl;
+        $instance->commandConfig = $config;
 
         return $instance;
     }
@@ -171,7 +162,6 @@ class Plugin implements PluginInterface, EventSubscriberInterface, Capable, Comm
         $this->installer = new Installer($this->dirs, $composer, $this->io);
         $this->wpDownloaderConfig = $this->wpDownloaderConfig();
         $this->wpDownloader = new WpDownloader($this->wpDownloaderConfig, $composer, $this->io);
-        $this->vipMuDownloader = new VipGoMuDownloader($this->io, $this->dirs);
 
         $composer->getInstallationManager()->addInstaller($this->installer);
     }
@@ -198,82 +188,201 @@ class Plugin implements PluginInterface, EventSubscriberInterface, Capable, Comm
      */
     public function run(Event $event = null): int
     {
+        // Setup some variables used by different tasks.
+        $filesystem = new Filesystem();
+        $config = $this->composer->getConfig();
+        $packages = new InstalledPackages($this->composer);
+        $shouldInstallVipMuPlugins = ($this->flags & self::DO_VIP_MU) === self::DO_VIP_MU;
+
+        if ($this->checkComposerLock($event)
+            && $this->installVipMuPlugins($shouldInstallVipMuPlugins)
+            && $this->symlinkDirectories($shouldInstallVipMuPlugins)
+            && $this->generateMuLoader($config)
+            && $this->copyWebsiteDevContentToVipFolder($filesystem)
+            && $this->generateAutoload($packages)
+            && $this->syncronizeConfig($filesystem)
+            && $this->gitMergeAndPush($filesystem, $config, $packages)
+        ) {
+            return 0;
+        }
+
+        return 1;
+    }
+
+    /**
+     * Check presence of composer.lock.
+     *
+     * @param Event|null $event
+     * @return bool
+     */
+    private function checkComposerLock(Event $event = null): bool
+    {
         if (!file_exists($this->dirs->basePath() . '/composer.lock')) {
             $this->io->writeError('<error>VIP: "composer.lock" not found.</error>');
             if (!$event) {
                 $this->io->writeError('<error>Please install or update via Composer first.</error>');
             }
 
-            return 1;
+            return false;
         }
 
+        // ensure VID dirs are in place
         $this->dirs->createDirs();
 
+        return true;
+    }
+
+    /**
+     * Install VIP MU plugins via Git if required to do so.
+     *
+     * @param bool $shouldInstallVipMuPlugins
+     * @return bool
+     */
+    private function installVipMuPlugins(bool $shouldInstallVipMuPlugins): bool
+    {
+        if ($shouldInstallVipMuPlugins) {
+            (new VipGoMuDownloader($this->io, $this->dirs))->download();
+        }
+
+        return true;
+    }
+
+    /**
+     * Symlink VIP folders to local WP installation content folder.
+     *
+     * @param bool $shouldInstallVipMuPlugins
+     * @return bool
+     */
+    private function symlinkDirectories(bool $shouldInstallVipMuPlugins): bool
+    {
         $contentDir = "/{$this->wpDownloaderConfig['target-dir']}/wp-content/";
         $contentDirPath = $this->dirs->basePath() . $contentDir;
         $this->io->write("<info>VIP: Symlinking content to {$contentDirPath}...</info>");
 
-        $this->dirs->symlink($contentDirPath, $this->shouldDownloadVipMu($event));
+        $this->dirs->symlink($contentDirPath, $shouldInstallVipMuPlugins);
 
-        $filesystem = new Filesystem();
-        $config = $this->composer->getConfig();
+        return true;
+    }
+
+    /**
+     * Generate a MU plugin that loads client MU plugins from subfolders and also load
+     * production-ready Composer autoload.
+     *
+     * @param Config $config
+     * @return bool
+     */
+    private function generateMuLoader(Config $config): bool
+    {
         /** @var \Composer\Package\PackageInterface[] $package */
         $packages = $this->composer->getRepositoryManager()->getLocalRepository()->getPackages();
-        $muGenerator = new MuPluginGenerator($this->dirs, $config, new PluginFileFinder($this->installer));
+        $muGenerator = new MuPluginGenerator(
+            $this->dirs,
+            $config,
+            new PluginFileFinder($this->installer)
+        );
+
         $muGenerator->generate(...$packages);
 
+        return true;
+    }
+
+    /**
+     * Copy dev content (mu-plugins plugins, themes, languages) in website repo
+     * to the "vip" folder that will be then used for deploy.
+     *
+     * @param Filesystem $filesystem
+     * @return bool
+     */
+    private function copyWebsiteDevContentToVipFolder(Filesystem $filesystem): bool
+    {
         $customPathCopier = new CustomPathCopier($filesystem, $this->extra);
         $customPathCopier->copy($this->dirs, $this->io);
 
-        $packages = new InstalledPackages($this->composer);
+        return true;
+    }
 
+    /**
+     * Generate production-tailored autoloader.
+     *
+     * @param InstalledPackages $packages
+     * @return bool
+     * @throws \Exception
+     */
+    private function generateAutoload(InstalledPackages $packages): bool
+    {
         $autoload = new AutoloadGenerator($packages, $this->dirs);
         $autoload->generate($this->composer, $this->io);
 
+        return true;
+    }
+
+    /**
+     * Syncronize config in "website" repo to "vip" folder.
+     *
+     * @param Filesystem $filesystem
+     * @return bool
+     */
+    private function syncronizeConfig(Filesystem $filesystem): bool
+    {
         $configSync = new ConfigSynchronizer($this->dirs, $this->io, $this->extra);
         $configSync->sync($filesystem, $this->wpDownloaderConfig['target-dir']);
 
+        return true;
+    }
+
+    /**
+     * Clone the remote Git repo, in a randomly-named folder inside "vip" folder, replace all the
+     * files with current state and commit them.
+     * Optionally, push back the changes to the remote and delete the randomly-named folder.
+     *
+     * @param Filesystem $filesystem
+     * @param Config $config
+     * @param InstalledPackages $packages
+     * @return bool
+     */
+    private function gitMergeAndPush(
+        Filesystem $filesystem,
+        Config $config,
+        InstalledPackages $packages
+    ): bool {
+
         if (($this->flags & self::NO_GIT) === self::NO_GIT) {
-            return 0;
+            return true;
         }
 
-        $this->git = new VipGit(
-            $this->io,
-            $config,
-            $this->dirs,
-            $this->extra,
-            $this->remoteUrl
-        );
+        $remoteUrl = $this->commandConfig[Command::REMOTE_URL] ?? null;
+        $remoteBranch = $this->commandConfig[Command::REMOTE_BRANCH] ?? null;
 
-        $this->io->write('<info>VIP: Starting Git sync...</info>');
+        $gitConfig = $this->extra[self::VIP_GIT_KEY] ?? [];
+        $remoteUrl and $gitConfig[Plugin::VIP_GIT_URL_KEY] = $remoteUrl;
+        $remoteBranch and $gitConfig[Plugin::VIP_GIT_BRANCH_KEY] = $remoteBranch;
+
+        $git = new VipGit($this->io, $config, $this->dirs, $gitConfig);
+
         $push = ($this->flags & self::DO_PUSH) === self::DO_PUSH;
-        $push ? $this->git->push($filesystem, $packages) : $this->git->sync($filesystem, $packages);
+        $push ? $git->push($filesystem, $packages) : $git->sync($filesystem, $packages);
 
-        return 0;
+        return true;
     }
 
     /**
      * Download WP on installation.
+     *
      * @param Event|null $event
      */
     public function wpInstall(Event $event = null)
     {
         $this->wpDownloader->install();
-        if ($this->shouldDownloadVipMu($event)) {
-            $this->vipMuDownloader->download();
-        }
     }
 
     /**
      * Download WP on update.
+     *
      * @param Event $event
      */
     public function wpUpdate(Event $event = null)
     {
         $this->wpDownloader->update();
-        if ($this->shouldDownloadVipMu($event)) {
-            $this->vipMuDownloader->download();
-        }
     }
 
     /**
@@ -290,14 +399,5 @@ class Plugin implements PluginInterface, EventSubscriberInterface, Capable, Comm
         $config = array_merge($default, $config);
 
         return $config;
-    }
-
-    /**
-     * @param Event|null $event
-     * @return bool
-     */
-    private function shouldDownloadVipMu(Event $event = null): bool
-    {
-        return ($event && $event->isDevMode()) || (($this->flags & self::DO_GIT) === self::DO_GIT);
     }
 }

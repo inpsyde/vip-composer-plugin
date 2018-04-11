@@ -37,11 +37,6 @@ class VipGit
     private $directories;
 
     /**
-     * @var array
-     */
-    private $extra;
-
-    /**
      * @var GitProcess
      */
     private $git;
@@ -57,6 +52,11 @@ class VipGit
     private $sshRemoteUrl;
 
     /**
+     * @var string
+     */
+    private $gitBranch;
+
+    /**
      * @var null|string
      */
     private $mirrorDir;
@@ -70,22 +70,20 @@ class VipGit
      * @param IOInterface $io
      * @param Config $config
      * @param Directories $directories
-     * @param array $extra
-     * @param string|null $remoteGitUrl
+     * @param array $gitConfig
      */
     public function __construct(
         IOInterface $io,
         Config $config,
         Directories $directories,
-        array $extra,
-        string $remoteGitUrl = null
+        array $gitConfig = []
     ) {
 
         $this->io = $io;
         $this->config = $config;
         $this->directories = $directories;
-        $this->extra = $extra[Plugin::VIP_GIT_KEY] ?? [];
-        $this->remoteUrl = $remoteGitUrl;
+        $this->remoteUrl = $gitConfig[Plugin::VIP_GIT_URL_KEY] ?? '';
+        $this->gitBranch = $gitConfig[Plugin::VIP_GIT_BRANCH_KEY] ?? '';
     }
 
     /**
@@ -107,6 +105,8 @@ class VipGit
      */
     public function sync(Filesystem $filesystem, InstalledPackages $packages): bool
     {
+        $this->io->write('<info>VIP: Starting Git sync...</info>');
+
         $push = $this->doPush;
         $this->doPush = false;
         $this->mirrorDir = '';
@@ -171,8 +171,7 @@ class VipGit
 
         $success and $this->io->write('     <comment>Repository initialized.</comment>');
         if ($success) {
-            $targetBranch = $this->extra[Plugin::VIP_GIT_BRANCH_KEY] ?? 'development';
-            $success = $this->maybeCreateBranch($targetBranch);
+            $success = $this->checkoutBranch($this->gitBranch);
         }
 
         return $success;
@@ -203,7 +202,7 @@ class VipGit
      */
     private function repoUrl(): string
     {
-        $url = $this->remoteUrl ?: (string)($this->extra[Plugin::VIP_GIT_URL_KEY] ?? '');
+        $url = $this->remoteUrl;
 
         if (!$url
             || !filter_var($url, FILTER_VALIDATE_URL)
@@ -420,7 +419,7 @@ class VipGit
      * @param string $target
      * @return bool
      */
-    private function maybeCreateBranch(string $target): bool
+    private function checkoutBranch(string $target): bool
     {
         list($success, $output) = $this->git->exec('branch -a');
         if (!$success) {
@@ -445,16 +444,9 @@ class VipGit
             return true;
         }
 
-        $this->io->write("     <comment>Branch {$target} not on remote. Pushing...</comment>");
+        $this->io->writeError("<error>VIP: Branch {$target} not on remote.</error>");
 
-        list($success) = $this->git->exec("checkout -b {$target}");
-        if (!$success) {
-            return false;
-        }
-
-        list($success) = $this->git->exec("push -u origin {$target}");
-
-        return $success;
+        return false;
     }
 
     /**
@@ -469,8 +461,6 @@ class VipGit
             return false;
         }
 
-        $targetBranch = $this->extra[Plugin::VIP_GIT_BRANCH_KEY] ?? 'development';
-
         $branches = explode($output, "\n");
         $currentBranch = '';
         foreach ($branches as $branch) {
@@ -479,7 +469,7 @@ class VipGit
             }
         }
 
-        $currentBranch === $targetBranch or $commands[] = "checkout {$targetBranch}";
+        $currentBranch === $this->gitBranch or $commands[] = "checkout {$this->gitBranch}";
         $commands[] = 'add .';
         $commands[] = 'commit -am "Merge-bot upstream sync."';
 

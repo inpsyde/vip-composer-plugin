@@ -24,6 +24,9 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class Command extends BaseCommand
 {
+    const REMOTE_URL = 'remote-url';
+    const REMOTE_BRANCH = 'remote-branch';
+
     /**
      * @inheritdoc
      * @throws \Symfony\Component\Console\Exception\InvalidArgumentException
@@ -58,6 +61,11 @@ class Command extends BaseCommand
                         InputArgument::OPTIONAL,
                         'A different Git remote URL for VIP repo. Only relevant when --push is used.'
                     ),
+                    new InputArgument(
+                        'branch',
+                        InputArgument::OPTIONAL,
+                        'A different Git branch URL for VIP repo. Only relevant when --push is used.'
+                    ),
                 ]
             );
     }
@@ -75,14 +83,21 @@ class Command extends BaseCommand
             $flags |= Plugin::DO_PUSH;
         }
 
-        $url = $input->hasArgument('remote') ? $input->getArgument('remote') : null;
+        $config = [
+            self::REMOTE_URL => $input->hasArgument('remote')
+                ? $input->getArgument('remote')
+                : null,
+            self::REMOTE_BRANCH => $input->hasArgument('branch')
+                ? $input->getArgument('branch')
+                : null,
+        ];
 
         $flags |= $input->hasOption('no-vip-mu') && $input->getOption('no-vip-mu')
                 ? Plugin::NO_VIP_MU
                 : Plugin::DO_VIP_MU;
 
         try {
-            $plugin = Plugin::forCommand($flags, $url);
+            $plugin = Plugin::forCommand($flags, $config);
             $plugin->activate($this->getComposer(false, false), $this->getIO());
             $plugin->wpUpdate();
             $plugin->run();
