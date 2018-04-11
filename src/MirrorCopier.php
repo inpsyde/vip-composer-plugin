@@ -16,7 +16,7 @@ use Composer\Config;
 use Composer\IO\IOInterface;
 use Composer\Util\Filesystem;
 
-class SafeCopier
+class MirrorCopier
 {
     /**
      * @var Filesystem
@@ -35,9 +35,9 @@ class SafeCopier
     /**
      * @param IOInterface $io
      * @param Config $config
-     * @return SafeCopier
+     * @return MirrorCopier
      */
-    public static function create(IOInterface $io, Config $config): SafeCopier
+    public static function create(IOInterface $io, Config $config): MirrorCopier
     {
         return new static(new Filesystem(), $io, $config);
     }
@@ -57,9 +57,16 @@ class SafeCopier
             'phpcs.xml',
             'phpunit.xml.dist',
             'phpunit.xml',
-            'README.md',
             '._compiled-resources',
+            '.eslintrc',
             'node_modules',
+            'gulpfile.js',
+            'composer.json',
+            'package.json',
+            'changelog.txt',
+            'changelog.md',
+            'readme.md',
+            'readme.txt',
         ];
 
         $excludeExt = [
@@ -68,11 +75,15 @@ class SafeCopier
             'error',
             'tmp',
             'temp',
+            'phar',
+            'scss',
+            'sass',
+            'less',
         ];
 
         return
-            !in_array($basename, $exclude, true)
-            && !in_array($ext, $excludeExt, true)
+            !in_array(strtolower($basename), $exclude, true)
+            && !in_array(strtolower($ext), $excludeExt, true)
             && strpos($path, 'node_modules/') === false
             && (strpos($path, '/.git') === false || $basename === '.gitkeep');
     }
@@ -189,27 +200,48 @@ class SafeCopier
     {
         $git = new GitProcess($this->io);
         $unzipper = new Unzipper($this->io, $this->config);
+        $all = 0;
+        $copied = 0;
         foreach ($linksPaths as $link => $target) {
             $real = realpath($link);
             $targetParent = dirname($target);
             $saveIn = "{$targetParent}/" . pathinfo($real, PATHINFO_FILENAME) . '.zip';
             $git->cd($real)->exec("archive --format zip --output {$saveIn} master");
+            $all++;
             if (file_exists($saveIn)) {
-                $this->extractZip($saveIn, $unzipper);
-                unlink($saveIn);
+                $unzipped = $this->extractZip($saveIn, $unzipper);
+                (unlink($saveIn) && $unzipped) and $copied++;
             }
         }
 
-        return true;
+        return $all === $copied;
     }
 
     /**
      * @param string $zipPath
      * @param Unzipper $unzipper
+     * @return bool
      */
-    private function extractZip(string $zipPath, Unzipper $unzipper)
+    private function extractZip(string $zipPath, Unzipper $unzipper): bool
     {
-        $target = dirname($zipPath) . '/' . pathinfo($zipPath, PATHINFO_FILENAME) . '/';
+        $folderName = pathinfo($zipPath, PATHINFO_FILENAME);
+        $target = dirname($zipPath) . "/{$folderName}/";
         $unzipper->unzip($zipPath, $target);
+        if (!is_dir($target)) {
+            $this->io->writeError("    <error>Failed to copy {$folderName} package.</error>");
+
+            return false;
+        }
+
+        $files = glob("{$target}/*", GLOB_NOSORT);
+        foreach ($files as $file) {
+            if (!self::accept($file)) {
+                is_dir($file)
+                    ? $this->filesystem->removeDirectory($file)
+                    : unlink($file);
+            }
+        }
+
+        return true;
     }
 }

@@ -255,7 +255,7 @@ class VipGit
      */
     private function fillMirror(Filesystem $filesystem, InstalledPackages $packages): bool
     {
-        $copier = SafeCopier::create($this->io, $this->config);
+        $copier = MirrorCopier::create($this->io, $this->config);
         $this->fillMirrorDirs($filesystem, $copier);
 
         $toCopy = $packages->noDevPackages();
@@ -269,9 +269,9 @@ class VipGit
 
     /**
      * @param Filesystem $filesystem
-     * @param SafeCopier $copier
+     * @param MirrorCopier $copier
      */
-    private function fillMirrorDirs(Filesystem $filesystem, SafeCopier $copier)
+    private function fillMirrorDirs(Filesystem $filesystem, MirrorCopier $copier)
     {
         $paths = [
             $this->directories->languagesDir(),
@@ -315,13 +315,13 @@ class VipGit
 
     /**
      * @param InstalledPackages $packages
-     * @param SafeCopier $copier
+     * @param MirrorCopier $copier
      * @param Filesystem $filesystem
      * @return bool
      */
     private function fillMirrorVendor(
         InstalledPackages $packages,
-        SafeCopier $copier,
+        MirrorCopier $copier,
         Filesystem $filesystem
     ): bool {
 
