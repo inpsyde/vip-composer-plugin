@@ -120,7 +120,7 @@ class VipGit
 
         $this->git = new GitProcess($this->io, $this->mirrorDir);
 
-        if (!$this->init($filesystem)) {
+        if (!$this->init()) {
             $this->mirrorDir = '';
 
             return false;
@@ -158,10 +158,9 @@ class VipGit
     }
 
     /**
-     * @param Filesystem $filesystem
      * @return bool
      */
-    private function init(Filesystem $filesystem): bool
+    private function init(): bool
     {
         $url = $this->repoUrl();
         if (!$url) {
@@ -256,7 +255,7 @@ class VipGit
      */
     private function fillMirror(Filesystem $filesystem, InstalledPackages $packages): bool
     {
-        $copier = SafeCopier::create();
+        $copier = SafeCopier::create($this->io, $this->config);
         $this->fillMirrorDirs($filesystem, $copier);
 
         $toCopy = $packages->noDevPackages();
