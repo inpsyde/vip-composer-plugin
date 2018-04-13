@@ -56,14 +56,16 @@ class Command extends BaseCommand
                         InputOption::VALUE_NONE,
                         'Push to remote.'
                     ),
-                    new InputArgument(
+                    new InputOption(
                         'remote',
-                        InputArgument::OPTIONAL,
+                        null,
+                        InputOption::VALUE_REQUIRED,
                         'A different Git remote URL for VIP repo. Only relevant when --push is used.'
                     ),
-                    new InputArgument(
+                    new InputOption(
                         'branch',
-                        InputArgument::OPTIONAL,
+                        null,
+                        InputOption::VALUE_REQUIRED,
                         'A different Git branch URL for VIP repo. Only relevant when --push is used.'
                     ),
                 ]
@@ -84,11 +86,11 @@ class Command extends BaseCommand
         }
 
         $config = [
-            self::REMOTE_URL => $input->hasArgument('remote')
-                ? $input->getArgument('remote')
+            self::REMOTE_URL => $input->hasOption('remote')
+                ? $input->getOption('remote')
                 : null,
-            self::REMOTE_BRANCH => $input->hasArgument('branch')
-                ? $input->getArgument('branch')
+            self::REMOTE_BRANCH => $input->hasOption('branch')
+                ? $input->getOption('branch')
                 : null,
         ];
 
