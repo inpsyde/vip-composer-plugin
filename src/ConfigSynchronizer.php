@@ -170,7 +170,7 @@ PHP;
         $fileContent .= "\n{$wpComment}\n\n";
         $fileContent .= ltrim($contentPartsEnd[1]);
 
-        $this->saveFile($wpConfig, $fileContent);
+        $this->saveFile($wpConfig, $this->ensureDebug($fileContent));
     }
 
     /**
@@ -186,5 +186,25 @@ PHP;
         }
 
         $this->io->write("<info>VIP: 'wp-config.php' updated.</info>");
+    }
+
+    /**
+     * @param string $fileContent
+     * @return string
+     */
+    private function ensureDebug(string $fileContent): string
+    {
+        $lines = explode("\n", $fileContent);
+        $parsed = '';
+        foreach ($lines as $line) {
+            $line = rtrim($line);
+            if (strpos($line, "define('WP_DEBUG'") === 0) {
+                $line = "define('WP_DEBUG', true);";
+            }
+
+            $parsed .= "{$line}\n";
+        }
+
+        return $parsed;
     }
 }
