@@ -61,19 +61,19 @@ class ConfigSynchronizer
      */
     public function sync(Filesystem $filesystem, string $wpDir)
     {
-        $files = $this->syncFiles($filesystem);
-        $this->updateWpConfig($wpDir, $files, $filesystem);
+        $vipConfig = $this->syncFiles($filesystem);
+        $this->updateWpConfig($wpDir, $vipConfig, $filesystem);
     }
 
     /**
      * @param Filesystem $filesystem
-     * @return array
+     * @return string
      */
-    private function syncFiles(Filesystem $filesystem): array
+    private function syncFiles(Filesystem $filesystem): string
     {
         $configDir = $this->config[Plugin::VIP_CONFIG_DIR_KEY];
         if (!$configDir) {
-            return [];
+            return '';
         }
 
         $sourcePath = $filesystem->isAbsolutePath($configDir)
@@ -81,7 +81,7 @@ class ConfigSynchronizer
             : $this->dirs->basePath() . "/{$configDir}";
 
         if (!is_dir($sourcePath)) {
-            return [];
+            return '';
         }
 
         $this->io->write('<info>VIP: Syncing config files...</info>');
@@ -90,11 +90,11 @@ class ConfigSynchronizer
         $targetDir = $this->dirs->configDir() . '/';
         $filesystem->emptyDirectory($targetDir);
 
-        $done = [];
+        $vipConfig = '';
         foreach ($configs as $source) {
             $target = $targetDir . basename($source);
             $success = $filesystem->copy($source, $target);
-            $success and $done[] = $source;
+            ($success && basename($target) === 'vip-config.php') and $vipConfig = $target;
             if ($this->io->isVerbose()) {
                 $success
                     ? $this->io->write("    {$source} copied to {$target}.")
@@ -102,17 +102,17 @@ class ConfigSynchronizer
             }
         }
 
-        return $done;
+        return $vipConfig;
     }
 
     /**
      * @param string $wpDir
-     * @param array $files
+     * @param string $vipConfig
      * @param Filesystem $filesystem
      */
     private function updateWpConfig(
         string $wpDir,
-        array $files,
+        string $vipConfig,
         Filesystem $filesystem
     ) {
 
@@ -122,7 +122,7 @@ class ConfigSynchronizer
         }
 
         $configLoad = $this->config[Plugin::VIP_CONFIG_LOAD_KEY];
-        $configLoad or $files = [];
+        $configLoad or $vipConfig = '';
 
         $this->io->write("<info>VIP: Updating 'wp-config.php'...</info>");
 
@@ -161,8 +161,8 @@ if (is_dir(__DIR__ . '/{$muPath}')) {
     define( 'WPMU_PLUGIN_DIR',__DIR__ . '/vip-go-mu-plugins' );
 }
 PHP;
-        foreach ($files as $file) {
-            $path = $filesystem->findShortestPath($this->dirs->basePath(), $file);
+        if ($vipConfig) {
+            $path = $filesystem->findShortestPath($this->dirs->basePath(), $vipConfig);
             $fileContent .= "\nrequire_once __DIR__ . '/{$path}';";
         }
 
