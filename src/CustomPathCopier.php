@@ -22,6 +22,7 @@ class CustomPathCopier
         Plugin::CUSTOM_PLUGINS_KEY => 'plugins',
         Plugin::CUSTOM_THEMES_KEY => 'themes',
         Plugin::CUSTOM_LANGUAGES_KEY => 'languages',
+        Plugin::CUSTOM_IMAGES_KEY => 'images',
     ];
 
     /**
@@ -60,6 +61,7 @@ class CustomPathCopier
         $this->copyCustomPaths(Plugin::CUSTOM_PLUGINS_KEY, $directories, $io);
         $this->copyCustomPaths(Plugin::CUSTOM_THEMES_KEY, $directories, $io);
         $this->copyCustomPaths(Plugin::CUSTOM_LANGUAGES_KEY, $directories, $io);
+        $this->copyCustomPaths(Plugin::CUSTOM_IMAGES_KEY, $directories, $io);
 
         $index = $directories->pluginsDir() . '/index.php';
         if (!file_exists($index)) {
@@ -126,6 +128,12 @@ class CustomPathCopier
                 $what = 'languages';
                 $target = $directories->languagesDir();
                 $pattern = "{$path}/*.{mo,po}";
+                $flags = GLOB_BRACE|GLOB_NOSORT;
+                break;
+            case Plugin::CUSTOM_IMAGES_KEY:
+                $what = 'images';
+                $target = $directories->imagesDir();
+                $pattern = "{$path}/*.*";
                 $flags = GLOB_BRACE|GLOB_NOSORT;
                 break;
             default:

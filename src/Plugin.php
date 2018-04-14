@@ -49,6 +49,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface, Capable, Comm
     const CUSTOM_PLUGINS_KEY = 'plugins';
     const CUSTOM_THEMES_KEY = 'themes';
     const CUSTOM_LANGUAGES_KEY = 'languages';
+    const CUSTOM_IMAGES_KEY = 'images';
     const NO_GIT = 1;
     const DO_GIT = 2;
     const DO_PUSH = 4;
