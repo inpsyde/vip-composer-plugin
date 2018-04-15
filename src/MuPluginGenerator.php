@@ -72,7 +72,9 @@ class MuPluginGenerator
             }
 
             if ($type === 'wordpress-plugin') {
-                $muContent .= "\nwpcom_vip_load_plugin('{$path}');";
+                $muContent .= "\nUEFA_IS_LOCAL_ENV\n\t? ";
+                $muContent .= "wp_register_plugin_realpath(dirname(__DIR__).'/plugins/{$path}')";
+                $muContent .= "\n\t: wpcom_vip_load_plugin('{$path}');";
                 continue;
             }
 
@@ -91,7 +93,8 @@ class MuPluginGenerator
         $vendorBase = basename($filesystem->normalizePath($this->config->get('vendor-dir')));
 
         $php = <<<PHP
-defined('VIP_GO_ENV')
+define('UEFA_IS_LOCAL_ENV', !defined('VIP_GO_ENV') || !VIP_GO_ENV || VIP_GO_ENV === 'local');
+UEFA_IS_LOCAL_ENV
     ? require_once __DIR__ . '/$vendorBase/vip-autoload/autoload.php'
     : require_once __DIR__ . '/$vendorBase/autoload.php';
 PHP;
