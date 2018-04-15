@@ -83,17 +83,15 @@ class AutoloadGenerator
         file_put_contents("{$path}/autoload.php", $autoloadEntrypoint);
         file_put_contents($composerPath, $composerContent);
 
-        $this->replaceVipPaths($path, $vendorDir);
+        $this->replaceVipPaths($path);
     }
 
     /**
      * @param string $path
-     * @param string $vendorDir
      */
-    private function replaceVipPaths(string $path, string $vendorDir)
+    private function replaceVipPaths(string $path)
     {
-        //$vendorBase = basename($vendorDir);
-        //$vendorDirPath = "\$vendorDir = WPMU_PLUGIN_DIR . '/{$vendorBase}';";
+        $vendorDirPath = '$vendorDir = WPCOM_VIP_CLIENT_MU_PLUGIN_DIR . \'/vendor\';';
         $baseDirPath = '$baseDir = ABSPATH;';
         $staticLoader = '$useStaticLoader = false;';
         $vipDirBase = basename($this->directories->targetPath());
@@ -108,7 +106,7 @@ class AutoloadGenerator
 
         foreach ($toReplace as $file) {
             $content = file_get_contents("{$path}/{$file}");
-            //$content = preg_replace('~\$vendorDir(?:\s*=\s*)[^;]+;~', $vendorDirPath, $content, 1);
+            $content = preg_replace('~\$vendorDir(?:\s*=\s*)[^;]+;~', $vendorDirPath, $content, 1);
             $content = preg_replace('~\$baseDir(?:\s*=\s*)[^;]+;~', $baseDirPath, $content, 1);
             $content = preg_replace(
                 '~\$baseDir\s*\.\s*\'/' . $vipDirBase . '/(plugins|themes)/~',

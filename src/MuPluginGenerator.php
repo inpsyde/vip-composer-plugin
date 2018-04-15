@@ -95,8 +95,8 @@ class MuPluginGenerator
         $php = <<<PHP
 define('UEFA_IS_LOCAL_ENV', !defined('VIP_GO_ENV') || !VIP_GO_ENV || VIP_GO_ENV === 'local');
 UEFA_IS_LOCAL_ENV
-    ? require_once __DIR__ . '/$vendorBase/vip-autoload/autoload.php'
-    : require_once __DIR__ . '/$vendorBase/autoload.php';
+    ? require_once __DIR__ . '/$vendorBase/autoload.php';
+    : require_once __DIR__ . '/$vendorBase/vip-autoload/autoload.php'
 PHP;
         return "{$php}\n\n";
     }
