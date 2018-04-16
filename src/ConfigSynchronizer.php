@@ -205,6 +205,6 @@ PHP;
             $parsed .= "{$line}\n";
         }
 
-        return $parsed;
+        return rtrim($parsed) . "\n";
     }
 }
