@@ -81,7 +81,7 @@ class Command extends BaseCommand
                         self::OPT_DEPLOY,
                         null,
                         InputOption::VALUE_NONE,
-                        'Alias for --no-vip-mu --push.'
+                        'Do only tasks that are necessary to setup and push to remote.'
                     ),
                     new InputOption(
                         self::OPT_DO,
