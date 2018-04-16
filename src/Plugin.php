@@ -53,8 +53,30 @@ class Plugin implements PluginInterface, EventSubscriberInterface, Capable, Comm
     const NO_GIT = 1;
     const DO_GIT = 2;
     const DO_PUSH = 4;
-    const NO_VIP_MU = 128;
-    const DO_VIP_MU = 256;
+    const NO_VIP_MU = 8;
+    const DO_VIP_MU = 16;
+    const NO_LOADER = 32;
+    const DO_LOADER = 64;
+    const NO_COPY = 128;
+    const DO_COPY = 256;
+    const NO_AUTOLOAD = 512;
+    const DO_AUTOLOAD = 1024;
+    const NO_CONFIG = 2048;
+    const DO_CONFIG = 4096;
+    const NO_SYMLINK = 8192;
+    const DO_SYMLINK = 16384;
+
+    // All the "DO_*" but: DO_VIP_MU and DO_GIT. Used on "composer install|update"
+    const DO_DEFAULT = 21833;
+
+    //  All the "NO_*"
+    const DO_NOTHING = 10921;
+
+    // All the "NO_*" but: DO_VIP_MU and DO_SYMLINK.
+    const LOCAL_CREATE = 19121;
+
+    // DO_VIP_MU, DO_SYMLINK, DO_CONFIG, DO_COPY and all the rest is "NO".
+    const LOCAL_UPDATE = 21297;
 
     /**
      * @var Composer
@@ -94,7 +116,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface, Capable, Comm
     /**
      * @var int
      */
-    private $flags = self::NO_GIT | self::NO_VIP_MU;
+    private $flags = self::DO_DEFAULT;
 
     /**
      * @var array
@@ -256,6 +278,10 @@ class Plugin implements PluginInterface, EventSubscriberInterface, Capable, Comm
      */
     private function symlinkDirectories(bool $shouldInstallVipMuPlugins): bool
     {
+        if (($this->flags & self::NO_SYMLINK) === self::NO_SYMLINK) {
+            return true;
+        }
+
         $contentDir = "/{$this->wpDownloaderConfig['target-dir']}/wp-content/";
         $contentDirPath = $this->dirs->basePath() . $contentDir;
         $this->io->write("<info>VIP: Symlinking content to {$contentDirPath}...</info>");
@@ -274,6 +300,10 @@ class Plugin implements PluginInterface, EventSubscriberInterface, Capable, Comm
      */
     private function generateMuLoader(Config $config): bool
     {
+        if (($this->flags & self::NO_LOADER) === self::NO_LOADER) {
+            return true;
+        }
+
         /** @var \Composer\Package\PackageInterface[] $package */
         $packages = $this->composer->getRepositoryManager()->getLocalRepository()->getPackages();
         $muGenerator = new MuPluginGenerator(
@@ -296,6 +326,10 @@ class Plugin implements PluginInterface, EventSubscriberInterface, Capable, Comm
      */
     private function copyWebsiteDevContentToVipFolder(Filesystem $filesystem): bool
     {
+        if (($this->flags & self::NO_COPY) === self::NO_COPY) {
+            return true;
+        }
+
         $customPathCopier = new CustomPathCopier($filesystem, $this->extra);
         $customPathCopier->copy($this->dirs, $this->io);
 
@@ -311,6 +345,10 @@ class Plugin implements PluginInterface, EventSubscriberInterface, Capable, Comm
      */
     private function generateAutoload(InstalledPackages $packages): bool
     {
+        if (($this->flags & self::NO_AUTOLOAD) === self::NO_AUTOLOAD) {
+            return true;
+        }
+
         $autoload = new AutoloadGenerator($packages, $this->dirs);
         $autoload->generate($this->composer, $this->io);
 
@@ -325,6 +363,9 @@ class Plugin implements PluginInterface, EventSubscriberInterface, Capable, Comm
      */
     private function syncronizeConfig(Filesystem $filesystem): bool
     {
+        if (($this->flags & self::NO_CONFIG) === self::NO_CONFIG) {
+            return true;
+        }
         $configSync = new ConfigSynchronizer($this->dirs, $this->io, $this->extra);
         $configSync->sync($filesystem, $this->wpDownloaderConfig['target-dir']);
 
