@@ -90,9 +90,34 @@ class VipGoMuDownloader
     {
         $targetDir = $this->directories->vipMuPluginsDir();
 
-        return is_dir($targetDir)
-            && is_dir("{$targetDir}/vip-support")
+        $installed = is_dir($targetDir)
             && file_exists("{$targetDir}/z-client-mu-plugins.php")
-            && file_exists("{$targetDir}/vip-support/vip-support.php");
+            && file_exists("{$targetDir}/.gitmodules")
+            && $this->checkSubmodules("{$targetDir}/.gitmodules");
+
+        return $installed;
+    }
+
+    /**
+     * @param string $path
+     * @return bool
+     */
+    private function checkSubmodules(string $path): bool
+    {
+        $modules = file($path);
+        if (!$modules) {
+            return false;
+        }
+
+        $base = dirname($path);
+        foreach ($modules as $line) {
+            if (preg_match("~^\s*path =(.+)$~", $line, $matches)
+                && !is_dir("{$base}/" . trim($matches[1]))
+            ) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }
