@@ -73,10 +73,13 @@ class Plugin implements PluginInterface, EventSubscriberInterface, Capable, Comm
     const DO_NOTHING = 10921;
 
     // All the "NO_*" but: DO_VIP_MU and DO_SYMLINK.
-    const LOCAL_CREATE = 19121;
+    const DO_LOCAL_CREATE = 19121;
 
     // DO_VIP_MU, DO_SYMLINK, DO_CONFIG, DO_COPY and all the rest is "NO".
-    const LOCAL_UPDATE = 21297;
+    const DO_LOCAL_UPDATE = 21297;
+
+    // DO_GIT, DO_PUSH, DO_AUTOLOAD, DO_LOADER and all the rest is "NO".
+    const DO_DEPLOY = 11470;
 
     /**
      * @var Composer

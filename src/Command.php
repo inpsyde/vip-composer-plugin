@@ -136,13 +136,13 @@ class Command extends BaseCommand
         $flags = null;
         switch (true) {
             case ($input->hasOption(self::OPT_DEPLOY) && $input->getOption(self::OPT_DEPLOY)):
-                $flags = Plugin::NO_VIP_MU | Plugin::DO_GIT | Plugin::DO_PUSH;
+                $flags = Plugin::DO_DEPLOY;
                 break;
             case ($input->hasOption(self::OPT_LOCAL_CREATE) && $input->getOption(self::OPT_LOCAL_CREATE)):
-                $flags = Plugin::LOCAL_CREATE;
+                $flags = Plugin::DO_LOCAL_CREATE;
                 break;
             case ($input->hasOption(self::OPT_LOCAL_UPDATE) && $input->getOption(self::OPT_LOCAL_UPDATE)):
-                $flags = Plugin::LOCAL_UPDATE;
+                $flags = Plugin::DO_LOCAL_UPDATE;
                 break;
             case ($input->hasOption(self::OPT_DO) && $input->getOption(self::OPT_DO)):
                 $option = strtoupper((string)$input->getOption(self::OPT_DO));
