@@ -73,7 +73,7 @@ class MuPluginGenerator
 
             if ($type === 'wordpress-plugin') {
                 $muContent .= "\nUEFA_IS_LOCAL_ENV\n\t? ";
-                $muContent .= "wp_register_plugin_realpath(dirname(__DIR__).'/plugins/{$path}')";
+                $muContent .= "wp_register_plugin_realpath(WP_CONTENT_DIR.'/plugins/{$path}')";
                 $muContent .= "\n\t: wpcom_vip_load_plugin('{$path}');";
                 continue;
             }
