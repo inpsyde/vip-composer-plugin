@@ -55,7 +55,6 @@ class MuPluginGenerator
         $loaderContent = "<?php\n";
         $loaderContent .= $this->autoloadLoader($filesystem);
         $loaderContent .= $this->vipLoadPluginFunction();
-        $muPluginsPath = $this->directories->muPluginsDir();
 
         $done = [];
 
@@ -84,8 +83,10 @@ class MuPluginGenerator
                 continue;
             }
 
-            $loaderContent .= "\nrequire_once __DIR__ . '/{$path}';";
+            $loaderContent .= "\nrequire_once realpath(__DIR__ . '/{$path}');";
         }
+
+        $muPluginsPath = $this->directories->muPluginsDir();
 
         return (bool) file_put_contents("{$muPluginsPath}/__loader.php", $loaderContent);
     }

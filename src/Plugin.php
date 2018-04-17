@@ -75,8 +75,8 @@ class Plugin implements PluginInterface, EventSubscriberInterface, Capable, Comm
     // All the "NO_*" but: DO_VIP_MU and DO_SYMLINK.
     const DO_LOCAL_CREATE = 19121;
 
-    // DO_VIP_MU, DO_SYMLINK, DO_CONFIG, DO_COPY and all the rest is "NO".
-    const DO_LOCAL_UPDATE = 21297;
+    // DO_VIP_MU, DO_SYMLINK, DO_CONFIG, DO_LOADER, DO_COPY and all the rest is "NO".
+    const DO_LOCAL_UPDATE = 21329;
 
     // DO_GIT, DO_PUSH, DO_AUTOLOAD, DO_LOADER and all the rest is "NO".
     const DO_DEPLOY = 11470;
@@ -223,8 +223,8 @@ class Plugin implements PluginInterface, EventSubscriberInterface, Capable, Comm
         if ($this->checkComposerLock($event)
             && $this->installVipMuPlugins($shouldInstallVipMuPlugins)
             && $this->symlinkDirectories($shouldInstallVipMuPlugins)
-            && $this->generateMuLoader($config)
             && $this->copyWebsiteDevContentToVipFolder($filesystem)
+            && $this->generateMuLoader($config)
             && $this->generateAutoload($packages)
             && $this->syncronizeConfig($filesystem)
             && $this->gitMergeAndPush($filesystem, $config, $packages)
