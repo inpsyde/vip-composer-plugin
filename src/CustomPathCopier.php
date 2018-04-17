@@ -85,6 +85,7 @@ class CustomPathCopier
 
         $sourcePaths = glob($pattern, $flags);
 
+        $this->filesystem->emptyDirectory($target, true);
         foreach ($sourcePaths as $sourcePath) {
             $targetPath = "{$target}/" . basename($sourcePath);
             $this->filesystem->copy($sourcePath, $targetPath)
