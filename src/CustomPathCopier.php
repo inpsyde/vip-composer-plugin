@@ -84,8 +84,16 @@ class CustomPathCopier
         $io->write("<info>VIP: Copying custom {$what} to deploy folder...</info>");
 
         $sourcePaths = glob($pattern, $flags);
+        $targetIsMu = $target === $directories->muPluginsDir();
+        if (!$targetIsMu) {
+            $this->filesystem->emptyDirectory($target, true);
+        }
 
-        $this->filesystem->emptyDirectory($target, true);
+        if ($targetIsMu) {
+            $toDelete = glob("{$target}/*.php");
+            array_walk($toDelete, [$this->filesystem, 'unlink']);
+        }
+
         foreach ($sourcePaths as $sourcePath) {
             $targetPath = "{$target}/" . basename($sourcePath);
             $this->filesystem->copy($sourcePath, $targetPath)

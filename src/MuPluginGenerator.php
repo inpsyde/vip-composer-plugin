@@ -50,14 +50,18 @@ class MuPluginGenerator
      */
     public function generate(PackageInterface ...$packages): bool
     {
-        $muContent = "<?php\n";
-        $muContent .= $this->autoloadLoader();
-        $muContent .= $this->vipLoadPluginFunction();
-        $muPluginPath = $this->directories->muPluginsDir();
+        $filesystem = new Filesystem();
+
+        $loaderContent = "<?php\n";
+        $loaderContent .= $this->autoloadLoader($filesystem);
+        $loaderContent .= $this->vipLoadPluginFunction();
+        $muPluginsPath = $this->directories->muPluginsDir();
+
+        $done = [];
 
         foreach ($packages as $package) {
             $packageName = $package->getName();
-            if (!$packageName || !is_string($packageName)) {
+            if (!$packageName || !is_string($packageName) || in_array($packageName, $done, true)) {
                 continue;
             }
 
@@ -71,25 +75,27 @@ class MuPluginGenerator
                 continue;
             }
 
+            $done[] = $packageName;
+
             if ($type === 'wordpress-plugin') {
-                $muContent .= "\nUEFA_IS_LOCAL_ENV\n\t? ";
-                $muContent .= "wp_register_plugin_realpath(WP_CONTENT_DIR.'/plugins/{$path}')";
-                $muContent .= "\n\t: wpcom_vip_load_plugin('{$path}');";
+                $loaderContent .= "\nUEFA_IS_LOCAL_ENV\n\t? ";
+                $loaderContent .= "wp_register_plugin_realpath(WP_CONTENT_DIR.'/plugins/{$path}')";
+                $loaderContent .= "\n\t: wpcom_vip_load_plugin('{$path}');";
                 continue;
             }
 
-            $muContent .= "\nrequire_once '{$muPluginPath}/{$path}';";
+            $loaderContent .= "\nrequire_once __DIR__ . '/{$path}';";
         }
 
-        return (bool) file_put_contents("{$muPluginPath}/__loader.php", $muContent);
+        return (bool) file_put_contents("{$muPluginsPath}/__loader.php", $loaderContent);
     }
 
     /**
+     * @param Filesystem $filesystem
      * @return string
      */
-    private function autoloadLoader(): string
+    private function autoloadLoader(Filesystem $filesystem): string
     {
-        $filesystem = new Filesystem();
         $vendorBase = basename($filesystem->normalizePath($this->config->get('vendor-dir')));
 
         $php = <<<PHP
