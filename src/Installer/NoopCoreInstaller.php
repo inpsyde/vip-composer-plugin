@@ -14,12 +14,12 @@
 
 declare(strict_types=1);
 
-namespace Inpsyde\VipComposer;
+namespace Inpsyde\VipComposer\Installer;
 
 use Composer\Installer\InstallerInterface;
-use Composer\IO\IOInterface;
 use Composer\Package\PackageInterface;
 use Composer\Repository\InstalledRepositoryInterface;
+use Inpsyde\VipComposer\Io;
 use InvalidArgumentException;
 
 /**
@@ -38,16 +38,15 @@ use InvalidArgumentException;
  */
 class NoopCoreInstaller implements InstallerInterface
 {
-
     /**
-     * @var IOInterface;
+     * @var Io;
      */
     private $io;
 
     /**
-     * @param IOInterface $io
+     * @param Io $io
      */
-    public function __construct(IOInterface $io)
+    public function __construct(Io $io)
     {
         $this->io = $io;
     }
@@ -82,7 +81,7 @@ class NoopCoreInstaller implements InstallerInterface
     public function install(InstalledRepositoryInterface $repo, PackageInterface $package)
     {
         $name = $package->getName();
-        $this->io->write("\<comment>VIP: Skipping installation of {$name}...</comment>\n");
+        $this->io->commentLine("Skipping installation of {$name}...");
     }
 
     /**
@@ -101,7 +100,7 @@ class NoopCoreInstaller implements InstallerInterface
     ) {
         // do nothing
         $name = $target->getName();
-        $this->io->write("\n<comment>VIP: Skipping updating of {$name}...</comment>\n");
+        $this->io->commentLine("Skipping update of {$name}...");
     }
 
     /**

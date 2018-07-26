@@ -10,37 +10,28 @@
 
 declare(strict_types=1);
 
-namespace Inpsyde\VipComposer;
+namespace Inpsyde\VipComposer\Git;
 
-use Composer\Config;
-use Composer\IO\IOInterface;
 use Composer\Util\Filesystem;
+use Inpsyde\VipComposer\Io;
+use Inpsyde\VipComposer\Utils\Unzipper;
 
 class MirrorCopier
 {
+
+    /**
+     * @var Io
+     */
+    private $io;
+
     /**
      * @var Filesystem
      */
     private $filesystem;
     /**
-     * @var IOInterface
+     * @var Unzipper
      */
-    private $io;
-
-    /**
-     * @var Config
-     */
-    private $config;
-
-    /**
-     * @param IOInterface $io
-     * @param Config $config
-     * @return MirrorCopier
-     */
-    public static function create(IOInterface $io, Config $config): MirrorCopier
-    {
-        return new static(new Filesystem(), $io, $config);
-    }
+    private $unzipper;
 
     /**
      * @param string $path
@@ -81,23 +72,26 @@ class MirrorCopier
             'less',
         ];
 
+        $nestedVendorRegEx = '~client-mu-plugins/vendor/[^/]+/[^/]+/vendor/[^/]+~';
+
         return
             !in_array(strtolower($basename), $exclude, true)
             && !in_array(strtolower($ext), $excludeExt, true)
             && strpos($path, 'node_modules/') === false
-            && (strpos($path, '/.git') === false || $basename === '.gitkeep');
+            && (strpos($path, '/.git') === false || $basename === '.gitkeep')
+            && !preg_match($nestedVendorRegEx, str_replace('\\', '/', $path));
     }
 
     /**
+     * @param Io $io
      * @param Filesystem $filesystem
-     * @param IOInterface $io
-     * @param Config $config
+     * @param Unzipper $unzipper
      */
-    public function __construct(Filesystem $filesystem, IOInterface $io, Config $config)
+    public function __construct(Io $io, Filesystem $filesystem, Unzipper $unzipper)
     {
         $this->filesystem = $filesystem;
         $this->io = $io;
-        $this->config = $config;
+        $this->unzipper = $unzipper;
     }
 
     /**
@@ -199,7 +193,6 @@ class MirrorCopier
     private function copyLinks(array $linksPaths): bool
     {
         $git = new GitProcess($this->io);
-        $unzipper = new Unzipper($this->io, $this->config);
         $all = 0;
         $copied = 0;
         foreach ($linksPaths as $link => $target) {
@@ -209,7 +202,7 @@ class MirrorCopier
             $git->cd($real)->exec("archive --format zip --output {$saveIn} master");
             $all++;
             if (file_exists($saveIn)) {
-                $unzipped = $this->extractZip($saveIn, $unzipper);
+                $unzipped = $this->extractZip($saveIn);
                 (unlink($saveIn) && $unzipped) and $copied++;
             }
         }
@@ -219,16 +212,15 @@ class MirrorCopier
 
     /**
      * @param string $zipPath
-     * @param Unzipper $unzipper
      * @return bool
      */
-    private function extractZip(string $zipPath, Unzipper $unzipper): bool
+    private function extractZip(string $zipPath): bool
     {
         $folderName = pathinfo($zipPath, PATHINFO_FILENAME);
         $target = dirname($zipPath) . "/{$folderName}/";
-        $unzipper->unzip($zipPath, $target);
+        $this->unzipper->unzip($zipPath, $target);
         if (!is_dir($target)) {
-            $this->io->writeError("    <error>Failed to copy {$folderName} package.</error>");
+            $this->io->errorLine("Failed to copy {$folderName} package.");
 
             return false;
         }

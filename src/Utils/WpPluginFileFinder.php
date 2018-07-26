@@ -10,11 +10,12 @@
 
 declare(strict_types=1);
 
-namespace Inpsyde\VipComposer;
+namespace Inpsyde\VipComposer\Utils;
 
 use Composer\Package\PackageInterface;
+use Inpsyde\VipComposer\Installer\Installer;
 
-class PluginFileFinder
+class WpPluginFileFinder
 {
 
     /**

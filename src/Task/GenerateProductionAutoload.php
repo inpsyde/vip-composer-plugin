@@ -10,15 +10,26 @@
 
 declare(strict_types=1);
 
-namespace Inpsyde\VipComposer;
+namespace Inpsyde\VipComposer\Task;
 
-use Composer\Autoload\AutoloadGenerator as ComposerAutoloadGenerator;
+use Composer\Autoload\AutoloadGenerator;
 use Composer\Composer;
-use Composer\IO\IOInterface;
+use Inpsyde\VipComposer\Config;
+use Inpsyde\VipComposer\Utils\InstalledPackages;
+use Inpsyde\VipComposer\Io;
+use Inpsyde\VipComposer\VipDirectories;
 
-class AutoloadGenerator
+final class GenerateProductionAutoload implements Task
 {
-    const PROD_AUTOLOAD_DIR = 'vip-autoload';
+    /**
+     * @var Config
+     */
+    private $config;
+
+    /**
+     * @var Composer
+     */
+    private $composer;
 
     /**
      * @var InstalledPackages
@@ -26,70 +37,100 @@ class AutoloadGenerator
     private $installedPackages;
 
     /**
-     * @var Directories
+     * @var VipDirectories
      */
     private $directories;
 
     /**
+     * @param Config $config
+     * @param Composer $composer
      * @param InstalledPackages $devPackages
-     * @param Directories $directories
+     * @param VipDirectories $directories
      */
-    public function __construct(InstalledPackages $devPackages, Directories $directories)
-    {
+    public function __construct(
+        Config $config,
+        Composer $composer,
+        InstalledPackages $devPackages,
+        VipDirectories $directories
+    ) {
+
+        $this->config = $config;
+        $this->composer = $composer;
         $this->installedPackages = $devPackages;
         $this->directories = $directories;
     }
 
     /**
-     * @param Composer $composer
-     * @param IOInterface $io
-     * @throws \Exception
+     * @return string
      */
-    public function generate(Composer $composer, IOInterface $io)
+    public function name(): string
     {
-        $io->write('<info>VIP: Building production autoload...</info>');
+        return 'Generate production autoloader';
+    }
 
-        $composerPath = $composer->getConfig()->get('vendor-dir') . '/autoload.php';
+    /**
+     * @param TaskConfig $taskConfig
+     * @return bool
+     */
+    public function enabled(TaskConfig $taskConfig): bool
+    {
+        return $taskConfig->isGit();
+    }
+
+    /**
+     * @param Io $io
+     * @param TaskConfig $taskConfig
+     * @return void
+     */
+    public function run(Io $io, TaskConfig $taskConfig): void
+    {
+        $io->commentLine('Building production autoload...');
+
+        $vendorDir = $this->config->composerConfigValue('vendor-dir');
+        $composerPath = "{$vendorDir}/autoload.php";
         $composerContent = file_get_contents($composerPath);
 
-        $autoloader = new ComposerAutoloadGenerator($composer->getEventDispatcher());
+        $autoloader = new AutoloadGenerator($this->composer->getEventDispatcher());
         $autoloader->setDevMode(false);
         $autoloader->setApcu(false);
         $autoloader->setClassMapAuthoritative(true);
         $autoloader->setRunScripts(false);
 
         $suffix = '';
-        $lockFile = $this->directories->basePath().'/composer.lock';
+        $lockFile = $this->config->basePath().'/composer.lock';
         if (is_readable($lockFile)) {
             $data = @json_decode(file_get_contents($lockFile) ?: '', true);
             $suffix = $data['content-hash'] ?? '';
         }
 
+        $prodAutoloadDirname = $this->config->prodAutoloadDir();
+
         $autoloader->dump(
-            $composer->getConfig(),
+            $this->composer->getConfig(),
             $this->installedPackages->noDevRepository(),
-            $composer->getPackage(),
-            $composer->getInstallationManager(),
-            self::PROD_AUTOLOAD_DIR,
+            $this->composer->getPackage(),
+            $this->composer->getInstallationManager(),
+            $prodAutoloadDirname,
             true,
             $suffix ?: md5(uniqid('', true))
         );
 
         $autoloadEntrypoint = "<?php\nrequire_once __DIR__ . '/autoload_real.php';\n";
         $autoloadEntrypoint .= "ComposerAutoloaderInit{$suffix}::getLoader();\n";
-        $vendorDir = $composer->getConfig()->get('vendor-dir');
-        $path = "{$vendorDir}/" . self::PROD_AUTOLOAD_DIR;
+        $path = "{$vendorDir}/{$prodAutoloadDirname}";
 
         file_put_contents("{$path}/autoload.php", $autoloadEntrypoint);
         file_put_contents($composerPath, $composerContent);
 
         $this->replaceVipPaths($path);
+
+        $io->infoLine('Done!');
     }
 
     /**
      * @param string $path
      */
-    private function replaceVipPaths(string $path)
+    private function replaceVipPaths(string $path): void
     {
         $vendorDirPath = '$vendorDir = WPCOM_VIP_CLIENT_MU_PLUGIN_DIR . \'/vendor\';';
         $baseDirPath = '$baseDir = ABSPATH;';

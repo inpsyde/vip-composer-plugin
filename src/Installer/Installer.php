@@ -14,32 +14,33 @@
 
 declare(strict_types=1);
 
-namespace Inpsyde\VipComposer;
+namespace Inpsyde\VipComposer\Installer;
 
 use Composer\Composer;
 use Composer\Installer\LibraryInstaller;
 use Composer\IO\IOInterface;
 use Composer\Package\PackageInterface;
+use Inpsyde\VipComposer\VipDirectories;
 
 class Installer extends LibraryInstaller
 {
-    const SUPPORTED_TYPES = [
+    private const SUPPORTED_TYPES = [
         'wordpress-plugin',
         'wordpress-theme',
         'wordpress-muplugin',
     ];
 
     /**
-     * @var Directories
+     * @var VipDirectories
      */
     private $directories;
 
     /**
-     * @param Directories $directories
+     * @param VipDirectories $directories
      * @param Composer $composer
      * @param IOInterface $io
      */
-    public function __construct(Directories $directories, Composer $composer, IOInterface $io)
+    public function __construct(VipDirectories $directories, Composer $composer, IOInterface $io)
     {
         $this->directories = $directories;
 

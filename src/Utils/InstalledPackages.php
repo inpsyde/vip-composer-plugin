@@ -10,7 +10,7 @@
 
 declare(strict_types=1);
 
-namespace Inpsyde\VipComposer;
+namespace Inpsyde\VipComposer\Utils;
 
 use Composer\Composer;
 use Composer\Package\PackageInterface;
@@ -18,6 +18,7 @@ use Composer\Repository\InstalledArrayRepository;
 use Composer\Repository\InstalledFilesystemRepository;
 use Composer\Repository\InstalledRepositoryInterface;
 use Composer\Repository\RepositoryInterface;
+use Inpsyde\VipComposer\Plugin;
 
 class InstalledPackages
 {
@@ -106,12 +107,12 @@ class InstalledPackages
 
         // First we collect all dev packages and recursively their requires
         $devRequires = $this->composer->getPackage()->getDevRequires();
-        list($devPackages, $devNames) = $this->findPackagesRecursive($devRequires, $localRepo);
+        [$devPackages, $devNames] = $this->findPackagesRecursive($devRequires, $localRepo);
 
         // Then we collect all non-dev packages and recursively their requires
         $requires = $this->composer->getPackage()->getRequires();
         /** @var $noDevPackages PackageInterface[] */
-        list($noDevPackages, $noDevNames) = $this->findPackagesRecursive($requires, $localRepo);
+        [$noDevPackages, $noDevNames] = $this->findPackagesRecursive($requires, $localRepo);
 
         // After that, we remove from dev packages any package that is also non-dev
         $devPackages = array_diff_key($devPackages, $noDevPackages);
@@ -177,7 +178,7 @@ class InstalledPackages
 
             $packages[$name] = $package;
             $names[$name] = $name;
-            list($packages, $names) = $this->findPackagesRecursive(
+            [$packages, $names] = $this->findPackagesRecursive(
                 $package->getRequires(),
                 $allRepo,
                 $packages,

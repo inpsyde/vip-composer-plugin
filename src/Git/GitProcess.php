@@ -10,10 +10,10 @@
 
 declare(strict_types=1);
 
-namespace Inpsyde\VipComposer;
+namespace Inpsyde\VipComposer\Git;
 
-use Composer\IO\IOInterface;
 use Composer\Util\ProcessExecutor;
+use Inpsyde\VipComposer\Io;
 use Symfony\Component\Process\Process;
 
 class GitProcess
@@ -30,7 +30,7 @@ class GitProcess
     private $origWorkingDir;
 
     /**
-     * @var IOInterface
+     * @var Io
      */
     private $io;
 
@@ -50,12 +50,12 @@ class GitProcess
     private $captured = ['', ''];
 
     /**
-     * @param IOInterface $io
+     * @param Io $io
      * @param string $workingDir
      * @param ProcessExecutor|null $executor
      */
     public function __construct(
-        IOInterface $io,
+        Io $io,
         string $workingDir = null,
         ProcessExecutor $executor = null
     ) {
@@ -63,7 +63,7 @@ class GitProcess
         $this->workingDir = $workingDir ?: getcwd();
         $this->origWorkingDir = $this->workingDir;
         $this->io = $io;
-        $this->executor = $executor ?: new ProcessExecutor($io);
+        $this->executor = $executor ?: new ProcessExecutor($io->composerIo());
         $this->outputCapture = function (string $type = '', string $buffer = '') {
             $this->captured = [$type, $buffer];
         };
@@ -107,11 +107,10 @@ class GitProcess
         $outputs = [];
         $lastOutput = '';
         $exitCode = 0;
-        $vvv = $this->io->isVeryVerbose();
 
         while ($exitCode === 0 && $commands) {
             $command = array_shift($commands);
-            $vvv and $this->io->write("     <comment>Executing </comment>`git {$command}`");
+            $this->io->verboseCommentLine("Executing `git {$command}`");
 
             $exitCode = $this->executor->execute(
                 "git {$command}",
@@ -119,11 +118,11 @@ class GitProcess
                 $this->workingDir
             );
 
-            list($type, $lastOutput) = $this->captured;
+            [$type, $lastOutput] = $this->captured;
             $this->captured = ['', ''];
             $outputs[] = $lastOutput;
             if ($exitCode !== 0 && $type === Process::ERR) {
-                $this->io->writeError("<error>{$lastOutput}</error>");
+                $this->io->errorLine($lastOutput);
             }
         }
 

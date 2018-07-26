@@ -15,19 +15,18 @@ namespace Inpsyde\VipComposer;
 use Composer\Util\Filesystem;
 use Composer\Util\Platform;
 
-class Directories
+class VipDirectories
 {
 
-    const PLUGINS_DIR = 'plugins';
-    const MU_PLUGINS_DIR = 'client-mu-plugins';
-    const THEMES_DIR = 'themes';
-    const LANG_DIR = 'languages';
-    const CONFIG_DIR = 'vip-config';
-    const PRIVATE_DIR = 'private';
-    const IMAGES_DIR = 'images';
-    const VIP_GO_MUPLUGINS_DIR = 'vip-go-mu-plugins';
+    public const PLUGINS_DIR = 'plugins';
+    public const MU_PLUGINS_DIR = 'client-mu-plugins';
+    public const THEMES_DIR = 'themes';
+    public const LANG_DIR = 'languages';
+    public const CONFIG_DIR = 'vip-config';
+    public const PRIVATE_DIR = 'private';
+    public const IMAGES_DIR = 'images';
 
-    const DIRS = [
+    private const DIRS = [
         self::PLUGINS_DIR => self::PLUGINS_DIR,
         self::MU_PLUGINS_DIR => self::MU_PLUGINS_DIR,
         self::THEMES_DIR => self::THEMES_DIR,
@@ -37,6 +36,9 @@ class Directories
         self::IMAGES_DIR => self::IMAGES_DIR,
     ];
 
+    /**
+     * @var bool
+     */
     private static $created = false;
 
     /**
@@ -52,18 +54,31 @@ class Directories
     /**
      * @var string
      */
+    private $vipMuPluginsPath;
+
+    /**
+     * @var string
+     */
     private $basePath;
 
     /**
      * @param Filesystem $filesystem
-     * @param string $targetPath
-     * @param string $basePath
+     * @param Config $config
      */
-    public function __construct(Filesystem $filesystem, string $targetPath, string $basePath)
+    public function __construct(Filesystem $filesystem, Config $config)
     {
+        $configData = $config->vipConfig();
+
+        $configTargetPath = $configData[Config::VIP_LOCAL_DIR_KEY];
+        $targetPath = Platform::expandPath($configTargetPath);
+
+        $configVipMuPluginsPath = $configData[Config::VIP_MUPLUGINS_LOCAL_DIR_KEY];
+        $vipMuPluginsPath = Platform::expandPath($configVipMuPluginsPath);
+
         $this->filesystem = $filesystem;
+        $this->basePath = $config->basePath();
         $this->targetPath = $filesystem->normalizePath($targetPath);
-        $this->basePath = $filesystem->normalizePath($basePath);
+        $this->vipMuPluginsPath = $filesystem->normalizePath($vipMuPluginsPath);
     }
 
     /**
@@ -73,14 +88,16 @@ class Directories
      */
     public function createDirs(): bool
     {
+        if (self::$created) {
+            return true;
+        }
+
         $target = "{$this->basePath}/{$this->targetPath}";
         foreach (self::DIRS as $dir) {
             $this->filesystem->ensureDirectoryExists("{$target}/{$dir}");
-            if (!file_exists("{$target}/{$dir}/.gitkeep")) {
-                $hasFiles = glob("{$target}/{$dir}/*.*");
-                $hasFiles or file_put_contents("{$target}/{$dir}/.gitkeep", '');
-            }
         }
+
+        self::$created = true;
 
         return true;
     }
@@ -146,50 +163,7 @@ class Directories
      */
     public function vipMuPluginsDir(): string
     {
-        self::$created or self::$created = $this->createDirs();
-        $this->filesystem->ensureDirectoryExists("{$this->basePath}/" . self::VIP_GO_MUPLUGINS_DIR);
-
-        return "{$this->basePath}/" . self::VIP_GO_MUPLUGINS_DIR;
-    }
-
-    /**
-     * @param string $contentDir
-     * @param bool $hasVipMu
-     */
-    public function symlink(string $contentDir, bool $hasVipMu)
-    {
-        $this->filesystem->ensureDirectoryExists($contentDir);
-        $this->filesystem->emptyDirectory($contentDir);
-
-        $map = [
-            $this->pluginsDir() => "{$contentDir}/plugins",
-            $this->themesDir() => "{$contentDir}/themes",
-            $this->languagesDir() => "{$contentDir}/languages",
-            $this->muPluginsDir() => $hasVipMu
-                ? "{$contentDir}/client-mu-plugins"
-                : "{$contentDir}/mu-plugins",
-        ];
-
-        if ($hasVipMu) {
-            $map[$this->vipMuPluginsDir()] = "{$contentDir}/mu-plugins";
-        }
-
-        $windows = Platform::isWindows();
-
-        foreach ($map as $target => $link) {
-            if (is_dir($link)) {
-                $this->filesystem->removeDirectory($link);
-            }
-
-            $this->filesystem->ensureDirectoryExists($target);
-
-            if ($windows) {
-                $this->filesystem->junction($target, $link);
-                continue;
-            }
-
-            $this->filesystem->relativeSymlink($target, $link);
-        }
+        return $this->filesystem->normalizePath("{$this->basePath}/{$this->vipMuPluginsPath}");
     }
 
     /**
@@ -197,15 +171,7 @@ class Directories
      */
     public function targetPath(): string
     {
-        return "{$this->basePath}/{$this->targetPath}";
-    }
-
-    /**
-     * @return string
-     */
-    public function basePath(): string
-    {
-        return $this->basePath;
+        return $this->filesystem->normalizePath("{$this->basePath}/{$this->targetPath}");
     }
 
     /**
@@ -214,8 +180,10 @@ class Directories
      */
     private function dir(string $which): string
     {
-        self::$created or self::$created = $this->createDirs();
+        $this->createDirs();
 
-        return "{$this->basePath}/{$this->targetPath}/" . self::DIRS[$which];
+        return $this->filesystem->normalizePath(
+            "{$this->basePath}/{$this->targetPath}/" . self::DIRS[$which]
+        );
     }
 }

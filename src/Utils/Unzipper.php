@@ -10,7 +10,7 @@
 
 declare(strict_types=1);
 
-namespace Inpsyde\VipComposer;
+namespace Inpsyde\VipComposer\Utils;
 
 use Composer\Config;
 use Composer\Downloader\ZipDownloader;
