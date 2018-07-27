@@ -113,7 +113,7 @@ final class DownloadWpCore implements Task
             $io->commentLine('No need to download WordPress: installed version matches required version.');
             [$wpCoreDir] = $this->preparePaths($version);
             $this->copyWpConfig($wpCoreDir, $io);
-            $this->createWpCliYml($wpCoreDir);
+            $this->createWpCliYml($wpCoreDir, $io);
 
             return;
         }
@@ -121,6 +121,7 @@ final class DownloadWpCore implements Task
         [$wpCorePath, $zipUrl, $zipFile] = $this->preparePaths($version);
 
         $io->commentLine("Installing WordPress {$version}...");
+        $this->cleanUp($zipFile, $wpCorePath, $io);
 
         if (!$this->remoteFilesystem->copy('wordpress.org', $zipUrl, $zipFile)) {
             $error = sprintf(
@@ -146,12 +147,13 @@ final class DownloadWpCore implements Task
         $this->unzipper->unzip($zipFile, $wpCorePath);
         $this->filesystem->unlink($zipFile);
 
-        $io->commentLine('Cleaning up destination folder...');
-        $this->cleanUp($zipFile, $wpCorePath, $io);
-
         if (file_exists("{$wpCorePath}/wordpress/index.php")) {
             $io->commentLine('Moving to destination folder...');
             $this->filesystem->copyThenRemove("{$wpCorePath}/wordpress", $wpCorePath);
+        }
+
+        if (!file_exists("{$wpCorePath}/index.php")) {
+            throw new \RuntimeException("Installation of WordPress {$version} failed.");
         }
 
         $io->infoLine("WordPress {$version} installed.");
@@ -389,11 +391,12 @@ final class DownloadWpCore implements Task
 
     /**
      * @param string $coreDir
+     * @param Io $io
      * @return void
      */
     private function createWpCliYml(string $coreDir, Io $io): void
     {
-        $io->commentLine("Copying 'wp-config.php' from core folder...");
+        $io->commentLine('Creating wp-cli.yml...');
         $path = $this->filesystem->findShortestPath($this->config->basePath(), $coreDir);
         file_put_contents($this->config->basePath() . '/wp-cli.yml', "path: {$path}\n");
     }
@@ -405,7 +408,7 @@ final class DownloadWpCore implements Task
      */
     private function cleanUp(string $zipFile, string $wpCoreDir, Io $io): void
     {
-        $io->verboseCommentLine('Cleaning previous WordPress in files...');
+        $io->verboseCommentLine('Cleaning previous WordPress files...');
 
         // Delete leftover zip file if found
         if (file_exists($zipFile)) {
