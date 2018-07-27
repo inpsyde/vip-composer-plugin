@@ -121,7 +121,6 @@ final class DownloadWpCore implements Task
         [$wpCorePath, $zipUrl, $zipFile] = $this->preparePaths($version);
 
         $io->commentLine("Installing WordPress {$version}...");
-        $this->cleanUp($zipFile, $wpCorePath, $io);
 
         if (!$this->remoteFilesystem->copy('wordpress.org', $zipUrl, $zipFile)) {
             $error = sprintf(
@@ -143,9 +142,13 @@ final class DownloadWpCore implements Task
 
         $this->filesystem->ensureDirectoryExists($wpCorePath);
 
-        $io->commentLine('Unzipping...');
+        $io->commentLine('Unzipping to temp folder...');
         $this->unzipper->unzip($zipFile, $wpCorePath);
         $this->filesystem->unlink($zipFile);
+
+        $io->commentLine('Cleaning up destination folder...');
+        $this->cleanUp($zipFile, $wpCorePath, $io);
+
         if (file_exists("{$wpCorePath}/wordpress/index.php")) {
             $io->commentLine('Moving to destination folder...');
             $this->filesystem->copyThenRemove("{$wpCorePath}/wordpress", $wpCorePath);
@@ -154,7 +157,7 @@ final class DownloadWpCore implements Task
         $io->infoLine("WordPress {$version} installed.");
 
         $this->copyWpConfig($wpCorePath, $io);
-        $this->createWpCliYml($wpCorePath);
+        $this->createWpCliYml($wpCorePath, $io);
     }
 
     /**
@@ -388,8 +391,9 @@ final class DownloadWpCore implements Task
      * @param string $coreDir
      * @return void
      */
-    private function createWpCliYml(string $coreDir): void
+    private function createWpCliYml(string $coreDir, Io $io): void
     {
+        $io->commentLine("Copying 'wp-config.php' from core folder...");
         $path = $this->filesystem->findShortestPath($this->config->basePath(), $coreDir);
         file_put_contents($this->config->basePath() . '/wp-cli.yml', "path: {$path}\n");
     }
@@ -408,8 +412,17 @@ final class DownloadWpCore implements Task
             $this->filesystem->unlink($zipFile);
         }
 
-        if (is_dir($wpCoreDir)) {
-            $this->filesystem->removeDirectory($wpCoreDir);
+        $dirs = glob("{$wpCoreDir}/*", GLOB_ONLYDIR);
+        foreach ($dirs as $dir) {
+            if (basename($dir)[0] !== '.') {
+                $this->filesystem->removeDirectory($dir);
+            }
+        }
+
+        foreach (glob("{$wpCoreDir}/*.*") as $file) {
+            if (basename($file)[0] !== '.') {
+                $this->filesystem->unlink($file);
+            }
         }
     }
 

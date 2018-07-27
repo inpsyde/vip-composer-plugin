@@ -61,7 +61,7 @@ final class SymlinkVipGoDir implements Task
      */
     public function enabled(TaskConfig $taskConfig): bool
     {
-        return $taskConfig->isLocal();
+        return $taskConfig->isLocal() || $taskConfig->forceCoreUpdate();
     }
 
     /**
