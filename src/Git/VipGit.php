@@ -171,7 +171,7 @@ class VipGit
             return false;
         }
 
-        $this->io->infoLine("{$operation} done successfully!");
+        $this->io->infoLine(ucfirst("{$operation} done successfully!"));
 
         return $success;
     }
