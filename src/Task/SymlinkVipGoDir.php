@@ -86,6 +86,7 @@ final class SymlinkVipGoDir implements Task
             $this->directories->languagesDir() => "{$contentDirPath}/languages",
             $this->directories->muPluginsDir() => "{$contentDirPath}/client-mu-plugins",
             $this->directories->vipMuPluginsDir() => "{$contentDirPath}/mu-plugins",
+            $this->directories->imagesDir() => "{$contentDirPath}/images",
             $uploadsPath => "{$contentDirPath}/{$uploadsDir}",
         ];
 
