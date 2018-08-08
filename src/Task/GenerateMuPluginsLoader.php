@@ -154,9 +154,10 @@ final class GenerateMuPluginsLoader implements Task
 
         $done[] = $packageName;
 
+        $content .= $this->registerRealPath($path, $type);
         $content .= $type === 'wordpress-plugin'
-            ? "\nwpcom_vip_load_plugin('{$path}');"
-            : "\nrequire_once realpath(__DIR__ . '/{$path}');";
+            ? "\nwpcom_vip_load_plugin('{$path}');\n"
+            : "\nrequire_once realpath(__DIR__ . '/{$path}');\n";
 
         return [$content, $toDo, $done];
     }
@@ -176,5 +177,26 @@ UEFA_IS_LOCAL_ENV
     : require_once __DIR__ . '/{$vendorBase}/vip-autoload/autoload.php';
 PHP;
         return "{$php}\n";
+    }
+
+    /**
+     * @param string $path
+     * @param string $type
+     * @return string
+     */
+    private function registerRealPath(string $path, string $type): string
+    {
+        $wpDirName = $this->config->wpConfig()[Config::WP_LOCAL_DIR_KEY];
+        $toPath = $this->filesystem->normalizePath($this->config->basePath() . "/{$wpDirName}");
+        $fromPath = $this->directories->muPluginsDir() . '/__loader.php';
+        $relative = $this->filesystem->findShortestPathCode($fromPath, $toPath, false);
+        $folder = $type === 'wordpress-plugin' ? 'plugins' : 'mu-plugins';
+
+        $php = <<<PHP
+if (UEFA_IS_LOCAL_ENV) {
+    wp_register_plugin_realpath($relative . "/wp-content/{$folder}/{$path}");
+}
+PHP;
+        return $php;
     }
 }
