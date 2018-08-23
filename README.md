@@ -23,7 +23,7 @@ composer vip --deploy --branch="develop"   # deploy to VIP Go repository
 
 Deploy command as shown above require some configuration in `composer.json` at very least the GitHub URL for the repository, that if not present in  `composer.json`  can be passed to the command via the `--git-url` option.
 
-It is important to note that `composer vip` command **must be run after composer install|update**.
+It is important to note that `composer vip` command **must be run *after* composer install|update**.
 
 Here's a one liner to both update Composer dependencies and prepare local environment:
 
@@ -31,7 +31,7 @@ Here's a one liner to both update Composer dependencies and prepare local enviro
 composer update && composer vip
 ```
 
-It is is the first time you come here, it is suggested to read below for better understand of what, how and why  this command does what it does.
+If this is the first time you come here, it is suggested to read below for better understand of what, how and why  this command does what it does.
 
 Skip to [Command reference](#command-reference) section for detailed documentation on the command and its available options.
 
@@ -39,19 +39,19 @@ Skip to [Command reference](#command-reference) section for detailed documentati
 
 ## Why
 
-VIP Go platform is a managed WordPress hosting that allows deploy to its server via a git commit to a repository hosted on GitHub. Different branches means different environments, and master is for production.
+VIP Go platform is a managed WordPress hosting that allows to deploy to its server via a Git commit to a repository hosted on GitHub. Different branches means different environments, and master is for production.
 
 The repository is not the full WordPress folder, but *a sort of* the `/wp-content` folder.
 
 *"Sort of"* because there are some differences:
 
 - MU plugins are not saved in `mu-plugins` folder as normally they are, but in a `/client-mu-plugins` folder, because  `mu-plugins` is reserved for proprietary MU plugins always present on the platform
-- There's a `/vip-config` folder that must contain at least a `vip-config.php` file that is loaded from platform `wp-config.php` and allow to set constants normally located on  `wp-config.php` (not having access to the whole installation, that file is, in fact, not editable).
-- There's a `/private` folder that contains not browser-accessible files , but useful to store PHP-accessible data, configuration and alike.
+- There's a `/vip-config` folder that must contain at least a `vip-config.php` file that is loaded from platform `wp-config.php` and it is the place where to set constants normally located on  `wp-config.php` (not having access to the whole installation, that file is, in fact, not editable).
+- There's a `/private` folder that contains not browser-accessible files, but useful to store PHP-accessible data, configuration and alike.
 - There's a `/images` browser-accessible folder that contains images that can be made available for the website.
 - There's no `/uploads` folder. All the media are stored on a CDN and will not be present on the server (container) filesystem at all.
 
-(More info can be found here: https://vip.wordpress.com/documentation/vip-go/understanding-your-vip-go-codebase/)
+More info can be found here: https://vip.wordpress.com/documentation/vip-go/understanding-your-vip-go-codebase/
 
 On top of that, as mentioned above, VIP Go as quite a few [proprietary MU plugins](https://github.com/Automattic/vip-go-mu-plugins) that will always be loaded.
 
@@ -61,7 +61,7 @@ This means that to have a local environment that can be used to develop websites
 - be sure to load the `vip-config/vip-config.php` from `wp-config.php`
 - install all VIP Go MU plugins
 
-(More info can be found here: https://vip.wordpress.com/documentation/vip-go/local-vip-go-development-environment/)
+More info can be found here: https://vip.wordpress.com/documentation/vip-go/local-vip-go-development-environment/
 
 To have  **a local environment entirely based on Composer, **where not only plugins / themes / libraries, but also WordPress itself are all installed via Composer, requires additional tasks on top of that:
 
@@ -72,7 +72,7 @@ To have  **a local environment entirely based on Composer, **where not only plug
 
 To do all of this in a programmatic way, both for local development and for deploy (e.g. via some CI service), is an additional concern on top of it.
 
-The aim of the package is to make these tasks as simple and straightforward as possible.
+**The aim of the package is to make these tasks as simple and straightforward as possible.**
 
 
 
@@ -80,7 +80,7 @@ The aim of the package is to make these tasks as simple and straightforward as p
 
 For **local** development it is necessary:
 
-- _something_ capable of running PHP 7.1+ and MySql. Being it XAMPP Mamp, Vagrant, Docker or anything is not really relevant.
+- _something_ capable of running PHP 7.1+ and MySql. Being it XAMPP, Mamp, Vagrant, Docker or anything else is not really relevant.
 - a DB ready for the website
 - an (updated) Git client available on the machine and accessible via the `git` command
 - Composer
@@ -116,9 +116,9 @@ A folder on local environment must be dedicated to the project. The *example* st
 
 On the structure above only **`composer.json`** and **`config/vip-config.php`** are mandatory, all the other things are optional (and `config/` folder could be renamed to something else, if desired).
 
-Such a structure could be used for a *monolith* repository that contains all the *things* necessary for the website, but chances are that some (or all) plugins / themes / mu-plugins will be in separate repositories and required via Composer. Even in that case there could be some simple mu-plugin / plugin that is located on the same project repository because not worth a separate repository.
+Such a structure could be used for a *monolith* repository that contains all the *things* (themes, plugins, MU plugins) necessary for the website, but chances are that some (or all) plugins / themes / mu-plugins will be located in separate repositories and required via Composer. But even in that case there could be some simple mu-plugin / plugin that is located on the same project repository because not worth a separate repository.
 
-A real-world typical the project folder (which very likely will be kept under version control) would look more like this:
+A real-world typical project folder (which very likely will be kept under version control) would look like this:
 
 ```
 \-
@@ -128,7 +128,7 @@ A real-world typical the project folder (which very likely will be kept under ve
   	|- some-image.png
   |- mu-plugins/
   	|- some-mu-plugin.php
-  	|- another-plugin.php
+  	|- another-mu-plugin.php
   |- private/
   	|- some-file.json
   |- composer.json
@@ -145,7 +145,7 @@ The `composer.json` is pretty standard. There are **a few things** that must be 
 
 - this plugin must be required, its name is `inpsyde/vip-composer-plugin`
 - an object `extra.vip-composer` can be used to configure / customize plugin behavior. This is entirely **optional**.
-- `config.vendor-dir` must be used to point the "client MU plugins folder", by default `vip/client-mu-plugins/vendor` but outer folder name (`/vip`) might change based on configuration of `extra.vip-composer.vip.local-dir` 
+- `config.vendor-dir` must be used to point the "client MU plugins folder", by default `vip/client-mu-plugins/vendor` (but outer folder name, `/vip`, might change based on configuration of `extra.vip-composer.vip.local-dir` )
 
 The whole set of settings available, with their defaults, looks like this:
 
@@ -186,7 +186,7 @@ The whole set of settings available, with their defaults, looks like this:
 }
 ```
 
-The `config` object is something provided by Composer, and not specific of this plugin. It is shown above for completeness. The `config.platform` is set above to `7.2` because that's the version currently used on VIP Go platform, and setting this will help in getting same dependencies that will be deployed even running a different PHP version.
+The `config` object is something provided by Composer, and not specific of this plugin. It is shown above for completeness. The `config.platform` is set above to `7.2` because that's the version currently used on VIP Go platform, and setting this will help in getting same dependencies that will be deployed even running a different PHP version locally.
 
 **If the `vip-composer` configuration shown above is fine for you, there's no need to add any configuration at all**, because these defaults will be used in absence of configuration.
 
@@ -208,7 +208,7 @@ Another thing that the plugin command does is to **download VIP Go MU plugins**,
 
 #### `vip-composer.git`
 
-This object controls the Git configuration for VIP Go GitHub repository. As shown above, default settings are empty, this require that both URL and branch must be passed to command.
+This object controls the Git configuration for VIP Go GitHub repository. As shown above, default settings are empty, this requires that both URL and branch must be passed as options to `composer vip` command.
 
 Might be a good idea to at least fill in the URL to avoid having to type long commands.
 
@@ -246,7 +246,7 @@ Assuming default configuration and an initial folder structure like this:
   	|- some-image.png
   |- mu-plugins/
   	|- some-mu-plugin.php
-  	|- another-plugin.php
+  	|- another-mu-plugin.php
   |- private/
   	|- some-file.json
   |- composer.json
@@ -269,7 +269,7 @@ composer update && composer vip
   	|- some-image.png
   |- mu-plugins/
   	|- some-mu-plugin.php
-  	|- another-plugin.php
+  	|- another-mu-plugin.php
   |- public/
   	|- wp-admin/
   		| ...            # core files
@@ -296,7 +296,7 @@ composer update && composer vip
   			|- autoload.php
   		|- __loader.php
   		|- some-mu-plugin.php
-  		|- another-plugin.php
+  		|- another-mu-plugin.php
   	|- themes/
   		| [...]            # any theme installed via Composer
   	|- plugins/
@@ -329,7 +329,6 @@ There's quite a lot going on there:
 
 - a `/wp-config.php` file has been created. It is outside the WordPress folder for both convenience and to make WordPress folder completely disposable. The first time the command is run, local **database configuration needs to be entered**. The file contains already the loading of `vip/vip-config.php` (to mimic VIP Go behavior)  and the constant to make `vip-go-mu-plugins/` the source of MU plugin.
 
-  
 
 ### A `.gitignore` sample
 
@@ -357,19 +356,19 @@ composer vip
 
 
 
-### Cheat-sheet
+### Options Cheat-Sheet
 
-- `--local` - To build the local environment
-- `--deploy` - To prepare the files and folders for production and commit any change to VIP Go GitHub repo, that is at any effect deploying the website.
+- `--local` - Tell the command to build the local environment
+- `--deploy` - Tell the command to prepare the files and folders for production and commit any change to VIP Go GitHub repo, that is at any effect deploying the website.
 
-- `--git-url` - Set the Git remote URL to pull from and pull to. When `--local` is used, this is relevant only if `--git` or ``--push` are used as well.
-- `--branch` - Set the Git branch to pull from and pull to. When `--local` is used, this is relevant only if `--git` or ``--push` are used as well.
-- `--git` - Build Git mirror, but no push. To be used in combination with `--local.` Ignored if `--deploy` is used.
-- `--push` - Build Git mirror and push. To be used in combination with `--local.` Ignored if `--deploy` is used.
-- `--sync-dev-paths` - Synchronize local dev paths. To be used as only option.
-- `--update-wp` - Force the update of WordPress core. To be used alone or in combination with `--local.` Ignored if `--deploy` is used.
+- `--git-url` - Set the Git remote URL to pull from and push to. When `--local` is used, this is relevant only if `--git` or `--push` are used as well.
+- `--branch` - Set the Git branch to pull from and push to. When `--local` is used, this is relevant only if `--git` or `--push` are used as well.
+- `--git` - Build Git mirror folder, but do not push. To be used in combination with `--local.` Ignored if `--deploy` is used.
+- `--push` - Build Git mirror and push it. To be used in combination with `--local.` Ignored if `--deploy` is used.
+- `--sync-dev-paths` - Synchronize local dev paths. To be used as the only option.
+- `--update-wp` - Force the update of WordPress core. To be used as the only option or in combination with `--local.` Ignored if `--deploy` is used.
 - `--skip-wp` - Skip the update of WordPress core. To be used in combination with `--local.` Ignored if `--deploy` is used.
-- `--update-vip-mu-plugins`  - Force the update of Vip Go MU plugins. To be used alone or in combination with `--local.` Ignored if `--deploy` is used.
+- `--update-vip-mu-plugins`  - Force the update of Vip Go MU plugins. To be used as the only option or in combination with `--local.` Ignored if `--deploy` is used.
 - `--skip-vip-mu-plugins` - Skip the update of Vip Go MU plugins. To be used in combination with `--local.` Ignored if `--deploy` is used.
 
 
@@ -388,7 +387,7 @@ composer vip
 6. Copy "dev paths" into VIP folder
 7. Create and configure `wp-cli.yml` if necessary
 
-This is the **default option** and it is assumed if no other option is passed.
+This is the **default option** and it is assumed if no option is passed.
 
 
 
@@ -422,17 +421,17 @@ composer vip --deploy --git-url="https://github.com/wpcomvip/my-project" --branc
 
 #### Git options for local environment
 
-By default, when `--local` option is used the plugin prepare the local environment **without** bother Git repo at all. Sometimes might be desirable to look at a Git diff of what would be pushed using `--deploy`, before actually doing the deploy.
+By default, when `--local` option is used the plugin prepare the local environment **without** bother with Git at all. Sometimes might be desirable to look at the Git diff of what would be pushed using `--deploy`, before actually doing the deploy.
 
 This could be achieved via the `--git` option.
 
 When this option is used, the plugin creates a folder inside `/vip` that has an unique name prepended by a dot, something like `/.vipgit5b59852eb21c7`.
 
-This folder will be a Git repository, build from VIP Go GitHub repo and where all changes have been committed. So by pointing a Git client / tool to this folder it is possible to "preview" changes before pushing. And, actually, by running `git push` on this folder it is possible to deploy the changes.
+This folder will be a Git repository, build from VIP Go GitHub repo, where all changes have been committed. So by pointing a Git client / tool to this folder it is possible to "preview" changes before pushing. And, actually, by running `git push` on this folder it is possible to deploy the changes.
 
 Sometimes it is also desirable to directly push the changes from local environment.
 
-This could be achieved via the `--push` option. Using this option is different from `--deploy` by the fact that the latter will only run tasks that are relevant for _remote_ server (e.g. always skipping WP install, VIP MU plugins download...) so it is a good choice to deploy from a CI. By using `--local --push` the command will update the development environment  and **also** push changes to remote repo.
+This could be achieved via the `--push` option. Using this option in combination with `--local` is different than just using `--deploy` by the fact that the latter will only run tasks that are relevant for _remote_ server (e.g. always skipping WP install, VIP MU plugins download...) so it is a good choice to deploy from a CI. By using `--local --push` the command will update the development environment  and **also** push changes to remote repo.
 
 Git configuration (URL and branch) applies when using either `--git` or `--push` in the same way they do when using `--deploy`.
 
@@ -448,15 +447,15 @@ composer vip --local --git --branch="develop"
 
 One of the things that it seems harder to grasp about the folder structure promoted by this plugins is why there are "dev paths" (plugins, themes, config and all the other folders in VIP Go structure) in the root of the project and same folders are **also copied** under `/vip` folder.
 
-The reason is quite simple. The reason to exist of `/vip` is to be a 1:1 mirror of the VIP Go Git repository.
+The reason is quite simple. The reason to exist of `/vip` folder is to be a 1:1 mirror of the VIP Go Git repository.
 
 Which means that when using Composer, a folder like `/vip/plugins` will contain plugins that are installed via Composer. Same for themes and MU plugins.
 
-If, for any reason, developers want to use the same "project" repository to include plugins, MU plugins, themes without them being on a separate repo, it would mean that  `/vip/plugins` (or `/theme` or `/client-mu-plugins`) would contain, after composer install, a "mix" of third party dependencies required via Composer and custom packages written for the project, in the project repo.
+If, for any reason, developers want to use the same "project" repository to include plugins, MU plugins, themes without them being on a separate repo, it would mean that  `/vip/plugins` (or `/theme` or `/client-mu-plugins`) would contain, after composer install, a "mix" of third party dependencies required via Composer and custom packages written for the project.
 
 Because the latter should be surely kept under version control, while the former probably not, it would be necessary to rely on quite complex (and honestly hard to maintain) `.gitignore` configuration.
 
-By using separate folders, like this plugins does, the folders in root contain only custom work to be kept under version control, and then the command take care of copying them alongside other dependencies that Composer takes care of placing in proper place (thanks to a custom installer shipped with the plugin).
+By using separate folders, like this plugins does, the folders in root contain only custom work to be kept under version control, and then the command takes care of copying them, alongside other dependencies that Composer takes care of placing in proper place (thanks to a custom installer shipped with the plugin).
 
 This way the `/vip` folder can be completely Git-ignored and it also becomes completely disposable, which is a good things for folders that are automatically generated.
 
@@ -464,13 +463,13 @@ However this approach has also a downside. When one of those custom plugin/theme
 
 Which means that after every change to those files the plugin command should be run again, to let it copy everything again.
 
-Besides being not very "developer friendly" the `--local` option makes the plugin do quite a lot of things, that are not necessary in the case, for example, a single configuration entry or a single MU plugin have been modified.
+Besides this being not very "developer friendly" the `--local` option makes the plugin do quite a lot of things, that are not necessary in the case, for example, a single configuration entry or a single MU plugin have been modified.
 
 This is why the plugin command provides the option `--sync-dev-paths`.
 
 This flag must be used as the **only** flag, and makes the command just copy the dev paths from root to `/vip`.
 
-This is a quite fast operation. So fast that it might be used in combination with some "watch" technique (provided by IDEs or by tool of choice), that basically run this comment when anything in the "dev paths" inside root folder changes. This make the developer experience much better.
+This is a quite fast operation. So fast that it might be used in combination with some "watch" technique (provided by IDEs or by tool of choice), that basically runs this command when anything in the "dev paths" in root folder changes. This make the developer experience much better.
 
 Example:
 
@@ -542,9 +541,9 @@ composer vip --update-vip-mu-plugins
 
 is shorter to type and easier to remember.
 
-Another option that controls the download of WordPress is `--skip-vip-mu-plugins`.
+Another option that controls the download of Vip Go MU plugins is `--skip-vip-mu-plugins`.
 
-This option tells the command to **never download VIP MU plugins**. Can only be used in combination with `--local`. This is useful when MU plugins are not there (never download or deleted by hand), but one wants to save the time necessary to download them, for any reason.
+This option tells the command to **never download VIP Go MU plugins**. Can only be used in combination with `--local`. This is useful when MU plugins are not there (never downloaded or deleted by hand), but one wants to save the time necessary to download them, for any reason.
 
 Must be noted that if MU plugins are not there and `--skip-vip-mu-plugins` is used, the local installation will not be functional.
 
