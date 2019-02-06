@@ -210,6 +210,19 @@ class Factory
     }
 
     /**
+     * @return GenerateDeployVersion
+     */
+    public function generateDeployVersion(): GenerateDeployVersion
+    {
+        return $this->service(
+            GenerateDeployVersion::class,
+            function (): GenerateDeployVersion {
+                return new GenerateDeployVersion($this->factory->vipDirectories());
+            }
+        );
+    }
+
+    /**
      * @param string $class
      * @param callable $factory
      * @return mixed

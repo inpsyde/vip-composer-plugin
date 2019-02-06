@@ -123,25 +123,5 @@ class Tasks
      */
     private function afterRun(): void
     {
-        file_put_contents(
-            $this->directories->privateDir() . '/deploy-id',
-            sprintf(
-                '%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
-                random_int(0, 0xffff),
-                time() % 0xffff,
-                random_int(0, 0xffff),
-                random_int(0, 0x0fff) | 0x4000,
-                random_int(0, 0x3fff) | 0x8000,
-                random_int(0, 0xffff),
-                random_int(0, 0xffff),
-                random_int(0, 0xffff)
-            )
-        );
-
-        if (file_exists($this->directories->privateDir() . '/deploy-id')
-            && file_exists($this->directories->privateDir() . '/.gitkeep')
-        ) {
-            unlink($this->directories->privateDir() . '/.gitkeep');
-        }
     }
 }

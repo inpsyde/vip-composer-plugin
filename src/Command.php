@@ -158,6 +158,7 @@ class Command extends BaseCommand
                 ->addTask($taskFactory->generateMuPluginsLoader())
                 ->addTask($taskFactory->generateProductionAutoload())
                 ->addTask($taskFactory->updateLocalWpConfigFile())
+                ->addTask($taskFactory->generateDeployVersion())
                 ->addTask($taskFactory->handleGit())
                 ->run();
         } catch (\Throwable $exception) {
