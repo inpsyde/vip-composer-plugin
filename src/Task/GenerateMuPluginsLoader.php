@@ -156,8 +156,8 @@ final class GenerateMuPluginsLoader implements Task
 
         $content .= $this->registerRealPath($path, $type);
         $content .= $type === 'wordpress-plugin'
-            ? "\nwpcom_vip_load_plugin('{$path}');\n"
-            : "\nrequire_once realpath(__DIR__ . '/{$path}');\n";
+            ? "\nwpcom_vip_load_plugin('{$path}');\n\n"
+            : "\nrequire_once realpath(__DIR__ . '/{$path}');\n\n";
 
         return [$content, $toDo, $done];
     }
@@ -187,15 +187,14 @@ PHP;
     private function registerRealPath(string $path, string $type): string
     {
         $wpDirName = $this->config->wpConfig()[Config::WP_LOCAL_DIR_KEY];
-        $toPath = $this->filesystem->normalizePath($this->config->basePath() . "/{$wpDirName}");
+        $folder = $type === 'wordpress-plugin' ? 'plugins' : 'client-mu-plugins';
         $fromPath = $this->directories->muPluginsDir() . '/__loader.php';
+        $toFolder = "/{$wpDirName}/wp-content/{$folder}/{$path}";
+        $toPath = $this->filesystem->normalizePath($this->config->basePath() . $toFolder);
         $relative = $this->filesystem->findShortestPathCode($fromPath, $toPath, false);
-        $folder = $type === 'wordpress-plugin' ? 'plugins' : 'mu-plugins';
 
         $php = <<<PHP
-if (UEFA_IS_LOCAL_ENV) {
-    wp_register_plugin_realpath($relative . "/wp-content/{$folder}/{$path}");
-}
+UEFA_IS_LOCAL_ENV and wp_register_plugin_realpath({$relative});
 PHP;
         return $php;
     }
