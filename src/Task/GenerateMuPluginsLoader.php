@@ -171,8 +171,8 @@ final class GenerateMuPluginsLoader implements Task
         $vendorBase = basename($this->filesystem->normalizePath($vendorDir));
 
         $php = <<<PHP
-define('UEFA_IS_LOCAL_ENV', !defined('VIP_GO_ENV') || !VIP_GO_ENV || VIP_GO_ENV === 'local');
-UEFA_IS_LOCAL_ENV
+define('VIP_GO_IS_LOCAL_ENV', !defined('VIP_GO_ENV') || !VIP_GO_ENV || VIP_GO_ENV === 'local');
+VIP_GO_IS_LOCAL_ENV
     ? require_once __DIR__ . '/{$vendorBase}/autoload.php'
     : require_once __DIR__ . '/{$vendorBase}/vip-autoload/autoload.php';
 PHP;
@@ -194,7 +194,7 @@ PHP;
         $relative = $this->filesystem->findShortestPathCode($fromPath, $toPath, false);
 
         $php = <<<PHP
-UEFA_IS_LOCAL_ENV and wp_register_plugin_realpath({$relative});
+VIP_GO_IS_LOCAL_ENV and wp_register_plugin_realpath({$relative});
 PHP;
         return $php;
     }
