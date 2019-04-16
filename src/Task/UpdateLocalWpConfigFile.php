@@ -78,7 +78,7 @@ final class UpdateLocalWpConfigFile implements Task
 
         $io->commentLine("Updating 'wp-config.php'...");
 
-        $wpComment = "/* That's all, stop editing! Happy blogging. */";
+        $wpComment = "~/\* That's all, stop editing!(?:[^\*]+)\*/~";
         $commentStart = '/* VIP Config START */';
         $commentEnd = '/* VIP Config END */';
 
@@ -88,7 +88,7 @@ final class UpdateLocalWpConfigFile implements Task
 
         $contentPartsStart = $start
             ? explode($commentStart, $currentContent, 2)
-            : explode($wpComment, $currentContent, 2);
+            : preg_split($wpComment, $currentContent, 2) ?: [];
 
         $contentPartsEnd = $end
             ? explode($commentEnd, $currentContent, 2)
