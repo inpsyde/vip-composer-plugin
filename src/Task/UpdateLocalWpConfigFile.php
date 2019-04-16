@@ -78,21 +78,25 @@ final class UpdateLocalWpConfigFile implements Task
 
         $io->commentLine("Updating 'wp-config.php'...");
 
-        $wpComment = "~/\* That's all, stop editing!(?:[^\*]+)\*/~";
+        $currentContent = file_get_contents($wpConfigPath);
+
+        $wpCommentRegex = "~/\* That's all, stop editing!(?:[^\*]+)\*/~";
+        preg_match($wpCommentRegex, $currentContent, $matches);
+        $wpCommentText = $matches ? $matches[0] : '';
+
         $commentStart = '/* VIP Config START */';
         $commentEnd = '/* VIP Config END */';
 
-        $currentContent = file_get_contents($wpConfigPath);
         $start = strpos($currentContent, $commentStart);
         $end = strpos($currentContent, $commentEnd);
 
         $contentPartsStart = $start
             ? explode($commentStart, $currentContent, 2)
-            : preg_split($wpComment, $currentContent, 2) ?: [];
+            : preg_split($wpCommentRegex, $currentContent, 2) ?: [];
 
         $contentPartsEnd = $end
             ? explode($commentEnd, $currentContent, 2)
-            : explode($wpComment, $currentContent, 2);
+            : preg_split($wpCommentRegex, $currentContent, 2) ?: [];
 
         if (empty($contentPartsStart[0]) || empty($contentPartsEnd[1])) {
             $io->errorLine("Can't update 'wp-config.php', it seems custom.");
@@ -100,8 +104,8 @@ final class UpdateLocalWpConfigFile implements Task
             return;
         }
 
-        $contentPartsStart[0] = str_replace($wpComment, '', $contentPartsStart[0]);
-        $contentPartsEnd[1] = str_replace($wpComment, '', $contentPartsEnd[1]);
+        $contentPartsStart[0] = str_replace($wpCommentText, '', $contentPartsStart[0]);
+        $contentPartsEnd[1] = str_replace($wpCommentText, '', $contentPartsEnd[1]);
 
         $fileContent = rtrim($contentPartsStart[0]);
         $fileContent .= "\n\n/* VIP Config START */\n";
@@ -124,7 +128,7 @@ PHP;
         }
 
         $fileContent .= "\n/* VIP Config END */\n\n";
-        $fileContent .= "\n{$wpComment}\n\n";
+        $fileContent .= "\n{$wpCommentText}\n\n";
         $fileContent .= ltrim($contentPartsEnd[1]);
 
         $this->saveFile($wpConfigPath, $this->ensureDebug($fileContent), $io);
