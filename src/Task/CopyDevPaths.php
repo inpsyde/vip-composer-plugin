@@ -80,7 +80,7 @@ final class CopyDevPaths implements Task
     public function run(Io $io, TaskConfig $taskConfig): void
     {
         if (!$io->composerIo()->isVerbose()) {
-            $io->commentLine('Copying dev paths copied to VIP folder...');
+            $io->commentLine('Copying dev paths to VIP folder...');
         }
 
         $failures = 0;
@@ -111,15 +111,8 @@ final class CopyDevPaths implements Task
     {
         [, $source, $target, $pattern, $flags] = $this->pathInfoForKey($pathConfigKey);
 
-        $hasGitKeep = file_exists("{$target}/.gitkeep");
-        $hasFiles = glob("{$target}/*.*") || glob("{$target}/*", GLOB_ONLYDIR);
-        if (!$hasFiles && !$hasGitKeep) {
-            file_put_contents("{$target}/.gitkeep", "\n");
-        } elseif ($hasFiles && $hasGitKeep) {
-            $this->filesystem->unlink("{$target}/.gitkeep");
-        }
-
         $sourcePaths = is_dir($source) ? glob($pattern, $flags) : [];
+
         if (!$sourcePaths) {
             return 0;
         }
@@ -128,6 +121,7 @@ final class CopyDevPaths implements Task
 
         foreach ($sourcePaths as $sourcePath) {
             $targetPath = "{$target}/" . basename($sourcePath);
+
             if ($this->filesystem->copy($sourcePath, $targetPath)) {
                 $io->verboseCommentLine("- </>copied<comment> '{$sourcePath}'</> to <comment>'{$targetPath}'");
                 continue;
@@ -135,6 +129,15 @@ final class CopyDevPaths implements Task
 
             $errors++;
             $io->errorLine("- failed copying '{$sourcePath}' to '{$targetPath}'.");
+        }
+
+        $hasGitKeep = file_exists("{$target}/.gitkeep");
+        $hasFiles = glob("{$target}/*", GLOB_NOSORT);
+
+        if (!$hasFiles && !$hasGitKeep) {
+            file_put_contents("{$target}/.gitkeep", "\n");
+        } elseif ($hasFiles && $hasGitKeep) {
+            $this->filesystem->unlink("{$target}/.gitkeep");
         }
 
         return $errors;
@@ -163,7 +166,7 @@ final class CopyDevPaths implements Task
             case Config::DEV_PATHS_PLUGINS_DIR_KEY:
                 $what = 'Plugins';
                 $target = $this->directories->pluginsDir();
-                $pattern = "{$source}/*.*";
+                $pattern = "{$source}/*";
                 $flags = GLOB_NOSORT;
                 break;
             case Config::DEV_PATHS_THEMES_DIR_KEY:
@@ -193,7 +196,7 @@ final class CopyDevPaths implements Task
             case Config::DEV_PATHS_PRIVATE_DIR_KEY:
                 $what = 'Private files';
                 $target = $this->directories->privateDir();
-                $pattern = "{$source}/*.*";
+                $pattern = "{$source}/*";
                 $flags = GLOB_NOSORT;
                 break;
             default:
