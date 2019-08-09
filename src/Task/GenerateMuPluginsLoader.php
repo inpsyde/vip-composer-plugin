@@ -94,27 +94,38 @@ final class GenerateMuPluginsLoader implements Task
     {
         $io->commentLine('Generating MU-plugins loader...');
 
-        [$loaderContent, $toDo, $done] = array_reduce(
+        $muPluginsPath = $this->directories->muPluginsDir();
+        $loaderPath = "{$muPluginsPath}/__loader.php";
+
+        $autoloader = $this->autoloadLoader();
+        $autoloadWritten = file_put_contents($loaderPath, "<?php\n{$autoloader}");
+
+        if (!$autoloadWritten) {
+            throw new \RuntimeException('Failed writing error autoloader.');
+        }
+
+        [$loaderContent, $toDoCount, $donePackages] = array_reduce(
             $this->packages,
             [$this, 'loaderContentForPackage'],
-            [$this->autoloadLoader(), 0, []]
+            [$autoloader, 0, []]
         );
 
-        if (!$toDo) {
+        if (!$toDoCount) {
+            $io->commentLine('No WP packages to write loader for.');
             return;
         }
 
-        $muPluginsPath = $this->directories->muPluginsDir();
-        $loaderPath = "{$muPluginsPath}/__loader.php";
-        file_put_contents($loaderPath, "<?php\n{$loaderContent}");
-
-        $allDone = count($done) === $toDo;
-        $fileWritten = file_exists($loaderPath);
+        $fileWritten = file_put_contents($loaderPath, "<?php\n{$loaderContent}");
+        $allDone = count($donePackages) === $toDoCount;
 
         if ($allDone && $fileWritten) {
             $io->infoLine("MU-plugins loader written to {$muPluginsPath}/__loader.php");
             return;
         }
+
+        $io->errorLine('Error generating MU-plugins loader:');
+        $allDone or $io->errorLine('- Not all MU plugins were properly parsed');
+        $fileWritten or $io->errorLine("- Loader file could not be written to {$loaderPath}");
 
         if (!$taskConfig->isOnlyLocal()) {
             throw new \RuntimeException(
@@ -123,10 +134,6 @@ final class GenerateMuPluginsLoader implements Task
                 . "\n - Loader file could not be written to {$loaderPath}"
             );
         }
-
-        $io->errorLine('Error generating MU-plugins loader:');
-        $allDone or $io->errorLine('- Not all MU plugins were properly parsed');
-        $fileWritten or $io->errorLine("- Loader file could not be written to {$loaderPath}");
     }
 
     /**
@@ -136,30 +143,30 @@ final class GenerateMuPluginsLoader implements Task
      */
     private function loaderContentForPackage(array $carry, PackageInterface $package): array
     {
-        [$content, $toDo, $done] = $carry;
+        [$content, $toDoCount, $done] = $carry;
 
         $packageName = $package->getName();
         $type = $package->getType();
         if ((!$packageName || !is_string($packageName) || in_array($packageName, $done, true))
             || ($type !== 'wordpress-plugin' && $type !== 'wordpress-muplugin')
         ) {
-            return [$content, $toDo, $done];
+            return [$content, $toDoCount, $done];
         }
 
-        $toDo++;
+        $toDoCount++;
         $path = $this->finder->pathForPluginPackage($package);
         if (!$path) {
-            return [$content, $toDo, $done];
+            return [$content, $toDoCount, $done];
         }
 
-        $done[] = $packageName;
+        $done++;
 
         $content .= $this->registerRealPath($path, $type);
         $content .= $type === 'wordpress-plugin'
             ? "\nwpcom_vip_load_plugin('{$path}');\n\n"
             : "\nrequire_once realpath(__DIR__ . '/{$path}');\n\n";
 
-        return [$content, $toDo, $done];
+        return [$content, $toDoCount, $done];
     }
 
     /**
