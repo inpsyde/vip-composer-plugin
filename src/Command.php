@@ -145,8 +145,15 @@ class Command extends BaseCommand
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         try {
+            $this->resetComposer();
+            $composer = $this->getComposer(true);
+            if (!file_exists(getcwd() . '/composer.lock')) {
+                throw new \RuntimeException('Composer lock file not found. Please install via Composer first.');
+            }
+
+            $io = $this->getIO();
             $taskFactory = new Task\Factory(
-                new Factory($this->getComposer(), $this->getIO()),
+                new Factory($composer, $io),
                 $this->createConfig($input)
             );
 

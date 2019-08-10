@@ -121,18 +121,15 @@ class Factory
         return $this->service(
             GenerateMuPluginsLoader::class,
             function (): GenerateMuPluginsLoader {
-                $packages = $this->factory
-                    ->composer()
-                    ->getRepositoryManager()
-                    ->getLocalRepository()
-                    ->getPackages();
+                $composer = $packages = $this->factory->composer();
+                $lockData = $composer->getLocker()->getLockData();
 
                 return new GenerateMuPluginsLoader(
                     $this->factory->config(),
                     $this->factory->vipDirectories(),
                     $this->factory->wpPluginFileFinder(),
                     $this->factory->fileSystem(),
-                    ...$packages
+                    $lockData
                 );
             }
         );
