@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Inpsyde\VipComposer\Task;
 
+use Composer\Package\PackageInterface;
 use Inpsyde\VipComposer\Factory as DependenciesFactory;
 use Inpsyde\VipComposer\Tasks;
 
@@ -121,15 +122,17 @@ class Factory
         return $this->service(
             GenerateMuPluginsLoader::class,
             function (): GenerateMuPluginsLoader {
-                $composer = $packages = $this->factory->composer();
-                $lockData = $composer->getLocker()->getLockData();
+                $packages = $this->factory->composer()
+                    ->getRepositoryManager()
+                    ->getLocalRepository()
+                    ->getPackages();
 
                 return new GenerateMuPluginsLoader(
                     $this->factory->config(),
                     $this->factory->vipDirectories(),
                     $this->factory->wpPluginFileFinder(),
                     $this->factory->fileSystem(),
-                    $lockData
+                    ...$packages
                 );
             }
         );

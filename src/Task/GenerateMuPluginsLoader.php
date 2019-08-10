@@ -44,29 +44,29 @@ final class GenerateMuPluginsLoader implements Task
     private $filesystem;
 
     /**
-     * @var array
+     * @var PackageInterface[] $packages
      */
-    private $lockData;
+    private $packages;
 
     /**
      * @param Config $config
      * @param VipDirectories $directories
      * @param WpPluginFileFinder $finder
      * @param Filesystem $filesystem
-     * @param $lockData
+     * @param PackageInterface[] $packages
      */
     public function __construct(
         Config $config,
         VipDirectories $directories,
         WpPluginFileFinder $finder,
         Filesystem $filesystem,
-        array $lockData
+        PackageInterface ...$packages
     ) {
         $this->directories = $directories;
         $this->config = $config;
         $this->finder = $finder;
         $this->filesystem = $filesystem;
-        $this->lockData = $lockData;
+        $this->packages = $packages;
     }
 
     /**
@@ -83,7 +83,7 @@ final class GenerateMuPluginsLoader implements Task
      */
     public function enabled(TaskConfig $taskConfig): bool
     {
-        return (bool)$this->lockData && ($taskConfig->isLocal() || $taskConfig->isDeploy());
+        return (bool)$this->packages && ($taskConfig->isLocal() || $taskConfig->isDeploy());
     }
 
     /**
@@ -99,27 +99,27 @@ final class GenerateMuPluginsLoader implements Task
         $loaderPath = "{$muPluginsPath}/__loader.php";
 
         $autoloadCode = $this->autoloadCode();
-        $autoloadWritten = file_put_contents($loaderPath, "<?php\n{$autoloadCode}");
 
-        if (!$autoloadWritten) {
+        if (!file_put_contents($loaderPath, "<?php\n{$autoloadCode}")) {
             throw new \RuntimeException('Failed writing error autoloader.');
         }
 
-        $io->verboseInfoLine('Autoloader written.');
-        $packages = $this->findPackages($taskConfig);
+        $io->infoLine('Autoloader written.');
 
+        $packagesLoaderCode = '';
         $donePackages = [];
-        $packagesContent = '';
-        foreach ($packages as $package) {
-            [$packageContent, $donePackages] = $this->loaderContentForPackage($package, $io, $donePackages);
-            $packageContent and $packagesContent .= $packageContent;
+        foreach ($this->packages as $package) {
+            $code = $this->loaderContentForPackage($package, $io, $donePackages);
+            $packagesLoaderCode .= $code;
         }
 
         if (!$donePackages) {
+            $io->verboseCommentLine("No WP packages to write loader for.");
+
             return;
         }
 
-        if (file_put_contents($loaderPath, "<?php\n{$autoloadCode}\n{$packagesContent}")) {
+        if (file_put_contents($loaderPath, "<?php\n{$autoloadCode}\n{$packagesLoaderCode}")) {
             $io->infoLine("MU-plugins loader written to {$muPluginsPath}/__loader.php");
             return;
         }
@@ -136,76 +136,40 @@ final class GenerateMuPluginsLoader implements Task
     }
 
     /**
-     * @param TaskConfig $taskConfig
-     * @return Package[]
-     */
-    private function findPackages(TaskConfig $taskConfig): array
-    {
-        $versionParser = new VersionParser();
-
-        $packages = [];
-        if ($taskConfig->isOnlyLocal()) {
-            foreach ($this->lockData['packages-dev'] ?? [] as $packageData) {
-                $package = $this->makePackage($packageData, $versionParser);
-                $packages[$package->getName()] = $package;
-            }
-        }
-
-        foreach ($this->lockData['packages'] ?? [] as $packageData) {
-            $package = $this->makePackage($packageData, $versionParser);
-            $packages[$package->getName()] = $package;
-        }
-
-        return array_values($packages);
-    }
-
-    /**
-     * @param array $packageData
-     * @param VersionParser $versionParser
-     * @return Package
-     */
-    private function makePackage(array $packageData, VersionParser $versionParser): Package
-    {
-        $name = $packageData['name'];
-        $version = $versionParser->normalize($packageData['version']);
-        $package = new Package($name, $version, $packageData['version']);
-        $package->setType($packageData['type']);
-
-        return $package;
-    }
-
-    /**
      * @param PackageInterface $package
      * @param Io $io
-     * @param array $found
-     * @return array
+     * @param array $done
+     * @return string
      */
-    private function loaderContentForPackage(PackageInterface $package, Io $io, array $found): array
+    private function loaderContentForPackage(PackageInterface $package, Io $io, array &$done): string
     {
         $packageName = $package->getName();
         $type = $package->getType();
-        if (!$packageName || !is_string($packageName) || in_array($packageName, $found, true)) {
-            return [null, $found];
+        if (!$packageName || !is_string($packageName) || in_array($packageName, $done, true)) {
+
+            return '';
         }
 
         if ($type !== 'wordpress-plugin' && $type !== 'wordpress-muplugin') {
-            return [null, $found];
+
+            return '';
         }
 
         $path = $this->finder->pathForPluginPackage($package);
         if (!$path) {
             $io->verboseCommentLine("Could not find path for package {$packageName} of type {$type}.");
-            return [null, $found];
+
+            return '';
         }
 
-        $found[] = $packageName;
+        $done[] = $packageName;
 
         $content = $this->registerRealPath($path, $type);
         $content .= $type === 'wordpress-plugin'
             ? "\nwpcom_vip_load_plugin('{$path}');\n\n"
             : "\nrequire_once realpath(__DIR__ . '/{$path}');\n\n";
 
-        return [$content, $found];
+        return $content;
     }
 
     /**
