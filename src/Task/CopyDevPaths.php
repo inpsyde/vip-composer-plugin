@@ -210,7 +210,11 @@ final class CopyDevPaths implements Task
      */
     private function ensureGitKeep(string $dir): void
     {
-        if ($dir && is_dir($dir) && !file_exists("{$dir}/.gitkeep")) {
+        if ($dir
+            && is_dir($dir)
+            && !file_exists("{$dir}/.gitkeep")
+            && !array_filter(glob("{$dir}/*", GLOB_NOSORT), 'is_file')
+        ) {
             file_put_contents("{$dir}/.gitkeep", "\n");
         }
     }
