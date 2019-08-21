@@ -11,9 +11,7 @@ declare(strict_types=1);
 
 namespace Inpsyde\VipComposer\Task;
 
-use Composer\Package\Package;
 use Composer\Package\PackageInterface;
-use Composer\Semver\VersionParser;
 use Composer\Util\Filesystem;
 use Inpsyde\VipComposer\Config;
 use Inpsyde\VipComposer\Io;
