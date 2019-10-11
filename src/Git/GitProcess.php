@@ -50,6 +50,11 @@ class GitProcess
     private $captured = ['', ''];
 
     /**
+     * @var bool
+     */
+    private $silent = false;
+
+    /**
      * @param Io $io
      * @param string $workingDir
      * @param ProcessExecutor|null $executor
@@ -122,10 +127,25 @@ class GitProcess
             $this->captured = ['', ''];
             $outputs[] = $lastOutput;
             if ($exitCode !== 0 && $type === Process::ERR) {
-                $this->io->errorLine($lastOutput);
+                $this->silent or $this->io->errorLine($lastOutput);
             }
         }
 
         return [$exitCode === 0, $lastOutput, $outputs];
+    }
+
+    /**
+     * @param string[] $commands
+     * @return array
+     */
+    public function execSilently(string ...$commands): array
+    {
+        $this->silent = true;
+
+        try {
+            return $this->exec(...$commands);
+        } finally {
+            $this->silent = false;
+        }
     }
 }

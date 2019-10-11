@@ -55,8 +55,6 @@ final class GenerateDeployVersion implements Task
      */
     public function run(Io $io, TaskConfig $taskConfig): void
     {
-        $io->commentLine('Building deploy version files...');
-
         $targetDir = $this->directories->privateDir();
 
         $doneId = $this->writeDeployId($io, $targetDir);
@@ -108,15 +106,17 @@ final class GenerateDeployVersion implements Task
     private function writeDeployTag(Io $io, string $targetDir): bool
     {
         $git = new GitProcess($io);
-        [$success, $tag] = $git->exec('describe --abbrev=0 --exact-match');
+        [$success, $output] = $git->execSilently('describe --abbrev=0 --exact-match');
 
-        if (!$success || !$tag) {
+        if (!$success && (stripos($output, 'no names') !== false)) {
+            $io->commentLine('Deploy Git tag: No tag matches commit being deployed.');
+
             return false;
         }
 
-        $tag = trim($tag);
+        $tag = trim($output);
 
-        if (!preg_match('~^v?[0-9]+~', $tag)) {
+        if (!$tag || !preg_match('~^v?[0-9]+~', $tag)) {
             return false;
         }
 
