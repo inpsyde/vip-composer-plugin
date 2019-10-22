@@ -172,6 +172,9 @@ The whole set of settings available, with their defaults, looks like this:
                 "local-dir": "public",
                 "uploads-local-dir": "uploads"
             },
+            "plugins-autoload": {
+                "include": ["*/*"]
+            },
             "dev-paths": {
                 "muplugins-dir": "mu-plugins",
                 "plugins-dir": "plugins",
@@ -223,6 +226,66 @@ When run to setup local environment, the command **installs WordPress**. This co
 `vip-composer.wordpress.local-dir` controls the folder, inside project root, where WordPress will be installed. Note that **this folder (and not the project root) must be set as the webroot** in the local environment web server.
 
 `vip-composer.wordpress.uploads-local-dir` controls the folder, inside project root, where the "uploads" folder will be located. The uploads folder, in facts, is located outside the WordPress folder to make the WordPress folder completely disposable without losing the media. **The folder will be symlinked** by the plugin command into `/wp-content/uploads` so WordPress will work with no issues.
+
+#### `vip-composer.plugins-autoload`
+
+VIP suggests to load plugins via code using [`wpcom_vip_load_plugin`](https://wpvip.com/functions/wpcom_vip_load_plugin/) function
+(see [VIP documentation](https://wpvip.com/documentation/vip-go/managing-plugins/) for details).
+
+An excerpt:
+
+> we recommend loading your plugins from code. Loading plugins in code results in more control and a greater consistency across your production, non-production environments, and local development environments.
+
+This package, by default, creates a loader MU plugin that uses `wpcom_vip_load_plugin` to load plugins via code as suggested by VIP.
+
+However, in multisite installations, it might be desirable to have some plugins activated in only some of the sites, and this is not possible when loading plugins via `wpcom_vip_load_plugin`.
+
+Thanks to `plugins-autoload` setting it is possible to select which plugins will be autoloaded via either a blacklist (list of plugins to don't autoload) or a whitelist (list of plugins to autoload).
+
+Without any setting the default is "autoload everything".
+
+To control which plugins to include it is possible to list them, eventually with `*` as wildcard, e.g.:
+
+```json
+{
+    "extra": {
+        "vip-composer": {
+            "plugins-autoload": {
+                "include": [
+                    "foo/some-package",
+                    "bar/*",
+                    "baz/something-*"
+                ]
+            }
+        }
+    }
+}
+```
+
+If it is easier to _exclude_ packages from being loaded, it is possible to use the `exclude` key:
+
+```json
+{
+    "extra": {
+        "vip-composer": {
+            "plugins-autoload": {
+                "exclude": [
+                    "foo/some-package",
+                    "bar/*"
+                ]
+            }
+        }
+    }
+}
+```
+
+To be noted:
+
+- this only works with packages of type "wordpress-plugins", packages of type "wordpress-muplugins" will be always loaded
+- packages listed by they exact qualified name (combination of vendor + name) will always take precedence on glob patterns.
+- if no qualified name matches, patterns are evaluated in the same order they are written, so might try to put "more generic" matches at the end
+- in case both `include` and `exclude` keys are provided, `exclude` is ignored: any package matching `include` will be loaded, anything else will not.
+
 
 #### `vip-composer.dev-paths`
 

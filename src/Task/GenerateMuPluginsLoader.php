@@ -104,11 +104,30 @@ final class GenerateMuPluginsLoader implements Task
 
         $io->infoLine('Autoloader written.');
 
+        [$packagesList, $includeByDefault] = $this->buildIncludeConfig();
+
         $packagesLoaderCode = '';
         $donePackages = [];
         foreach ($this->packages as $package) {
-            $code = $this->loaderContentForPackage($package, $io, $donePackages);
+            $packageName = $package->getName();
+            $type = $package->getType();
+
+            if (!$packageName
+                || !in_array($type, ['wordpress-plugin', 'wordpress-muplugin'], true)
+                || in_array($packageName, $donePackages, true)
+            ) {
+                continue;
+            }
+
+            if ($type === 'wordpress-plugin'
+                && !$this->shouldInclude($package, $packagesList, $includeByDefault)
+            ) {
+                continue;
+            }
+
+            $code = $this->loaderCodeForPackage($package, $io);
             $packagesLoaderCode .= $code;
+            $donePackages[] = $packageName;
         }
 
         if (!$donePackages) {
@@ -134,40 +153,47 @@ final class GenerateMuPluginsLoader implements Task
     }
 
     /**
+     * @return array
+     */
+    private function buildIncludeConfig(): array
+    {
+        $config = $this->config->pluginsAutoloadConfig();
+
+        $includeRaw = $config[Config::PLUGINS_AUTOLOAD_INCLUDE_KEY] ?? [];
+        $excludeRaw = $config[Config::PLUGINS_AUTOLOAD_EXCLUDE_KEY] ?? [];
+
+        $include = is_array($includeRaw) ? array_filter($includeRaw, 'is_string') : [];
+        $exclude = is_array($excludeRaw) ? array_filter($excludeRaw, 'is_string') : [];
+
+        $includeUnique = $include ? array_values(array_unique($include)) : [];
+        $excludeUnique = $exclude ? array_values(array_unique($exclude)) : [];
+
+        return [$excludeUnique ?: $includeUnique, (bool)$excludeUnique];
+    }
+
+    /**
      * @param PackageInterface $package
      * @param Io $io
-     * @param array $done
      * @return string
      */
-    private function loaderContentForPackage(PackageInterface $package, Io $io, array &$done): string
+    private function loaderCodeForPackage(PackageInterface $package, Io $io): string
     {
-        $packageName = $package->getName();
+        $name = $package->getName();
         $type = $package->getType();
-        if (!$packageName || !is_string($packageName) || in_array($packageName, $done, true)) {
-
-            return '';
-        }
-
-        if ($type !== 'wordpress-plugin' && $type !== 'wordpress-muplugin') {
-
-            return '';
-        }
 
         $path = $this->finder->pathForPluginPackage($package);
         if (!$path) {
-            $io->verboseCommentLine("Could not find path for package {$packageName} of type {$type}.");
+            $io->verboseCommentLine("Could not find path for package {$name} of type {$type}.");
 
             return '';
         }
 
-        $done[] = $packageName;
-
-        $content = $this->registerRealPath($path, $type);
-        $content .= $type === 'wordpress-plugin'
+        $code = $this->registerRealPathCode($path, $type);
+        $code .= $type === 'wordpress-plugin'
             ? "\nwpcom_vip_load_plugin('{$path}');\n\n"
             : "\nrequire_once realpath(__DIR__ . '/{$path}');\n\n";
 
-        return $content;
+        return $code;
     }
 
     /**
@@ -192,7 +218,7 @@ PHP;
      * @param string $type
      * @return string
      */
-    private function registerRealPath(string $path, string $type): string
+    private function registerRealPathCode(string $path, string $type): string
     {
         $wpDirName = $this->config->wpConfig()[Config::WP_LOCAL_DIR_KEY];
         $folder = $type === 'wordpress-plugin' ? 'plugins' : 'client-mu-plugins';
@@ -205,5 +231,39 @@ PHP;
 VIP_GO_IS_LOCAL_ENV and wp_register_plugin_realpath({$relative});
 PHP;
         return $php;
+    }
+
+    /**
+     * @param PackageInterface $package
+     * @param array<int,string> $packagesList
+     * @param bool $byDefault
+     * @return bool
+     */
+    private function shouldInclude(
+        PackageInterface $package,
+        array $packagesList,
+        bool $byDefault
+    ): bool {
+
+        $name = $package->getName();
+
+        // exact match always win
+        $exactMatch = in_array($name, $packagesList, true);
+        if ($exactMatch) {
+            return !$byDefault;
+        }
+
+        foreach ($packagesList as $pattern) {
+            if (strpos($pattern, '*') === 0) {
+                continue;
+            }
+
+            $pattern === '*' and $pattern = '*/*';
+            if (fnmatch($pattern, $name, FNM_PATHNAME|FNM_PERIOD|FNM_CASEFOLD)) {
+                return !$byDefault;
+            }
+        }
+
+        return $byDefault;
     }
 }

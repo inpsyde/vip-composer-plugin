@@ -35,6 +35,10 @@ final class Config implements \ArrayAccess
     public const WP_LOCAL_DIR_KEY = 'local-dir';
     public const WP_LOCAL_UPLOADS_DIR_KEY = 'uploads-local-dir';
 
+    public const PLUGINS_AUTOLOAD_KEY = 'plugins-autoload';
+    public const PLUGINS_AUTOLOAD_INCLUDE_KEY = 'include';
+    public const PLUGINS_AUTOLOAD_EXCLUDE_KEY = 'exclude';
+
     public const DEV_PATHS_CONFIG_KEY = 'dev-paths';
     public const DEV_PATHS_MUPLUGINS_DIR_KEY = 'muplugins-dir';
     public const DEV_PATHS_PLUGINS_DIR_KEY = 'plugins-dir';
@@ -57,6 +61,10 @@ final class Config implements \ArrayAccess
             self::WP_VERSION_KEY => '4.9.*',
             self::WP_LOCAL_DIR_KEY => 'public',
             self::WP_LOCAL_UPLOADS_DIR_KEY => 'uploads',
+        ],
+        self::PLUGINS_AUTOLOAD_KEY => [
+            self::PLUGINS_AUTOLOAD_INCLUDE_KEY => [],
+            self::PLUGINS_AUTOLOAD_EXCLUDE_KEY => [],
         ],
         self::DEV_PATHS_CONFIG_KEY => [
             self::DEV_PATHS_MUPLUGINS_DIR_KEY => 'mu-plugins',
@@ -85,7 +93,9 @@ final class Config implements \ArrayAccess
      */
     public function __construct(Composer $composer, string $basePath)
     {
-        $extra = $composer->getPackage()->getExtra()[self::CONFIG_KEY] ?? [];
+
+        $extra = $composer->getPackage()
+                ->getExtra()[self::CONFIG_KEY] ?? [];
         $this->composerConfig = $composer->getConfig();
 
         $this->config = [];
@@ -147,6 +157,15 @@ final class Config implements \ArrayAccess
     public function wpConfig(): array
     {
         return $this->offsetGet(self::WP_CONFIG_KEY);
+    }
+
+    /**
+     * @return array
+     */
+    public function pluginsAutoloadConfig(): array
+    {
+
+        return $this->offsetGet(self::PLUGINS_AUTOLOAD_KEY);
     }
 
     /**
