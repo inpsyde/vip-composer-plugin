@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Inpsyde\VipComposer\Task;
 
+use Composer\IO\IOInterface;
 use Composer\Package\PackageInterface;
 use Composer\Util\Filesystem;
 use Inpsyde\VipComposer\Config;
@@ -92,7 +93,7 @@ final class GenerateMuPluginsLoader implements Task
      */
     public function run(Io $io, TaskConfig $taskConfig): void
     {
-        $io->commentLine('Generating MU-plugins loader...');
+        $io->commentLine('Generating autoloader...');
 
         $muPluginsPath = $this->directories->muPluginsDir();
         $loaderPath = "{$muPluginsPath}/__loader.php";
@@ -104,6 +105,7 @@ final class GenerateMuPluginsLoader implements Task
         }
 
         $io->infoLine('Autoloader written.');
+        $io->commentLine('Generating MU-plugins loader...');
 
         [$packagesList, $includeByDefault] = $this->buildIncludeConfig();
 
@@ -123,11 +125,16 @@ final class GenerateMuPluginsLoader implements Task
             if ($type === 'wordpress-plugin'
                 && !$this->shouldInclude($package, $packagesList, $includeByDefault)
             ) {
+                $io->line(
+                    "     - skipping <comment>$packageName</comment>",
+                    false,
+                    IOInterface::VERBOSE
+                );
+
                 continue;
             }
 
-            $code = $this->loaderCodeForPackage($package, $io);
-            $packagesLoaderCode .= $code;
+            $packagesLoaderCode .= $this->loaderCodeForPackage($package, $io);
             $donePackages[] = $packageName;
         }
 
@@ -169,7 +176,9 @@ final class GenerateMuPluginsLoader implements Task
         $includeUnique = $include ? array_values(array_unique($include)) : [];
         $excludeUnique = $exclude ? array_values(array_unique($exclude)) : [];
 
-        return [$excludeUnique ?: $includeUnique, (bool)$excludeUnique];
+        $byDefault = ($includeUnique || $excludeUnique) ? (bool)$excludeUnique : true;
+
+        return [$excludeUnique ?: $includeUnique, $byDefault];
     }
 
     /**
@@ -255,7 +264,7 @@ PHP;
         }
 
         foreach ($packagesList as $pattern) {
-            if (strpos($pattern, '*') === 0) {
+            if (strpos($pattern, '*') === false) {
                 continue;
             }
 
