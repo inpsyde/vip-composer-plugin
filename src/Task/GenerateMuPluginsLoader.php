@@ -60,6 +60,7 @@ final class GenerateMuPluginsLoader implements Task
         Filesystem $filesystem,
         PackageInterface ...$packages
     ) {
+
         $this->directories = $directories;
         $this->config = $config;
         $this->finder = $finder;
@@ -259,7 +260,7 @@ PHP;
             }
 
             $pattern === '*' and $pattern = '*/*';
-            if (fnmatch($pattern, $name, FNM_PATHNAME|FNM_PERIOD|FNM_CASEFOLD)) {
+            if (fnmatch($pattern, $name, FNM_PATHNAME | FNM_PERIOD | FNM_CASEFOLD)) {
                 return !$byDefault;
             }
         }

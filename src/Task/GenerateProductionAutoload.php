@@ -97,7 +97,7 @@ final class GenerateProductionAutoload implements Task
         $autoloader->setRunScripts(false);
 
         $suffix = '';
-        $lockFile = $this->config->basePath().'/composer.lock';
+        $lockFile = $this->config->basePath() . '/composer.lock';
         if (is_readable($lockFile)) {
             $data = @json_decode(file_get_contents($lockFile) ?: '', true);
             $suffix = $data['content-hash'] ?? '';

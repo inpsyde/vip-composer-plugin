@@ -212,9 +212,11 @@ class VipGit
             ->ignoreDotFiles(false)
             ->depth(0)
             ->directories()
-            ->filter(function (\SplFileInfo $info): bool {
-                return strpos($info->getBasename(), self::MIRROR_PREFIX) === 0;
-            });
+            ->filter(
+                function (\SplFileInfo $info): bool {
+                    return strpos($info->getBasename(), self::MIRROR_PREFIX) === 0;
+                }
+            );
 
         foreach ($finder as $dir) {
             $this->filesystem->removeDirectory((string)$dir);

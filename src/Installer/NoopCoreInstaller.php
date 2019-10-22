@@ -64,7 +64,6 @@ class NoopCoreInstaller implements InstallerInterface
      *
      * @param InstalledRepositoryInterface $repo repository in which to check
      * @param PackageInterface $package package instance
-     *
      * @return bool
      */
     public function isInstalled(InstalledRepositoryInterface $repo, PackageInterface $package)
@@ -90,7 +89,6 @@ class NoopCoreInstaller implements InstallerInterface
      * @param InstalledRepositoryInterface $repo repository in which to check
      * @param PackageInterface $initial already installed package version
      * @param PackageInterface $target updated version
-     *
      * @throws InvalidArgumentException if $initial package is not installed
      */
     public function update(
@@ -118,8 +116,8 @@ class NoopCoreInstaller implements InstallerInterface
      * We return an existing and valid path to prevent error output or installation abortion in case
      * Composer checks it exists.
      *
-     * @param  PackageInterface $package
-     * @return string           path
+     * @param PackageInterface $package
+     * @return string path
      */
     public function getInstallPath(PackageInterface $package)
     {

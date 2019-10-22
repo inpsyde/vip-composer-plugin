@@ -110,7 +110,9 @@ final class DownloadWpCore implements Task
         if (!$taskConfig->forceCoreUpdate()
             && !$this->shouldInstall($targetVersion, $this->discoverInstalledVersion(), $io)
         ) {
-            $io->commentLine('No need to download WordPress: installed version matches required version.');
+            $io->commentLine(
+                'No need to download WordPress: installed version matches required version.'
+            );
             [$wpCoreDir] = $this->preparePaths($version);
             $this->copyWpConfig($wpCoreDir, $io);
             $this->createWpCliYml($wpCoreDir, $io);

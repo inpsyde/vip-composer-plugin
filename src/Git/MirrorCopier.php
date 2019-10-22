@@ -161,7 +161,7 @@ class MirrorCopier
         }
 
         if (!$this->filesystem->isSymlinkedDirectory($filepath)
-            && ! $this->filesystem->isJunction($filepath)
+            && !$this->filesystem->isJunction($filepath)
         ) {
             return false;
         }

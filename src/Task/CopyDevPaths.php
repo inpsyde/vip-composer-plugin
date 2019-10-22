@@ -125,7 +125,9 @@ final class CopyDevPaths implements Task
             $targetPath = "{$target}/" . basename($sourcePath);
 
             if ($this->filesystem->copy($sourcePath, $targetPath)) {
-                $io->verboseCommentLine("- </>copied<comment> '{$sourcePath}'</> to <comment>'{$targetPath}'");
+                $io->verboseCommentLine(
+                    "- </>copied<comment> '{$sourcePath}'</> to <comment>'{$targetPath}'"
+                );
                 continue;
             }
 

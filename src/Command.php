@@ -148,7 +148,9 @@ class Command extends BaseCommand
             $this->resetComposer();
             $composer = $this->getComposer(true);
             if (!file_exists(getcwd() . '/composer.lock')) {
-                throw new \RuntimeException('Composer lock file not found. Please install via Composer first.');
+                throw new \RuntimeException(
+                    'Composer lock file not found. Please install via Composer first.'
+                );
             }
 
             $io = $this->getIO();
