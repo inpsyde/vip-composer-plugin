@@ -162,6 +162,14 @@ class Io
 
     /**
      * @param string $message
+     */
+    public function verboseLine(string $message): void
+    {
+        $this->line("     {$message}", false, IOInterface::VERBOSE);
+    }
+
+    /**
+     * @param string $message
      * @param bool $error
      * @param int $verbosity
      */

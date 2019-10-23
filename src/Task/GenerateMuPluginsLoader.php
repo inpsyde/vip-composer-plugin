@@ -125,11 +125,7 @@ final class GenerateMuPluginsLoader implements Task
             if ($type === 'wordpress-plugin'
                 && !$this->shouldInclude($package, $packagesList, $includeByDefault)
             ) {
-                $io->line(
-                    "     - skipping <comment>$packageName</comment>",
-                    false,
-                    IOInterface::VERBOSE
-                );
+                $io->verboseLine(" - skipping <comment>{$packageName}</comment>");
 
                 continue;
             }
