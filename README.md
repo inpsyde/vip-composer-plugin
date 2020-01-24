@@ -619,12 +619,5 @@ composer vip --local --update-vip-mu-plugins
 ```
 
 
-
-## License and Copyright
-
-Copyright (c) 2018 Inpsyde GmbH.
-
-"VIP Go Composer Plugin" code is licensed under [MIT license](https://opensource.org/licenses/MIT).
-
-The team at [Inpsyde](https://inpsyde.com) is engineering the Web since 2006.
-
+## Copyright (c) 2020 Inpsyde GmbH
+This software is only to be used for the specific project for which it was transmitted.! Since it's released under the GIL License you arent allowed to publish or for commercial useage.
