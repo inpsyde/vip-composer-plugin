@@ -1,4 +1,5 @@
-<?php # -*- coding: utf-8 -*-
+<?php
+
 /*
  * This file is part of the vip-composer-plugin package.
  *
@@ -6,10 +7,6 @@
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
- *
- * phpcs:disable Inpsyde.CodeQuality.ReturnTypeDeclaration
- * phpcs:disable Inpsyde.CodeQuality.ArgumentTypeDeclaration
- * phpcs:disable Inpsyde.CodeQuality.NoAccessors
  */
 
 declare(strict_types=1);
@@ -22,8 +19,14 @@ use Composer\Plugin\Capability\CommandProvider;
 use Composer\Plugin\Capable;
 use Composer\Plugin\PluginInterface;
 
+/*
+ * phpcs:disable Inpsyde.CodeQuality.ReturnTypeDeclaration
+ * phpcs:disable Inpsyde.CodeQuality.ArgumentTypeDeclaration
+ * phpcs:disable Inpsyde.CodeQuality.NoAccessors
+ */
 class Plugin implements PluginInterface, Capable, CommandProvider
 {
+
     public const NAME = 'inpsyde/vip-composer-plugin';
 
     /**
@@ -81,7 +84,7 @@ class Plugin implements PluginInterface, Capable, CommandProvider
         }
 
         is_array($disabledInstallers) or $disabledInstallers = [];
-        $disabledInstallers[] = 'wordpress';
+        $disabledInstallers[] = 'wordpress'; // phpcs:ignore
         $rootPackageExtra['installer-disable'] = $disabledInstallers;
         $rootPackage->setExtra($rootPackageExtra);
     }

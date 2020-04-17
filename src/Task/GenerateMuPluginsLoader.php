@@ -1,4 +1,5 @@
-<?php # -*- coding: utf-8 -*-
+<?php
+
 /*
  * This file is part of the vip-composer-plugin package.
  *
@@ -7,6 +8,7 @@
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
+
 declare(strict_types=1);
 
 namespace Inpsyde\VipComposer\Task;
@@ -115,14 +117,16 @@ final class GenerateMuPluginsLoader implements Task
             $packageName = $package->getName();
             $type = $package->getType();
 
-            if (!$packageName
+            if (
+                !$packageName
                 || !in_array($type, ['wordpress-plugin', 'wordpress-muplugin'], true)
                 || in_array($packageName, $donePackages, true)
             ) {
                 continue;
             }
 
-            if ($type === 'wordpress-plugin'
+            if (
+                $type === 'wordpress-plugin'
                 && !$this->shouldInclude($package, $packagesList, $includeByDefault)
             ) {
                 $io->verboseLine(" - skipping <comment>{$packageName}</comment>");

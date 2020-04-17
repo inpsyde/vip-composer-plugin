@@ -1,4 +1,5 @@
-<?php # -*- coding: utf-8 -*-
+<?php
+
 /*
  * This file is part of the vip-composer-plugin package.
  *
@@ -123,7 +124,8 @@ final class DownloadVipGoMuPlugins implements Task
 
         $base = dirname($path);
         foreach ($modules as $line) {
-            if (preg_match("~^\s*path =(.+)$~", $line, $matches)
+            if (
+                preg_match("~^\s*path =(.+)$~", $line, $matches)
                 && !is_dir("{$base}/" . trim($matches[1]))
             ) {
                 return false;

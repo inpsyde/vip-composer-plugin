@@ -1,4 +1,5 @@
-<?php # -*- coding: utf-8 -*-
+<?php
+
 /*
  * This file is part of the vip-composer-plugin package.
  *
@@ -62,9 +63,9 @@ class WpPluginFileFinder
      */
     private function isPluginFile(string $file): bool
     {
-        $handle = @fopen($file, 'r');
-        $data = @fread($handle, 8192);
-        @fclose($handle);
+        $handle = fopen($file, 'r');
+        $data = fread($handle, 8192);
+        fclose($handle);
         if (!$data) {
             return false;
         }

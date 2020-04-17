@@ -1,4 +1,5 @@
-<?php # -*- coding: utf-8 -*-
+<?php
+
 /*
  * This file is part of the vip-composer-plugin package.
  *
@@ -15,6 +16,11 @@ namespace Inpsyde\VipComposer;
 use Composer\Util\Filesystem;
 use Composer\Util\Platform;
 
+/*
+ * phpcs:disable Inpsyde.CodeQuality.ReturnTypeDeclaration
+ * phpcs:disable Inpsyde.CodeQuality.ArgumentTypeDeclaration
+ * phpcs:disable Inpsyde.CodeQuality.NoAccessors
+ */
 class VipDirectories
 {
 

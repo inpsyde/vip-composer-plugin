@@ -1,4 +1,5 @@
-<?php # -*- coding: utf-8 -*-
+<?php
+
 /*
  * This file is part of the vip-composer-plugin package.
  *
@@ -92,11 +93,11 @@ final class UpdateLocalWpConfigFile implements Task
 
         $contentPartsStart = $start
             ? explode($commentStart, $currentContent, 2)
-            : preg_split($wpCommentRegex, $currentContent, 2) ?: [];
+            : (preg_split($wpCommentRegex, $currentContent, 2) ?: []);
 
         $contentPartsEnd = $end
             ? explode($commentEnd, $currentContent, 2)
-            : preg_split($wpCommentRegex, $currentContent, 2) ?: [];
+            : (preg_split($wpCommentRegex, $currentContent, 2) ?: []);
 
         if (empty($contentPartsStart[0]) || empty($contentPartsEnd[1])) {
             $io->errorLine("Can't update 'wp-config.php', it seems custom.");

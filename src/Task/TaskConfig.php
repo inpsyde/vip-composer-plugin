@@ -1,4 +1,5 @@
-<?php # -*- coding: utf-8 -*-
+<?php
+
 /*
  * This file is part of the vip-composer-plugin package.
  *
@@ -185,7 +186,8 @@ final class TaskConfig
      */
     private function validate(): void
     {
-        if (!$this->isLocal()
+        if (
+            !$this->isLocal()
             && !$this->isDeploy()
             && !$this->syncDevPaths()
             && !$this->forceCoreUpdate()

@@ -1,4 +1,5 @@
-<?php # -*- coding: utf-8 -*-
+<?php
+
 /*
  * This file is part of the vip-composer-plugin package.
  *
@@ -338,7 +339,8 @@ class VipGit
     {
         $url = $customUrl ?? $this->gitConfig[Config::GIT_URL_KEY];
 
-        if (!$url
+        if (
+            !$url
             || !filter_var($url, FILTER_VALIDATE_URL)
             || strtolower((string)parse_url($url, PHP_URL_SCHEME)) !== 'https'
             || strpos((string)parse_url($url, PHP_URL_HOST), 'github.com') === false

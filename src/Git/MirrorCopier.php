@@ -1,4 +1,5 @@
-<?php # -*- coding: utf-8 -*-
+<?php
+
 /*
  * This file is part of the vip-composer-plugin package.
  *
@@ -160,7 +161,8 @@ class MirrorCopier
             return false;
         }
 
-        if (!$this->filesystem->isSymlinkedDirectory($filepath)
+        if (
+            !$this->filesystem->isSymlinkedDirectory($filepath)
             && !$this->filesystem->isJunction($filepath)
         ) {
             return false;

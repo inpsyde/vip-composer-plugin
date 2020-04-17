@@ -1,4 +1,5 @@
-<?php # -*- coding: utf-8 -*-
+<?php
+
 /*
  * This file is part of the vip-composer-plugin package.
  *
@@ -107,7 +108,8 @@ final class DownloadWpCore implements Task
             return;
         }
 
-        if (!$taskConfig->forceCoreUpdate()
+        if (
+            !$taskConfig->forceCoreUpdate()
             && !$this->shouldInstall($targetVersion, $this->discoverInstalledVersion(), $io)
         ) {
             $io->commentLine(
@@ -227,7 +229,7 @@ final class DownloadWpCore implements Task
     }
 
     /**
-     * Looks config in `composer.json` for any wordpress core package and return the first found.
+     * Looks config in `composer.json` for any WordPress core package and return the first found.
      *
      * This used to set the version to download if no wp-downloader specific configs are set.
      *
@@ -482,7 +484,7 @@ final class DownloadWpCore implements Task
         };
 
         try {
-            $data = @json_decode($content, true);
+            $data = json_decode($content, true);
             if (!$data || !is_array($data) || empty($data['offers'])) {
                 return [];
             }

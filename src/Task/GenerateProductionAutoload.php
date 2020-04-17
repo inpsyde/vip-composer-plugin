@@ -1,4 +1,5 @@
-<?php # -*- coding: utf-8 -*-
+<?php
+
 /*
  * This file is part of the vip-composer-plugin package.
  *
@@ -99,7 +100,7 @@ final class GenerateProductionAutoload implements Task
         $suffix = '';
         $lockFile = $this->config->basePath() . '/composer.lock';
         if (is_readable($lockFile)) {
-            $data = @json_decode(file_get_contents($lockFile) ?: '', true);
+            $data = json_decode(file_get_contents($lockFile) ?: '', true);
             $suffix = $data['content-hash'] ?? '';
         }
 

@@ -1,4 +1,5 @@
-<?php # -*- coding: utf-8 -*-
+<?php
+
 /*
  * This file is part of the vip-composer-plugin package.
  *
@@ -6,10 +7,6 @@
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
- *
- * phpcs:disable Inpsyde.CodeQuality.ReturnTypeDeclaration
- * phpcs:disable Inpsyde.CodeQuality.ArgumentTypeDeclaration
- * phpcs:disable Inpsyde.CodeQuality.NoAccessors
  */
 
 declare(strict_types=1);
@@ -35,6 +32,10 @@ use InvalidArgumentException;
  * a custom installer (this class) that just does... nothing.
  * So Composer will think that WordPress package is installed and will not complain,
  * but nothing really happened.
+ *
+ * phpcs:disable Inpsyde.CodeQuality.ReturnTypeDeclaration
+ * phpcs:disable Inpsyde.CodeQuality.ArgumentTypeDeclaration
+ * phpcs:disable Inpsyde.CodeQuality.NoAccessors
  */
 class NoopCoreInstaller implements InstallerInterface
 {
