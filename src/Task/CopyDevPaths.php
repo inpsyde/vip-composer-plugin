@@ -116,7 +116,7 @@ final class CopyDevPaths implements Task
         $sourcePaths = is_dir($source) ? glob($pattern, $flags) : [];
 
         if (!$sourcePaths) {
-            $this->ensureGitKeep($target, $pattern, $flags);
+            $this->ensureGitKeep($target);
 
             return 0;
         }
