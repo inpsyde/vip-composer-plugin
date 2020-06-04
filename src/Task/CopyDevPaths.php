@@ -116,7 +116,7 @@ final class CopyDevPaths implements Task
         $sourcePaths = is_dir($source) ? glob($pattern, $flags) : [];
 
         if (!$sourcePaths) {
-            $this->ensureGitKeep($target);
+            $this->ensureGitKeep($target, $pattern, $flags);
 
             return 0;
         }
@@ -224,8 +224,27 @@ final class CopyDevPaths implements Task
             return;
         }
 
-        $hasFiles = (bool)array_filter(glob("{$dir}/*", GLOB_NOSORT), 'is_file');
-        $hasGitKeep = file_exists("{$dir}/.gitkeep");
+        $hasFiles = false;
+        $hasGitKeep = false;
+        foreach (glob("{$dir}/{*,.*}", GLOB_NOSORT | GLOB_BRACE) as $maybeFile) {
+            if (!is_file($maybeFile)) {
+                continue;
+            }
+
+            $isGitKeep = basename($maybeFile) === '.gitkeep';
+            if ($isGitKeep && $hasFiles) {
+                $hasGitKeep = true;
+                break;
+            } elseif ($isGitKeep) {
+                $hasGitKeep = true;
+                continue;
+            }
+
+            $hasFiles = true;
+            if ($hasGitKeep) {
+                break;
+            }
+        }
 
         if (!$hasFiles && !$hasGitKeep) {
             file_put_contents("{$dir}/.gitkeep", "\n");
