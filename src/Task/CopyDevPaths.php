@@ -189,7 +189,7 @@ final class CopyDevPaths implements Task
                 $what = 'Config files';
                 $target = $this->directories->configDir();
                 $pattern = "{$source}/*.{yml,php}";
-                $flags = GLOB_NOSORT;
+                $flags = GLOB_BRACE | GLOB_NOSORT;
                 break;
             case Config::DEV_PATHS_PRIVATE_DIR_KEY:
                 $what = 'Private files';
