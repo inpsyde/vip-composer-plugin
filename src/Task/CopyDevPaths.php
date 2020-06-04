@@ -188,7 +188,7 @@ final class CopyDevPaths implements Task
             case Config::DEV_PATHS_CONFIG_FILES_DIR_KEY:
                 $what = 'Config files';
                 $target = $this->directories->configDir();
-                $pattern = "{$source}/*.php";
+                $pattern = "{$source}/*.{yml,php}";
                 $flags = GLOB_NOSORT;
                 break;
             case Config::DEV_PATHS_PRIVATE_DIR_KEY:
