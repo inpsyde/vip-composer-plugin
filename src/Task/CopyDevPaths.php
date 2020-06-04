@@ -26,7 +26,8 @@ final class CopyDevPaths implements Task
         Config::DEV_PATHS_THEMES_DIR_KEY,
         Config::DEV_PATHS_LANGUAGES_DIR_KEY,
         Config::DEV_PATHS_IMAGES_DIR_KEY,
-        Config::DEV_PATHS_CONFIG_FILES_DIR_KEY,
+        Config::DEV_PATHS_PHP_CONFIG_DIR_KEY,
+        Config::DEV_PATHS_YAML_CONFIG_DIR_KEY,
         Config::DEV_PATHS_PRIVATE_DIR_KEY,
     ];
 
@@ -185,11 +186,17 @@ final class CopyDevPaths implements Task
                 $pattern = "{$source}/*.*";
                 $flags = GLOB_NOSORT;
                 break;
-            case Config::DEV_PATHS_CONFIG_FILES_DIR_KEY:
-                $what = 'Config files';
-                $target = $this->directories->configDir();
-                $pattern = "{$source}/*.{yml,php}";
-                $flags = GLOB_BRACE | GLOB_NOSORT;
+            case Config::DEV_PATHS_PHP_CONFIG_DIR_KEY:
+                $what = 'PHP config files';
+                $target = $this->directories->phpConfigDir();
+                $pattern = "{$source}/*.php";
+                $flags = GLOB_NOSORT;
+                break;
+            case Config::DEV_PATHS_YAML_CONFIG_DIR_KEY:
+                $what = 'Yaml config files';
+                $target = $this->directories->yamlConfigDir();
+                $pattern = "{$source}/.*.yml";
+                $flags = GLOB_NOSORT;
                 break;
             case Config::DEV_PATHS_PRIVATE_DIR_KEY:
                 $what = 'Private files';

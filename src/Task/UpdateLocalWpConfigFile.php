@@ -118,7 +118,7 @@ if (is_dir('{$muPath}')) {
     define( 'WPMU_PLUGIN_DIR', '{$muPath}' );
 }
 PHP;
-        $vipConfigMainFile = $this->directories->configDir() . '/vip-config.php';
+        $vipConfigMainFile = $this->directories->phpConfigDir() . '/vip-config.php';
 
         if (file_exists($vipConfigMainFile)) {
             $vipConfigMainFileRelPath = $this->filesystem->findShortestPath(

@@ -181,6 +181,7 @@ The whole set of settings available, with their defaults, looks like this:
                 "themes-dir": "themes",
                 "languages-dir": "languages",
                 "images-dir": "images",
+                "vip-config-dir": "vip-config",
                 "config-dir": "config",
                 "private-dir": "private"
             }

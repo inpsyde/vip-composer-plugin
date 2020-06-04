@@ -46,7 +46,8 @@ final class Config implements \ArrayAccess
     public const DEV_PATHS_THEMES_DIR_KEY = 'themes-dir';
     public const DEV_PATHS_LANGUAGES_DIR_KEY = 'languages-dir';
     public const DEV_PATHS_IMAGES_DIR_KEY = 'images-dir';
-    public const DEV_PATHS_CONFIG_FILES_DIR_KEY = 'config-dir';
+    public const DEV_PATHS_PHP_CONFIG_DIR_KEY = 'vip-config-dir';
+    public const DEV_PATHS_YAML_CONFIG_DIR_KEY = 'config-dir';
     public const DEV_PATHS_PRIVATE_DIR_KEY = 'private-dir';
 
     public const DEFAULTS = [
@@ -73,7 +74,8 @@ final class Config implements \ArrayAccess
             self::DEV_PATHS_THEMES_DIR_KEY => 'themes',
             self::DEV_PATHS_LANGUAGES_DIR_KEY => 'languages',
             self::DEV_PATHS_IMAGES_DIR_KEY => 'images',
-            self::DEV_PATHS_CONFIG_FILES_DIR_KEY => 'config',
+            self::DEV_PATHS_PHP_CONFIG_DIR_KEY => 'vip-config',
+            self::DEV_PATHS_YAML_CONFIG_DIR_KEY => 'config',
             self::DEV_PATHS_PRIVATE_DIR_KEY => 'private',
         ],
     ];

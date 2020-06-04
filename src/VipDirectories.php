@@ -28,7 +28,8 @@ class VipDirectories
     public const MU_PLUGINS_DIR = 'client-mu-plugins';
     public const THEMES_DIR = 'themes';
     public const LANG_DIR = 'languages';
-    public const CONFIG_DIR = 'vip-config';
+    public const PHP_CONFIG_DIR = 'vip-config';
+    public const YAML_CONFIG_DIR = 'config';
     public const PRIVATE_DIR = 'private';
     public const IMAGES_DIR = 'images';
 
@@ -37,7 +38,8 @@ class VipDirectories
         self::MU_PLUGINS_DIR => self::MU_PLUGINS_DIR,
         self::THEMES_DIR => self::THEMES_DIR,
         self::LANG_DIR => self::LANG_DIR,
-        self::CONFIG_DIR => self::CONFIG_DIR,
+        self::PHP_CONFIG_DIR => self::PHP_CONFIG_DIR,
+        self::YAML_CONFIG_DIR => self::YAML_CONFIG_DIR,
         self::PRIVATE_DIR => self::PRIVATE_DIR,
         self::IMAGES_DIR => self::IMAGES_DIR,
     ];
@@ -143,9 +145,17 @@ class VipDirectories
     /**
      * @return string
      */
-    public function configDir(): string
+    public function phpConfigDir(): string
     {
-        return $this->dir(self::CONFIG_DIR);
+        return $this->dir(self::PHP_CONFIG_DIR);
+    }
+
+    /**
+     * @return string
+     */
+    public function yamlConfigDir(): string
+    {
+        return $this->dir(self::YAML_CONFIG_DIR);
     }
 
     /**

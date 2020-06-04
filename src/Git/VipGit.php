@@ -411,7 +411,8 @@ class VipGit
             $this->directories->pluginsDir(),
             $this->directories->privateDir(),
             $this->directories->themesDir(),
-            $this->directories->configDir(),
+            $this->directories->phpConfigDir(),
+            $this->directories->yamlConfigDir(),
             $this->directories->imagesDir(),
         ];
 
