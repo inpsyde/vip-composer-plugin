@@ -33,5 +33,11 @@
     },
     "extra": {
         "class": "Inpsyde\\VipComposer\\Plugin"
+    },
+    "scripts": {
+        "cs": "@php ./vendor/squizlabs/php_codesniffer/bin/phpcs",
+        "qa": [
+            "@cs"
+        ]
     }
 }

@@ -214,7 +214,7 @@ class VipGit
             ->depth(0)
             ->directories()
             ->filter(
-                function (\SplFileInfo $info): bool {
+                static function (\SplFileInfo $info): bool {
                     return strpos($info->getBasename(), self::MIRROR_PREFIX) === 0;
                 }
             );
@@ -517,7 +517,7 @@ class VipGit
 
         array_walk(
             $files,
-            function (string $file) use (&$counts) {
+            static function (string $file) use (&$counts): void {
                 $letter = strtoupper($file[0] ?? '');
                 array_key_exists($letter, $counts) and $counts[$letter]++;
             }

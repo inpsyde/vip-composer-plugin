@@ -164,7 +164,7 @@ class Factory
     {
         return $this->service(
             Filesystem::class,
-            function (): Filesystem {
+            static function (): Filesystem {
                 return new Filesystem();
             }
         );
