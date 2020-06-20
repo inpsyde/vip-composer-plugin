@@ -45,6 +45,10 @@ class MirrorCopier
         $ext = pathinfo($path, PATHINFO_EXTENSION);
 
         $exclude = [
+            '.composer_compiled_assets',
+            '.eslintrc',
+            '.phpstorm.meta.php',
+            '.phpunit.result.cache',
             'bitbucket-pipelines.yml',
             'changelog.md',
             'changelog.txt',
@@ -87,7 +91,7 @@ class MirrorCopier
             !in_array(strtolower($basename), $exclude, true)
             && !in_array(strtolower($ext), $excludeExt, true)
             && strpos($path, 'node_modules/') === false
-            && ((strpos($basename, '.') !== 0) || $basename === '.gitkeep')
+            && (strpos($path, '/.git') === false || $basename === '.gitkeep')
             && !preg_match($nestedVendorRegEx, str_replace('\\', '/', $path));
     }
 
