@@ -29,6 +29,7 @@ class MirrorCopier
      * @var Filesystem
      */
     private $filesystem;
+
     /**
      * @var Unzipper
      */
@@ -45,32 +46,39 @@ class MirrorCopier
 
         $exclude = [
             'bitbucket-pipelines.yml',
-            'phpcs.xml.dist',
-            'phpcs.xml',
-            'phpunit.xml.dist',
-            'phpunit.xml',
-            '._compiled-resources',
-            '.eslintrc',
-            'node_modules',
-            'gulpfile.js',
-            'composer.json',
-            'package.json',
-            'changelog.txt',
             'changelog.md',
+            'changelog.txt',
+            'composer.json',
+            'gulpfile.js',
+            'gruntfile.js',
+            'node_modules',
+            'npm-shrinkwrap.json',
+            'package.json',
+            'package-lock.json',
+            'phpcs.xml',
+            'phpcs.xml.dist',
+            'phpunit.xml',
+            'phpunit.xml.dist',
             'readme.md',
             'readme.txt',
+            'studio.json',
+            'tsconfig.json',
+            'webpack.config.js',
         ];
 
         $excludeExt = [
+            'coffee',
+            'error',
+            'jsx',
+            'less',
             'lock',
             'log',
-            'error',
-            'tmp',
-            'temp',
             'phar',
-            'scss',
             'sass',
-            'less',
+            'scss',
+            'temp',
+            'tmp',
+            'ts',
         ];
 
         $nestedVendorRegEx = '~client-mu-plugins/vendor/[^/]+/[^/]+/vendor/[^/]+~';
@@ -79,7 +87,7 @@ class MirrorCopier
             !in_array(strtolower($basename), $exclude, true)
             && !in_array(strtolower($ext), $excludeExt, true)
             && strpos($path, 'node_modules/') === false
-            && (strpos($path, '/.git') === false || $basename === '.gitkeep')
+            && ((strpos($basename, '.') !== 0) || $basename === '.gitkeep')
             && !preg_match($nestedVendorRegEx, str_replace('\\', '/', $path));
     }
 

@@ -189,7 +189,7 @@ final class CopyDevPaths implements Task
             case Config::DEV_PATHS_PHP_CONFIG_DIR_KEY:
                 $what = 'PHP config files';
                 $target = $this->directories->phpConfigDir();
-                $pattern = "{$source}/*.php";
+                $pattern = "{$source}/*";
                 $flags = GLOB_NOSORT;
                 break;
             case Config::DEV_PATHS_YAML_CONFIG_DIR_KEY:
