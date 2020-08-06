@@ -112,10 +112,13 @@ final class UpdateLocalWpConfigFile implements Task
         $fileContent .= "\n\n/* VIP Config START */\n";
 
         $muPath = $this->directories->vipMuPluginsDir();
+        $altMuPath = $this->directories->muPluginsDir();
 
         $fileContent .= <<<PHP
 if (is_dir('{$muPath}')) {
     define( 'WPMU_PLUGIN_DIR', '{$muPath}' );
+} elseif (defined('WP_INSTALLING') && WP_INSTALLING) {
+    define( 'WPMU_PLUGIN_DIR', '{$altMuPath}' );
 }
 PHP;
         $vipConfigMainFile = $this->directories->phpConfigDir() . '/vip-config.php';
