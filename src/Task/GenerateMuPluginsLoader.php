@@ -219,8 +219,10 @@ define('VIP_GO_IS_LOCAL_ENV', !defined('VIP_GO_ENV') || !VIP_GO_ENV || VIP_GO_EN
 VIP_GO_IS_LOCAL_ENV
     ? require_once __DIR__ . '/{$vendorBase}/autoload.php'
     : require_once __DIR__ . '/{$vendorBase}/vip-autoload/autoload.php';
+
 PHP;
         $php .= <<<'PHP'
+
 if (!function_exists('wpcom_vip_load_plugin')) {
     function wpcom_vip_load_plugin($path) {
         require_once dirname(__DIR__) . "/plugins/{$path}";
