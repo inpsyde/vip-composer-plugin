@@ -115,7 +115,7 @@ final class UpdateLocalWpConfigFile implements Task
         $altMuPath = $this->directories->muPluginsDir();
 
         $fileContent .= <<<PHP
-if (defined('WP_INSTALLING') && WP_INSTALLING)) {
+if (defined('WP_INSTALLING') && WP_INSTALLING) {
     define('WPMU_PLUGIN_DIR', '{$altMuPath}');
 } elseif (is_dir('{$muPath}')) {
     define('WPMU_PLUGIN_DIR', '{$muPath}');
