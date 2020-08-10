@@ -113,7 +113,8 @@ final class CopyDevPaths implements Task
     {
         [, $source, $target, $pattern, $flags] = $this->pathInfoForKey($pathConfigKey);
 
-        $sourcePaths = is_dir($source) ? glob($pattern, $flags) : [];
+        $sourcePaths = is_dir($source) ? (glob($pattern, $flags) ?: []) : [];
+        $this->cleanupTarget($pathConfigKey, $target, $source);
 
         if (!$sourcePaths) {
             return 0;
@@ -125,9 +126,9 @@ final class CopyDevPaths implements Task
             $targetPath = "{$target}/" . basename($sourcePath);
 
             if ($this->filesystem->copy($sourcePath, $targetPath)) {
-                $io->verboseCommentLine(
-                    "- </>copied<comment> '{$sourcePath}'</> to <comment>'{$targetPath}'"
-                );
+                $from = "<comment>'{$sourcePath}'</comment>";
+                $to = "<comment>'{$targetPath}'</comment>";
+                $io->verboseInfoLine("- copied</info> {$from} <info>to</info> {$to}<info>");
                 continue;
             }
 
@@ -208,5 +209,68 @@ final class CopyDevPaths implements Task
         }
 
         return [$what, $source, $target, $pattern, $flags];
+    }
+
+    /**
+     * @param string $key
+     * @param string $target
+     * @param string $source
+     * @return void
+     */
+    private function cleanupTarget(string $key, string $target, string $source): void
+    {
+        // Do nothing for languages: emptying the folder would conflict with translation downloader.
+        if ($key === Config::DEV_PATHS_LANGUAGES_DIR_KEY) {
+            return;
+        }
+
+        /* These directories are only filled from root, we can safely empty them before copying. */
+        switch ($key) {
+            case Config::DEV_PATHS_IMAGES_DIR_KEY:
+            case Config::DEV_PATHS_PHP_CONFIG_DIR_KEY:
+            case Config::DEV_PATHS_YAML_CONFIG_DIR_KEY:
+                $this->filesystem->emptyDirectory($target);
+                return;
+        }
+
+        /*
+         * If dev path has sub-folder (e.g. `/themes/my-theme`), and that sub-folder exists under
+         * `/vip` e.g. `/vip/themes/my-theme`, empty the target sub-folder before copying from
+         * source to make sure files deleted on the source will not be there.
+         */
+        $sourceDirs = glob("{$source}/*", GLOB_ONLYDIR | GLOB_NOSORT);
+        foreach ($sourceDirs as $sourceDir) {
+            $sourceBasename = basename($sourceDir);
+            if (
+                $sourceBasename !== '.'
+                && $sourceBasename !== '..'
+                && is_dir("{$target}/{$sourceBasename}")
+            ) {
+                $this->filesystem->emptyDirectory("{$target}/{$sourceBasename}");
+            }
+        }
+
+        $isMu = $key === Config::DEV_PATHS_MUPLUGINS_DIR_KEY;
+        $isPrivate = $key === Config::DEV_PATHS_PRIVATE_DIR_KEY;
+        foreach (glob("{$target}/*", GLOB_NOSORT) as $item) {
+            /*
+             * We need to preserve `/vip/private/deploy-id` and `/vip/private/deploy-ver` files,
+             * but anything else in /vip/private` can be deleted before copying, as no Composer nor
+             * any other source is expected to write there.
+             */
+            if ($isPrivate && is_dir($item)) {
+                $this->filesystem->removeDirectory($item);
+                continue;
+            }
+
+            $basename = ($item && is_file($item)) ? basename($item) : null;
+            if (
+                $basename
+                && (!$isMu || ($basename !== '__loader.php'))
+                && (!$isPrivate || !in_array($basename, ['deploy-id', 'deploy-ver'], true))
+            ) {
+                $this->filesystem->unlink($item);
+            }
+        }
     }
 }
