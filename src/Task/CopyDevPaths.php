@@ -20,7 +20,7 @@ use Inpsyde\VipComposer\VipDirectories;
 
 final class CopyDevPaths implements Task
 {
-    private const PATHS = [
+    public const PATHS = [
         Config::DEV_PATHS_MUPLUGINS_DIR_KEY,
         Config::DEV_PATHS_PLUGINS_DIR_KEY,
         Config::DEV_PATHS_THEMES_DIR_KEY,
@@ -116,8 +116,6 @@ final class CopyDevPaths implements Task
         $sourcePaths = is_dir($source) ? glob($pattern, $flags) : [];
 
         if (!$sourcePaths) {
-            $this->ensureGitKeep($target);
-
             return 0;
         }
 
@@ -136,8 +134,6 @@ final class CopyDevPaths implements Task
             $errors++;
             $io->errorLine("- failed copying '{$sourcePath}' to '{$targetPath}'.");
         }
-
-        $this->ensureGitKeep($target);
 
         return $errors;
     }
@@ -212,44 +208,5 @@ final class CopyDevPaths implements Task
         }
 
         return [$what, $source, $target, $pattern, $flags];
-    }
-
-    /**
-     * @param string $dir
-     * @return void
-     */
-    private function ensureGitKeep(string $dir): void
-    {
-        if (!$dir || !is_dir($dir)) {
-            return;
-        }
-
-        $hasFiles = false;
-        $hasGitKeep = false;
-        foreach (glob("{$dir}/{*,.*}", GLOB_NOSORT | GLOB_BRACE) as $maybeFile) {
-            if (!is_file($maybeFile)) {
-                continue;
-            }
-
-            $isGitKeep = basename($maybeFile) === '.gitkeep';
-            if ($isGitKeep && $hasFiles) {
-                $hasGitKeep = true;
-                break;
-            } elseif ($isGitKeep) {
-                $hasGitKeep = true;
-                continue;
-            }
-
-            $hasFiles = true;
-            if ($hasGitKeep) {
-                break;
-            }
-        }
-
-        if (!$hasFiles && !$hasGitKeep) {
-            file_put_contents("{$dir}/.gitkeep", "\n");
-        } elseif ($hasFiles && $hasGitKeep) {
-            @unlink("{$dir}/.gitkeep");
-        }
     }
 }

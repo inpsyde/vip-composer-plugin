@@ -23,7 +23,6 @@ use Composer\Util\Platform;
  */
 class VipDirectories
 {
-
     public const PLUGINS_DIR = 'plugins';
     public const MU_PLUGINS_DIR = 'client-mu-plugins';
     public const THEMES_DIR = 'themes';
@@ -188,6 +187,19 @@ class VipDirectories
     public function targetPath(): string
     {
         return $this->filesystem->normalizePath("{$this->basePath}/{$this->targetPath}");
+    }
+
+    /**
+     * @return array<string>
+     */
+    public function toArray(): array
+    {
+        $data = [];
+        foreach (self::DIRS as $dir) {
+            $data[] = $this->dir($dir);
+        }
+
+        return $data;
     }
 
     /**

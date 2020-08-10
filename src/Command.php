@@ -174,6 +174,7 @@ class Command extends BaseCommand
                 ->addTask($taskFactory->generateProductionAutoload())
                 ->addTask($taskFactory->updateLocalWpConfigFile())
                 ->addTask($taskFactory->generateDeployVersion())
+                ->addTask($taskFactory->ensureGitKeep())
                 ->addTask($taskFactory->handleGit())
                 ->run();
         } catch (\Throwable $exception) {

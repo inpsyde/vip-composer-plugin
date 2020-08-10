@@ -13,7 +13,6 @@ declare(strict_types=1);
 
 namespace Inpsyde\VipComposer\Task;
 
-use Composer\Package\PackageInterface;
 use Inpsyde\VipComposer\Factory as DependenciesFactory;
 use Inpsyde\VipComposer\Tasks;
 
@@ -219,6 +218,19 @@ class Factory
             GenerateDeployVersion::class,
             function (): GenerateDeployVersion {
                 return new GenerateDeployVersion($this->factory->vipDirectories());
+            }
+        );
+    }
+
+    /**
+     * @return EnsureGitKeep
+     */
+    public function ensureGitKeep(): EnsureGitKeep
+    {
+        return $this->service(
+            EnsureGitKeep::class,
+            function (): EnsureGitKeep {
+                return new EnsureGitKeep($this->factory->vipDirectories());
             }
         );
     }
