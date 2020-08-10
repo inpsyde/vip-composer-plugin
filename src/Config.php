@@ -97,8 +97,7 @@ final class Config implements \ArrayAccess
     public function __construct(Composer $composer, string $basePath)
     {
 
-        $extra = $composer->getPackage()
-                ->getExtra()[self::CONFIG_KEY] ?? [];
+        $extra = $composer->getPackage()->getExtra()[self::CONFIG_KEY] ?? [];
         $this->composerConfig = $composer->getConfig();
 
         $this->config = [];

@@ -61,7 +61,7 @@ class NoopCoreInstaller implements InstallerInterface
     }
 
     /**
-     * Just return true, because we don't want Composer complain about WordPress not being installed.
+     * Just return true, because we don't want Composer complain about WP not being installed.
      *
      * @param InstalledRepositoryInterface $repo repository in which to check
      * @param PackageInterface $package package instance

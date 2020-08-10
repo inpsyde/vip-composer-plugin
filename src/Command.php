@@ -93,7 +93,8 @@ class Command extends BaseCommand
                         self::OPT_FORCE_CORE_UPDATE,
                         null,
                         InputOption::VALUE_NONE,
-                        'Force the update of WordPress core. To be used alone or in combination with --local.'
+                        'Force the update of WordPress core. '
+                        . 'To be used alone or in combination with --local.'
                         . 'Ignored if --deploy is used.'
                     ),
                     new InputOption(
@@ -114,7 +115,8 @@ class Command extends BaseCommand
                         self::OPT_SKIP_VIP_MU,
                         null,
                         InputOption::VALUE_NONE,
-                        'Skip the update of VIP Go MU plugins. To be used in combination with --local.'
+                        'Skip the update of VIP Go MU plugins. '
+                        . 'To be used in combination with --local. '
                         . 'Ignored if --deploy is used.'
                     ),
                     new InputOption(
@@ -127,15 +129,17 @@ class Command extends BaseCommand
                         self::OPT_GIT_URL,
                         null,
                         InputOption::VALUE_REQUIRED,
-                        'A different Git remote URL for VIP repo.'
-                        . 'When --local is used, this is relevant only if --git or --push are used as well.'
+                        'A different Git remote URL for VIP repo. '
+                        . 'When --local is used, this is relevant only if --git or --push '
+                        . 'are used as well.'
                     ),
                     new InputOption(
                         self::OPT_GIT_BRANCH,
                         null,
                         InputOption::VALUE_REQUIRED,
-                        'A different Git branch for VIP repo.'
-                        . 'When --local is used, this is relevant only if --git or --push are used as well.'
+                        'A different Git branch for VIP repo. '
+                        . 'When --local is used, this is relevant only if --git or --push '
+                        . 'are used as well.'
                     ),
                 ]
             );

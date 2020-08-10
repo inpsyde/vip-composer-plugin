@@ -2,7 +2,7 @@
     "name": "inpsyde/vip-composer-plugin",
     "description": "A Composer plugin to ease deployment to wordpress.com VIP servers alongside Composer-based development.",
     "type": "composer-plugin",
-    "license": "General Inpsyde License V1.0",
+    "license": "MIT",
     "minimum-stability": "stable",
     "authors": [
         {
