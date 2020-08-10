@@ -1,6 +1,8 @@
 # VIP Go Composer Plugin
 
+![PHP Quality Assurance](https://github.com/inpsyde/vip-composer-plugin/workflows/PHP%20Quality%20Assurance/badge.svg)
 
+-----
 
 This package is a Composer plugin to be used in projects to be deployed on [VIP Go platform](https://vip.wordpress.com/documentation/vip-go/) and provides a CLI command with **two different purposes**:
 
