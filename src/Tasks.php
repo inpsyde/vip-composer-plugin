@@ -94,11 +94,11 @@ class Tasks
         }
 
         $this->tasks->rewind();
-        $this->io->composerIo()->write("\n");
+        $this->io->composerIo()->write('');
         while ($this->tasks->count()) {
             /** @var Task $task */
             $task = $this->tasks->dequeue();
-            $this->io->info('Task: ' . $task->name());
+            $this->io->line('Task: ' . $task->name());
             $task->run($this->io, $this->taskConfig);
         }
 

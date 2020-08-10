@@ -46,7 +46,7 @@ final class GenerateDeployVersion implements Task
      */
     public function enabled(TaskConfig $taskConfig): bool
     {
-        return $taskConfig->isLocal() || $taskConfig->isGit();
+        return $taskConfig->isLocal() || $taskConfig->isGit() || $taskConfig->syncDevPaths();
     }
 
     /**
@@ -57,15 +57,12 @@ final class GenerateDeployVersion implements Task
     public function run(Io $io, TaskConfig $taskConfig): void
     {
         $targetDir = $this->directories->privateDir();
-
-        $doneId = $this->writeDeployId($io, $targetDir);
-        $doneTag = $this->writeDeployTag($io, $targetDir);
-
-        if (($doneId || $doneTag) && file_exists("{$targetDir}/.gitkeep")) {
-            unlink("{$targetDir}/.gitkeep");
+        $this->writeDeployId($io, $targetDir);
+        if ($taskConfig->isLocal() || $taskConfig->isGit()) {
+            $this->writeDeployTag($io, $targetDir);
         }
 
-        $io->infoLine('Done!');
+        $io->infoLine('Done.');
     }
 
     /**
@@ -94,7 +91,7 @@ final class GenerateDeployVersion implements Task
             return false;
         }
 
-        $io->commentLine("Deploy ID: '{$deployId}' written to file.");
+        $io->infoLine("Deploy ID: '{$deployId}' written to file.");
 
         return true;
     }
@@ -110,7 +107,7 @@ final class GenerateDeployVersion implements Task
         [$success, $output] = $git->execSilently('describe --abbrev=0 --exact-match');
 
         if (!$success && (stripos($output, 'no names') !== false)) {
-            $io->commentLine('Deploy Git tag: No tag matches commit being deployed.');
+            $io->infoLine('Deploy Git tag: No tag matches commit being deployed.');
 
             return false;
         }
@@ -127,7 +124,7 @@ final class GenerateDeployVersion implements Task
             return false;
         }
 
-        $io->commentLine("Deploy Git tag: '{$tag}' written to file.");
+        $io->infoLine("Deploy Git tag: '{$tag}' written to file.");
 
         return true;
     }

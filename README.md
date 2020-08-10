@@ -376,6 +376,10 @@ This folder will contain **a copy** of any file located in `/private` folder und
 
 This folder contain all the themes that have been required via Composer (in the example, just one), plus **a copy** of any plugin located in `/themes` folder under  root (in the example there's a child theme).
 
+Please note that even if this approach is supported, **it is suggested to use separate repositories for themes**, due to an issue with "dev paths" using sub-folders, and themes always comes in a folder.
+
+Make sure to review the section [Managing Dev Paths](#managing-dev-paths) below that documents this matter in detail. 
+
 #### `/vip-config`
 
 This folder contain **a copy** of any file located in `/vip-config` folder under root, at the very least the `vip-config.php` file that is required.
@@ -549,15 +553,13 @@ By using separate folders, like this plugins does, the folders in root contain o
 
 This way the `/vip` folder can be completely Git-ignored and it also becomes completely disposable, which is a good things for folders that are automatically generated.
 
-However this approach has also a downside. When one of those custom plugin/theme/mu-plugin in the root folder, but also anything in `/config` , `/private` and `/images`, is edited, the local installation will not recognize the changes. Because local WordPress `/wp-content` contents are symlinked to the folders inside `/vip` (git-ignored) and not to the what's in root folder (tracked).
+However this approach has also **two issues**.
 
-Which means that after every change to those files the plugin command should be run again, to let it copy everything again.
-
-Besides this being not very "developer friendly" the `--local` option makes the plugin do quite a lot of things, that are not necessary in the case, for example, a single configuration entry or a single MU plugin have been modified.
+**The first issue is that "dev paths" in root folder are "copied" into `/vip` folder, which means that at any change the copy has to be done again**.
 
 This is why the plugin command provides the option `--sync-dev-paths`.
 
-This flag must be used as the **only** flag, and makes the command just copy the dev paths from root to `/vip`.
+This flag must be used as the **only** flag, and makes the command sync the dev paths from root to `/vip`.
 
 Example:
 
@@ -570,6 +572,14 @@ Considering this is a quite fast operation it makes sense to use (if possible) I
 Here's the screenshot on how this could be set up via in [PHPStorm using a "file watcher"](https://www.jetbrains.com/help/phpstorm/settings-tools-file-watchers.html):
 
 ![File watcher setup in PHPStorm](https://d1fqb1zktzfwq.cloudfront.net/public/inpsyde/vip-go-website-template-readme/php_storm.png)
+
+**The second issue regards themes and plugins that comes in own folder**. The problem is that when a theme or a plugin in own folder is deleted from `/themes` or `/plugins`, it will not be deleted from `/vip/themes` or `vip/plugins`.
+
+For example, if there's a theme in `/themes/my-theme`, its files will be correcly kept in sync with `/vip/themes/my-theme` as long as the `/themes/my-theme` exists. However, if `/themes/my-theme` is deleted,  `/vip/themes/my-theme` will **not** be deleted.
+
+This issue does not affect single-file plugins, e. g. a plugin located at `/plugins/my-plugin.php` will be correcly kept in sync with `/vip/plugins/my-plugin.php` and if `/plugins/my-plugin.php` is deleted,  `/vip/plugins/my-plugin.php` will be deleted as well.
+
+For this reason **it is suggested to use "dev paths" only for MU plugins and simple single-file plugins, but use a separate repository for themes** (that always comes in own folder) or more complex plugins.
 
 
 

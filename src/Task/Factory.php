@@ -230,7 +230,10 @@ class Factory
         return $this->service(
             EnsureGitKeep::class,
             function (): EnsureGitKeep {
-                return new EnsureGitKeep($this->factory->vipDirectories());
+                return new EnsureGitKeep(
+                    $this->factory->vipDirectories(),
+                    $this->factory->fileSystem()
+                );
             }
         );
     }

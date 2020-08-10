@@ -82,14 +82,12 @@ final class SymlinkVipGoDir implements Task
         $this->filesystem->emptyDirectory($contentDirPath);
 
         $map = [
-            $this->directories->pluginsDir() => "{$contentDirPath}/plugins",
-            $this->directories->themesDir() => "{$contentDirPath}/themes",
-            $this->directories->languagesDir() => "{$contentDirPath}/languages",
-            $this->directories->muPluginsDir() => "{$contentDirPath}/client-mu-plugins",
-            $this->directories->vipMuPluginsDir() => "{$contentDirPath}/mu-plugins",
-            $this->directories->imagesDir() => "{$contentDirPath}/images",
             $uploadsPath => "{$contentDirPath}/{$uploadsDir}",
+            $this->directories->vipMuPluginsDir() => "{$contentDirPath}/mu-plugins",
         ];
+        foreach ($this->directories->toArray() as $dirPath) {
+            $map[$dirPath] =  "{$contentDirPath}/" . basename($dirPath);
+        }
 
         $isWindows = Platform::isWindows();
 

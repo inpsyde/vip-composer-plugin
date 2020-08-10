@@ -74,12 +74,12 @@ final class DownloadVipGoMuPlugins implements Task
     {
         $targetDir = $this->vipDirectories->vipMuPluginsDir();
         if (!$taskConfig->forceVipMuPlugins() && $this->alreadyInstalled()) {
-            $io->commentLine('VIP Go MU plugins already there, skipping.');
+            $io->infoLine('VIP Go MU plugins already there, skipping.');
 
             return;
         }
 
-        $io->commentLine('Pulling VIP Go MU plugins (will take a while)...');
+        $io->infoLine('Pulling VIP Go MU plugins (will take a while)...');
 
         $this->filesystem->ensureDirectoryExists($targetDir);
         $this->filesystem->emptyDirectory($targetDir, true);

@@ -70,7 +70,7 @@ class Io
      */
     public function error(string $message): void
     {
-        $this->line("<error>VIP: $message</error>", true, IOInterface::NORMAL);
+        $this->line("<error>$message</error>", true, IOInterface::NORMAL);
     }
 
     /**
@@ -78,7 +78,7 @@ class Io
      */
     public function comment(string $message): void
     {
-        $this->line("<comment>VIP: $message</comment>", false, IOInterface::NORMAL);
+        $this->line("<comment>$message</comment>", false, IOInterface::NORMAL);
     }
 
     /**
@@ -86,7 +86,7 @@ class Io
      */
     public function info(string $message): void
     {
-        $this->line("<info>VIP: $message</info>", false, IOInterface::NORMAL);
+        $this->line("<info>$message</info>", false, IOInterface::NORMAL);
     }
 
     /**
@@ -94,7 +94,7 @@ class Io
      */
     public function errorLine(string $message): void
     {
-        $this->line("<error>     $message</error>", true, IOInterface::NORMAL);
+        $this->line("<error>      $message</error>", true, IOInterface::NORMAL);
     }
 
     /**
@@ -102,7 +102,7 @@ class Io
      */
     public function commentLine(string $message): void
     {
-        $this->line("<comment>     $message</comment>", false, IOInterface::NORMAL);
+        $this->line("<comment>      $message</comment>", false, IOInterface::NORMAL);
     }
 
     /**
@@ -110,7 +110,7 @@ class Io
      */
     public function infoLine(string $message): void
     {
-        $this->line("<info>     $message</info>", false, IOInterface::NORMAL);
+        $this->line("<info>      $message</info>", false, IOInterface::NORMAL);
     }
 
     /**
@@ -118,7 +118,7 @@ class Io
      */
     public function verboseError(string $message): void
     {
-        $this->line("<error>VIP: $message</error>", true, IOInterface::VERBOSE);
+        $this->line("<error>$message</error>", true, IOInterface::VERBOSE);
     }
 
     /**
@@ -126,7 +126,7 @@ class Io
      */
     public function verboseComment(string $message): void
     {
-        $this->line("<comment>VIP: $message</comment>", false, IOInterface::VERBOSE);
+        $this->line("<comment>$message</comment>", false, IOInterface::VERBOSE);
     }
 
     /**
@@ -134,7 +134,7 @@ class Io
      */
     public function verboseInfo(string $message): void
     {
-        $this->line("<info>VIP: $message</info>", false, IOInterface::VERBOSE);
+        $this->line("<info>$message</info>", false, IOInterface::VERBOSE);
     }
 
     /**
@@ -142,7 +142,7 @@ class Io
      */
     public function verboseErrorLine(string $message): void
     {
-        $this->line("<error>     $message</error>", true, IOInterface::VERBOSE);
+        $this->line("<error>      $message</error>", true, IOInterface::VERBOSE);
     }
 
     /**
@@ -150,7 +150,7 @@ class Io
      */
     public function verboseCommentLine(string $message): void
     {
-        $this->line("<comment>     $message</comment>", false, IOInterface::VERBOSE);
+        $this->line("<comment>      $message</comment>", false, IOInterface::VERBOSE);
     }
 
     /**
@@ -158,7 +158,7 @@ class Io
      */
     public function verboseInfoLine(string $message): void
     {
-        $this->line("<info>     $message</info>", false, IOInterface::VERBOSE);
+        $this->line("<info>      $message</info>", false, IOInterface::VERBOSE);
     }
 
     /**
@@ -166,7 +166,7 @@ class Io
      */
     public function verboseLine(string $message): void
     {
-        $this->line("     {$message}", false, IOInterface::VERBOSE);
+        $this->line("      {$message}", false, IOInterface::VERBOSE);
     }
 
     /**

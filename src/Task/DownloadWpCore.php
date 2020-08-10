@@ -112,7 +112,7 @@ final class DownloadWpCore implements Task
             !$taskConfig->forceCoreUpdate()
             && !$this->shouldInstall($targetVersion, $this->discoverInstalledVersion(), $io)
         ) {
-            $io->commentLine(
+            $io->infoLine(
                 'No need to download WordPress: installed version matches required version.'
             );
             [$wpCoreDir] = $this->preparePaths($version);
@@ -369,7 +369,7 @@ final class DownloadWpCore implements Task
 
         $parent = dirname($coreDir);
         if (file_exists("{$parent}/wp-config.php")) {
-            $io->commentLine('"wp-config.php" already exists in target folder, nothing to copy.');
+            $io->infoLine('"wp-config.php" already exists in target folder, nothing to copy.');
 
             return;
         }
@@ -402,7 +402,12 @@ final class DownloadWpCore implements Task
     {
         $io->commentLine('Creating wp-cli.yml...');
         $path = $this->filesystem->findShortestPath($this->config->basePath(), $coreDir);
-        file_put_contents($this->config->basePath() . '/wp-cli.yml', "path: {$path}\n");
+        if (file_put_contents($this->config->basePath() . '/wp-cli.yml', "path: {$path}\n")) {
+            $io->infoLine('wp-cli.yml written');
+            return;
+        }
+
+        $io->errorLine('Failed writing /wp-cli.yml.');
     }
 
     /**
@@ -466,7 +471,7 @@ final class DownloadWpCore implements Task
             return $versions;
         }
 
-        $io->commentLine('Retrieving WordPress versions info...');
+        $io->verboseCommentLine('Retrieving WordPress versions info...');
         $content = $this->remoteFilesystem->getContents('wordpress.org', self::RELEASES_URL, false);
         $code = $this->remoteFilesystem->findStatusCode($this->remoteFilesystem->getLastHeaders());
         if ($code !== 200) {

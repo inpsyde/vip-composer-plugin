@@ -75,7 +75,7 @@ final class GenerateMuPluginsLoader implements Task
      */
     public function name(): string
     {
-        return 'Generate MU plugins loader';
+        return 'Generating loader for Composer autoload and plugins';
     }
 
     /**
@@ -94,7 +94,7 @@ final class GenerateMuPluginsLoader implements Task
      */
     public function run(Io $io, TaskConfig $taskConfig): void
     {
-        $io->commentLine('Generating autoloader...');
+        $io->verboseCommentLine('Start with Composer loader...');
 
         $muPluginsPath = $this->directories->muPluginsDir();
         $loaderPath = "{$muPluginsPath}/__loader.php";
@@ -102,11 +102,11 @@ final class GenerateMuPluginsLoader implements Task
         $autoloadCode = $this->autoloadCode();
 
         if (!file_put_contents($loaderPath, "<?php\n{$autoloadCode}")) {
-            throw new \RuntimeException('Failed writing error autoloader.');
+            throw new \RuntimeException('Failed writing loader.');
         }
 
-        $io->infoLine('Autoloader written.');
-        $io->commentLine('Generating MU-plugins loader...');
+        $io->verboseInfoLine('Composer loader written.');
+        $io->verboseCommentLine('Now proceeding with plugins loader...');
 
         [$packagesList, $includeByDefault] = $this->buildIncludeConfig();
 
@@ -138,25 +138,24 @@ final class GenerateMuPluginsLoader implements Task
         }
 
         if (!$donePackages) {
-            $io->verboseCommentLine("No WP packages to write loader for.");
+            $io->verboseInfoLine("No WP packages to write loader for.");
+            $io->infoLine("Loaders generation complete.");
 
             return;
         }
 
         if (file_put_contents($loaderPath, "<?php\n{$autoloadCode}\n{$packagesLoaderCode}")) {
-            $io->infoLine("MU-plugins loader written to {$muPluginsPath}/__loader.php");
+            $io->infoLine("Loaders generation complete.");
             return;
         }
 
-        $io->errorLine('Error generating MU-plugins loader:');
-        $io->errorLine("loader file could not be written to {$loaderPath}");
-
-        if (!$taskConfig->isOnlyLocal()) {
-            throw new \RuntimeException(
-                'Error generating MU-plugins loader:'
-                . " loader file could not be written to {$loaderPath}."
-            );
+        $error = "Error: loaders file could not be written to {$loaderPath}";
+        if ($taskConfig->isOnlyLocal()) {
+            $io->errorLine($error);
+            return;
         }
+
+        throw new \RuntimeException($error);
     }
 
     /**
@@ -192,7 +191,7 @@ final class GenerateMuPluginsLoader implements Task
 
         $path = $this->finder->pathForPluginPackage($package);
         if (!$path) {
-            $io->verboseCommentLine("Could not find path for package {$name} of type {$type}.");
+            $io->verboseInfoLine("Could not find path for package {$name} of type {$type}.");
 
             return '';
         }
