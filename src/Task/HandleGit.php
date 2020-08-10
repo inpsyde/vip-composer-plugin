@@ -104,11 +104,19 @@ class HandleGit implements Task
         );
 
         $isPush = $taskConfig->isGitPush();
-        $success = $isPush
-            ? $git->push($taskConfig->gitUrl(), $taskConfig->gitBranch())
-            : $git->sync($taskConfig->gitUrl(), $taskConfig->gitBranch());
+        $gitUrl = $taskConfig->gitUrl();
+        $gitBranch = $taskConfig->gitBranch();
+        $success = $isPush ? $git->push($gitUrl, $gitBranch) : $git->sync($gitUrl, $gitBranch);
 
-        if ($success && $isPush && $taskConfig->isLocal()) {
+        if (!$success) {
+            $format = $isPush
+                ? 'Failed Git merge and push to %s (%s).'
+                : 'Failed Git merge with %s (%s).';
+
+            throw new \RuntimeException(sprintf($format, $gitUrl, $gitBranch));
+        }
+
+        if ($isPush && $taskConfig->isLocal()) {
             $io->commentLine('Cleaning up...');
             $this->filesystem->removeDirectory($git->mirrorDir());
         }

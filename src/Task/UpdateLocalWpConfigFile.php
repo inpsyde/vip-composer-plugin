@@ -112,12 +112,9 @@ final class UpdateLocalWpConfigFile implements Task
         $fileContent .= "\n\n/* VIP Config START */\n";
 
         $muPath = $this->directories->vipMuPluginsDir();
-        $altMuPath = $this->directories->muPluginsDir();
 
         $fileContent .= <<<PHP
-if (defined('WP_INSTALLING') && WP_INSTALLING) {
-    define('WPMU_PLUGIN_DIR', '{$altMuPath}');
-} elseif (is_dir('{$muPath}')) {
+if (!defined('WP_INSTALLING') || !WP_INSTALLING) {
     define('WPMU_PLUGIN_DIR', '{$muPath}');
 }
 PHP;
@@ -164,8 +161,8 @@ PHP;
         $parsed = '';
         foreach ($lines as $line) {
             $line = rtrim($line);
-            if (strpos($line, "define('WP_DEBUG'") === 0) {
-                $line = "define('WP_DEBUG', true);";
+            if (preg_match("~^(\s*)?define\(\s*'WP_DEBUG',\s*[^\)]+\)\s*;~", $line, $match)) {
+                $line = ($match[1] ?? '') . "define('WP_DEBUG', true);";
             }
 
             $parsed .= "{$line}\n";

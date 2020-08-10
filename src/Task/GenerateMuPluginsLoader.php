@@ -13,7 +13,6 @@ declare(strict_types=1);
 
 namespace Inpsyde\VipComposer\Task;
 
-use Composer\IO\IOInterface;
 use Composer\Package\PackageInterface;
 use Composer\Util\Filesystem;
 use Inpsyde\VipComposer\Config;
