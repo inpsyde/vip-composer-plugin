@@ -91,7 +91,7 @@ For **local** development it is necessary:
 
 A folder on local environment must be dedicated to the project. The *example* structure is something like this:
 
-![folders structure](D:\Desktop\vgcp-readme\folder_001.png)
+![folders structure](https://d1fqb1zktzfwq.cloudfront.net/public/inpsyde/vgcp-readme/folder_001.png)
 
 ## Structure in detail
 
@@ -301,7 +301,7 @@ composer update && composer vip --local
 
 (and waiting for a while) the structure of the project folder will be:
 
-![folder structure after vip command](D:\Desktop\vgcp-readme\folder_002.png)
+![folder structure after vip command](https://d1fqb1zktzfwq.cloudfront.net/public/inpsyde/vgcp-readme/folder_002.png)
 
 Files and folder created by the command have been highlighted above in light yellow. Let's list them:
 
@@ -349,7 +349,7 @@ The first time the VIP Go Composer plugin is executed there's the need to fill i
 
 Let's "zoom" in the `/vip` folder:
 
-![/vip folder internal structure](D:\Desktop\vgcp-readme\folder_003.png)
+![/vip folder internal structure](https://d1fqb1zktzfwq.cloudfront.net/public/inpsyde/vgcp-readme/folder_003.png)
 
 #### `/client-mu-plugins`
 
