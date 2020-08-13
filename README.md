@@ -6,14 +6,14 @@
 
 This package is a Composer plugin to be used in projects to be deployed on [VIP Go platform](https://vip.wordpress.com/documentation/vip-go/) and provides a CLI command with **two different purposes**:
 
-1. ease the setup of a **local environment** based on Composer that is compatible with the VIP Go platform
+1. ease the Composer-based **local environment** that is compatible with the VIP Go platform
 2. ease the **automatic deploy** of the project on VIP Go
 
 
 
 ## Quick reference
 
-The package provides a command **`composer vip`** that can be used to both **prepare a local environment**  and **deploy to VIP Go repository**.
+The package provides a command **`composer vip`** that can be used to both **prepare a local environment** and **deploy to VIP Go repository**.
 
 Examples:
 
@@ -23,7 +23,7 @@ composer vip --local                       # prepare local environment
 composer vip --deploy --branch="develop"   # deploy to VIP Go repository
 ```
 
-Deploy command as shown above require some configuration in `composer.json`, at very least the GitHub URL for the repository, that if not present in  `composer.json`  can be passed to the command via the `--git-url` option.
+Deploy command as shown above require some configuration in `composer.json`, at the very least the GitHub URL for the repository, that if not present in `composer.json`, can be passed to the command via the `--git-url` option.
 
 It is important to note that `composer vip` command **must be run *after* composer install|update**.
 
@@ -33,7 +33,7 @@ Here's a one liner to both update Composer dependencies and prepare local enviro
 composer update && composer vip
 ```
 
-If this is the first time you come here, it is suggested to read below for better understand of what, how and why  this command does what it does.
+If this is the first time you come here, it is suggested to read below for better understand of what, how and why this command does what it does.
 
 Skip to [Command reference](#command-reference) section for detailed documentation on the command and its available options.
 
@@ -41,23 +41,23 @@ Skip to [Command reference](#command-reference) section for detailed documentati
 
 ## Why
 
-VIP Go platform is a managed WordPress hosting that allows to deploy to its server via a Git commit to a repository hosted on GitHub. Different branches means different environments, and master branch is for production.
+VIP Go platform is a managed WordPress hosting that allows to deploy to its server via a Git commit to a repository hosted on GitHub. Different branches means different environments, and `master` branch is for production.
 
 The repository does not contain the full WordPress folder, but *a sort of* the `/wp-content` folder.
 
 *"Sort of"* because there are some differences:
 
-- MU plugins are not saved in `mu-plugins` folder as normally they are, but in a `/client-mu-plugins` folder, because  `mu-plugins` is reserved for proprietary MU plugins always present on the platform
-- There's a `/vip-config` folder that must contain at least a `vip-config.php` file that is loaded from platform `wp-config.php` and it is the place where to set constants normally located on  `wp-config.php` (not having access to the whole installation, that file is, in fact, not editable).
-- There's a `/private` folder that contains not browser-accessible files, but useful to store PHP-accessible data, configuration and alike.
+- MU plugins are not saved in `mu-plugins` folder as normally they are, but in a `/client-mu-plugins` folder, because `mu-plugins` is reserved for proprietary MU plugins always present on the platform
+- There's a `/vip-config` folder that must contain at least a `vip-config.php` file that is loaded from the platform `wp-config.php` and it is the place where to set constants that are normally located on `wp-config.php` (not having access to the whole installation `wp-config.php` is not editable).
+- There's a `/private` folder that contains not browser-accessible files, but useful to store PHP-accessible data, configuration, and alike.
 - There's a `/images` browser-accessible folder that contains images that can be made available for the website.
-- There's no `/uploads` folder. All the media are stored on a CDN and will not be present on the server (container) filesystem at all.
+- There's no `/uploads` folder. All the media are stored on a CDN and will not be present on the server filesystem at all.
 
 More info can be found here: https://vip.wordpress.com/documentation/vip-go/understanding-your-vip-go-codebase/
 
 On top of that, as mentioned above, VIP Go as quite a few [proprietary MU plugins](https://github.com/Automattic/vip-go-mu-plugins) that will always be loaded.
 
-This means that to have a local environment that can be used to develop websites there's the need of different tasks:
+This means that to have a local environment that can be used to develop websites there's the need of:
 
 - install WordPress
 - be sure to load the `vip-config/vip-config.php` from `wp-config.php`
@@ -65,7 +65,7 @@ This means that to have a local environment that can be used to develop websites
 
 More info can be found here: https://vip.wordpress.com/documentation/vip-go/local-vip-go-development-environment/
 
-To have  **a local environment entirely based on Composer, **where not only plugins/themes/libraries, but also WordPress itself are all installed via Composer, requires additional tasks on top of that:
+To have **a local environment entirely based on Composer, where plugins, themes, libraries, and WordPress core are all installed via Composer, requires additional tasks on top of that**:
 
 - the Composer autoloader must be loaded at some early point of the request bootstrap
 - the Composer autoloader that is deployed must **not** contain development dependencies
@@ -80,7 +80,7 @@ To have  **a local environment entirely based on Composer, **where not only plug
 
 For **local** development it is necessary:
 
-- _something_ capable of running PHP 7.1+ and MySql. Being it XAMPP, Mamp, Vagrant, Docker or anything else is not really relevant.
+- _something_ capable of running PHP 7.2+ and MySql. Being it XAMPP, Mamp, Vagrant, Docker, or anything else is not really relevant.
 - a DB ready for the website
 - an (updated) Git client available on the machine and accessible via the `git` command
 - Composer
