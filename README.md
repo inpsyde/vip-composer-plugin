@@ -1,6 +1,6 @@
 # VIP Go Composer Plugin
 
-![PHP Quality Assurance](https://github.com/inpsyde/vip-composer-plugin/workflows/PHP%20Quality%20Assurance/badge.svg)
+![PHP Quality Assurance] (https://github.com/inpsyde/vip-composer-plugin/workflows/PHP%20Quality%20Assurance/badge.svg)
 
 -----
 
