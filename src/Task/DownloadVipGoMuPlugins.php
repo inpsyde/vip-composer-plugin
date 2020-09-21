@@ -21,7 +21,7 @@ use Inpsyde\VipComposer\VipDirectories;
 
 final class DownloadVipGoMuPlugins implements Task
 {
-    public const GIT_URL = 'git@github.com:Automattic/vip-go-mu-plugins.git';
+    public const GIT_URL = 'https://github.com/Automattic/vip-go-mu-plugins.git';
 
     /**
      * @var VipDirectories
@@ -87,7 +87,7 @@ final class DownloadVipGoMuPlugins implements Task
 
         $timeout = ProcessExecutor::getTimeout();
         ProcessExecutor::setTimeout(0);
-        [, , $outputs] = $this->git->exec('clone  --recursive ' . self::GIT_URL . ' .');
+        [, , $outputs] = $this->git->exec('clone --recursive ' . self::GIT_URL . ' .');
         ProcessExecutor::setTimeout($timeout);
 
         if (!$this->alreadyInstalled()) {
