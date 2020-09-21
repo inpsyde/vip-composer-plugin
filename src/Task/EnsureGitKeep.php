@@ -7,6 +7,8 @@ namespace Inpsyde\VipComposer\Task;
 use Composer\Util\Filesystem;
 use Inpsyde\VipComposer\Io;
 use Inpsyde\VipComposer\VipDirectories;
+use Symfony\Component\Finder\Finder;
+use Symfony\Component\Finder\SplFileInfo;
 
 final class EnsureGitKeep implements Task
 {
@@ -68,84 +70,29 @@ final class EnsureGitKeep implements Task
      */
     private function ensureGitKeepFor(string $dir): void
     {
-        if (!$dir || !is_dir($dir)) {
+        $dir = is_dir($dir) ? $this->filesystem->normalizePath($dir) : null;
+        if (!$dir) {
             return;
         }
 
-        $hasFiles = false;
-        $hasGitKeep = false;
+        $finder = (new Finder())
+            ->in($dir)
+            ->files()
+            ->filter(
+                function (SplFileInfo $info) use ($dir): bool {
+                    $path = $this->filesystem->normalizePath($info->getPathname());
 
-        foreach (glob("{$dir}/{*,.*}", GLOB_NOSORT | GLOB_BRACE) as $maybeFile) {
-            $basename = $maybeFile ? basename($maybeFile) : '';
-            if (
-                !$basename
-                || $basename === '.'
-                || $basename === '..'
-                || $this->filesystem->isSymlinkedDirectory($maybeFile)
-            ) {
-                continue;
-            }
+                    return $path !== $this->filesystem->normalizePath("{$dir}/.gitkeep");
+                }
+            );
 
-            if (is_dir($maybeFile)) {
-                $hasFiles = $this->isNotEmptyDir($maybeFile);
-                // Remove empty subdirectories.
-                $hasFiles or $this->filesystem->removeDirectory($maybeFile);
-                continue;
-            }
-
-            if (!is_file($maybeFile)) {
-                continue;
-            }
-
-            $isGitKeep = basename($maybeFile) === '.gitkeep';
-            $isGitKeep and $hasGitKeep = true;
-            if ($isGitKeep && $hasFiles) {
-                break;
-            }
-
-            $hasFiles = !$isGitKeep;
-            if ($hasGitKeep) {
-                break;
-            }
-        }
+        $hasFiles = $finder->count() > 0;
+        $hasGitKeep = file_exists(realpath($dir) . '/.gitkeep');
 
         if (!$hasFiles && !$hasGitKeep) {
             file_put_contents("{$dir}/.gitkeep", "\n");
         } elseif ($hasFiles && $hasGitKeep) {
             @unlink("{$dir}/.gitkeep");
         }
-    }
-
-    /**
-     * @param string $path
-     * @return bool
-     */
-    private function isNotEmptyDir(string $path): bool
-    {
-        $realpath = realpath($path);
-        $dirs = [];
-        foreach (glob("{$realpath}/{*,.*}", GLOB_NOSORT | GLOB_BRACE) as $contentItem) {
-            $base = $contentItem ? basename($contentItem) : '';
-            if (!$base || $base === '.' || $base === '..') {
-                continue;
-            }
-
-            if (is_file($contentItem)) {
-                return true;
-            }
-
-            if (is_dir($contentItem)) {
-                $dirs[] = $contentItem;
-            }
-        }
-
-        while ($dirs) {
-            $path = array_shift($dirs);
-            if ($this->isNotEmptyDir($path)) {
-                return true;
-            }
-        }
-
-        return false;
     }
 }

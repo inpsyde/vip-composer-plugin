@@ -17,6 +17,8 @@ use Composer\Util\Filesystem;
 use Inpsyde\VipComposer\Config;
 use Inpsyde\VipComposer\Io;
 use Inpsyde\VipComposer\VipDirectories;
+use Symfony\Component\Finder\Finder;
+use Symfony\Component\Finder\SplFileInfo;
 
 final class CopyDevPaths implements Task
 {
@@ -111,9 +113,9 @@ final class CopyDevPaths implements Task
      */
     private function copyCustomPath(string $pathConfigKey, Io $io): int
     {
-        [, $source, $target, $pattern, $flags] = $this->pathInfoForKey($pathConfigKey);
+        /** @var Finder $sourcePaths */
+        [, $source, $target, $sourcePaths] = $this->pathInfoForKey($pathConfigKey);
 
-        $sourcePaths = is_dir($source) ? (glob($pattern, $flags) ?: []) : [];
         $this->cleanupTarget($pathConfigKey, $target, $source);
 
         if (!$sourcePaths) {
@@ -122,8 +124,10 @@ final class CopyDevPaths implements Task
 
         $errors = 0;
 
-        foreach ($sourcePaths as $sourcePath) {
-            $targetPath = "{$target}/" . basename($sourcePath);
+        /** @var SplFileInfo $sourcePathInfo */
+        foreach ($sourcePaths as $sourcePathInfo) {
+            $sourcePath = $sourcePathInfo->getPathname();
+            $targetPath = "{$target}/" . $sourcePathInfo->getBasename();
 
             if ($this->filesystem->copy($sourcePath, $targetPath)) {
                 $from = "<comment>'{$sourcePath}'</comment>";
@@ -152,63 +156,71 @@ final class CopyDevPaths implements Task
         $sourceDir = $this->config[Config::DEV_PATHS_CONFIG_KEY][$key];
         $source = $this->filesystem->normalizePath($this->config->basePath() . "/{$sourceDir}");
 
+        $finder = null;
+        if (is_dir($source)) {
+            $finder = (new Finder())
+                ->in($source)
+                ->depth('== 0')
+                ->ignoreUnreadableDirs()
+                ->ignoreVCS(true);
+        }
+
+
         switch ($key) {
             case Config::DEV_PATHS_MUPLUGINS_DIR_KEY:
                 $what = 'MU plugins';
                 $target = $this->directories->muPluginsDir();
-                $pattern = "{$source}/*.*";
-                $flags = GLOB_NOSORT;
+                $finder and $finder->files()->ignoreDotFiles(true);
                 break;
             case Config::DEV_PATHS_PLUGINS_DIR_KEY:
                 $what = 'Plugins';
                 $target = $this->directories->pluginsDir();
-                $pattern = "{$source}/*";
-                $flags = GLOB_NOSORT;
+                $finder and $finder->ignoreDotFiles(true);
                 break;
             case Config::DEV_PATHS_THEMES_DIR_KEY:
                 $what = 'Themes';
                 $target = $this->directories->themesDir();
-                $pattern = "{$source}/*";
-                $flags = GLOB_ONLYDIR | GLOB_NOSORT;
+                $finder and $finder->directories()->ignoreDotFiles(true);
                 break;
             case Config::DEV_PATHS_LANGUAGES_DIR_KEY:
                 $what = 'Languages';
                 $target = $this->directories->languagesDir();
-                $pattern = "{$source}/*.{mo,po}";
-                $flags = GLOB_BRACE | GLOB_NOSORT;
+                $finder and $finder->files()->ignoreDotFiles(true)->filter(
+                    static function (SplFileInfo $info): bool {
+                        return in_array(strtolower($info->getExtension()), ['po', 'mo'], true);
+                    }
+                );
                 break;
             case Config::DEV_PATHS_IMAGES_DIR_KEY:
                 $what = 'Images';
                 $target = $this->directories->imagesDir();
-                $pattern = "{$source}/*.*";
-                $flags = GLOB_NOSORT;
+                $finder and $finder->files()->ignoreDotFiles(true);
                 break;
             case Config::DEV_PATHS_PHP_CONFIG_DIR_KEY:
                 $what = 'PHP config files';
                 $target = $this->directories->phpConfigDir();
-                $pattern = "{$source}/*";
-                $flags = GLOB_NOSORT;
+                $finder and $finder->ignoreDotFiles(true);
                 break;
             case Config::DEV_PATHS_YAML_CONFIG_DIR_KEY:
                 $what = 'Yaml config files';
                 $target = $this->directories->yamlConfigDir();
-                $pattern = "{$source}/.*.yml";
-                $flags = GLOB_NOSORT;
+                $finder and $finder->files()->filter(
+                    static function (SplFileInfo $info) use ($source): bool {
+                        return (bool)preg_match('~\.[^\.]+\.yml$~i', $info->getFilename());
+                    }
+                );
                 break;
             case Config::DEV_PATHS_PRIVATE_DIR_KEY:
                 $what = 'Private files';
                 $target = $this->directories->privateDir();
-                $pattern = "{$source}/*";
-                $flags = GLOB_NOSORT;
                 break;
             default:
                 $what = '';
                 $target = '';
-                $pattern = '';
-                $flags = null;
+                $finder = null;
         }
 
-        return [$what, $source, $target, $pattern, $flags];
+        return [$what, $source, $target, $finder];
     }
 
     /**

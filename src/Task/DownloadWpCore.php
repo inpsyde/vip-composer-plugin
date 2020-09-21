@@ -14,7 +14,9 @@ declare(strict_types=1);
 namespace Inpsyde\VipComposer\Task;
 
 use Composer\Composer;
+use Composer\Downloader\ZipDownloader;
 use Composer\Package\Link;
+use Composer\Package\Package;
 use Composer\Semver\Comparator;
 use Composer\Semver\Semver;
 use Composer\Util\Filesystem;
@@ -22,6 +24,7 @@ use Composer\Util\RemoteFilesystem;
 use Inpsyde\VipComposer\Config;
 use Inpsyde\VipComposer\Io;
 use Inpsyde\VipComposer\Utils\Unzipper;
+use Symfony\Component\Finder\Finder;
 
 final class DownloadWpCore implements Task
 {
@@ -49,30 +52,30 @@ final class DownloadWpCore implements Task
     private $filesystem;
 
     /**
-     * @var Unzipper
+     * @var ZipDownloader
      */
-    private $unzipper;
+    private $zipDownloader;
 
     /**
      * @param Config $config
      * @param Composer $composer
      * @param RemoteFilesystem $remoteFilesystem
      * @param Filesystem $filesystem
-     * @param Unzipper $unzipper
+     * @param ZipDownloader $zipDownloader
      */
     public function __construct(
         Config $config,
         Composer $composer,
         RemoteFilesystem $remoteFilesystem,
         Filesystem $filesystem,
-        Unzipper $unzipper
+        ZipDownloader $zipDownloader
     ) {
 
         $this->config = $config;
+        $this->composer = $composer;
         $this->remoteFilesystem = $remoteFilesystem;
         $this->filesystem = $filesystem;
-        $this->unzipper = $unzipper;
-        $this->composer = $composer;
+        $this->zipDownloader = $zipDownloader;
     }
 
     /**
@@ -122,46 +125,28 @@ final class DownloadWpCore implements Task
             return;
         }
 
-        [$wpCorePath, $zipUrl, $zipFile] = $this->preparePaths($version);
+        [$wpCorePath, $zipUrl] = $this->preparePaths($version);
 
         $io->commentLine("Installing WordPress {$version}...");
-        $this->cleanUp($zipFile, $wpCorePath, $io);
-
-        if (!$this->remoteFilesystem->copy('wordpress.org', $zipUrl, $zipFile)) {
+        try {
+            $package = new Package('wordpress/wordpress', $version, $version);
+            $package->setDistType('zip');
+            $package->setDistUrl($zipUrl);
+            $this->zipDownloader->download($package, $wpCorePath, false);
+        } catch (\Throwable $throwable) {
             $error = sprintf(
-                'Error downloading WordPress %s from %s',
+                'Error installing WordPress %s from %s.',
                 $version,
                 $zipUrl
             );
+
             $io->errorLine($error);
+            $io->verboseErrorLine($throwable->getMessage());
 
             return;
-        }
-
-        if (!is_file($zipFile)) {
-            $error = sprintf('Error downloading WordPress %s from %s', $version, $zipUrl);
-            $io->errorLine($error);
-
-            return;
-        }
-
-        $this->filesystem->ensureDirectoryExists($wpCorePath);
-
-        $io->commentLine('Unzipping to temp folder...');
-        $this->unzipper->unzip($zipFile, $wpCorePath);
-        $this->filesystem->unlink($zipFile);
-
-        if (file_exists("{$wpCorePath}/wordpress/index.php")) {
-            $io->commentLine('Moving to destination folder...');
-            $this->filesystem->copyThenRemove("{$wpCorePath}/wordpress", $wpCorePath);
-        }
-
-        if (!file_exists("{$wpCorePath}/index.php")) {
-            throw new \RuntimeException("Installation of WordPress {$version} failed.");
         }
 
         $io->infoLine("WordPress {$version} installed.");
-
         $this->copyWpConfig($wpCorePath, $io);
         $this->createWpCliYml($wpCorePath, $io);
     }
@@ -353,10 +338,8 @@ final class DownloadWpCore implements Task
         $wpCorePath = $this->filesystem->normalizePath("{$baseDir}/{$wpCoreDir}");
 
         $zipUrl = self::DOWNLOADS_BASE_URL . "{$version}-no-content.zip";
-        $zipFile = $baseDir . '/' . basename(parse_url($zipUrl, PHP_URL_PATH));
-        $zipFile = $this->filesystem->normalizePath($zipFile);
 
-        return [$wpCorePath, $zipUrl, $zipFile];
+        return [$wpCorePath, $zipUrl];
     }
 
     /**
@@ -424,17 +407,13 @@ final class DownloadWpCore implements Task
             $this->filesystem->unlink($zipFile);
         }
 
-        $dirs = glob("{$wpCoreDir}/*", GLOB_ONLYDIR);
-        foreach ($dirs as $dir) {
-            if (basename($dir)[0] !== '.') {
-                $this->filesystem->removeDirectory($dir);
-            }
-        }
+        $dirs = (new Finder())
+            ->in($wpCoreDir)
+            ->depth('== 0')
+            ->ignoreDotFiles(true);
 
-        foreach (glob("{$wpCoreDir}/*.*") as $file) {
-            if (basename($file)[0] !== '.') {
-                $this->filesystem->unlink($file);
-            }
+        foreach ($dirs as $dir) {
+            $this->filesystem->remove($dir->getPathname());
         }
     }
 

@@ -108,7 +108,7 @@ class Factory
                     $this->factory->composer(),
                     $this->factory->remoteFileSystem(),
                     $this->factory->fileSystem(),
-                    $this->factory->unzipper()
+                    $this->factory->zipDownloader()
                 );
             }
         );

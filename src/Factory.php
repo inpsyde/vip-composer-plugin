@@ -14,8 +14,10 @@ declare(strict_types=1);
 namespace Inpsyde\VipComposer;
 
 use Composer\Composer;
+use Composer\Downloader\ZipDownloader;
 use Composer\IO\IOInterface;
 use Composer\Util\Filesystem;
+use Composer\Util\ProcessExecutor;
 use Composer\Util\RemoteFilesystem;
 
 class Factory
@@ -142,6 +144,26 @@ class Factory
     }
 
     /**
+     * @return ZipDownloader
+     */
+    public function zipDownloader(): ZipDownloader
+    {
+        return $this->service(
+            ZipDownloader::class,
+            function (): ZipDownloader {
+                return new ZipDownloader(
+                    $this->composerIo,
+                    $this->composer->getConfig(),
+                    null,
+                    null,
+                    $this->processExecutor(),
+                    $this->remoteFileSystem()
+                );
+            }
+        );
+    }
+
+    /**
      * @return Utils\Unzipper
      */
     public function unzipper(): Utils\Unzipper
@@ -182,6 +204,19 @@ class Factory
                     $this->composerIo,
                     $this->composer->getConfig()
                 );
+            }
+        );
+    }
+
+    /**
+     * @return ProcessExecutor
+     */
+    public function processExecutor(): ProcessExecutor
+    {
+        return $this->service(
+            ProcessExecutor::class,
+            function (): ProcessExecutor {
+                return new ProcessExecutor($this->composerIo);
             }
         );
     }
