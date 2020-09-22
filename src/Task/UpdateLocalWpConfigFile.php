@@ -114,7 +114,7 @@ final class UpdateLocalWpConfigFile implements Task
         $muPath = $this->directories->vipMuPluginsDir();
 
         $fileContent .= <<<PHP
-if (!defined('WP_INSTALLING') || !WP_INSTALLING) {
+if (!defined('WP_INSTALLING') || !WP_INSTALLING && is_dir('{$muPath}')) {
     define('WPMU_PLUGIN_DIR', '{$muPath}');
 }
 PHP;
