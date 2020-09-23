@@ -218,7 +218,7 @@ final class GenerateMuPluginsLoader implements Task
     : (defined('VIP_GO_ENV') ? VIP_GO_ENV : 'local');
 define('VIP_GO_IS_LOCAL_ENV', (!\$vipEnv || \$vipEnv === 'local'));
 unset(\$vipEnv);
-VIP_GO_IS_LOCAL_ENV;
+VIP_GO_IS_LOCAL_ENV
     ? require_once __DIR__ . "/{$vendorBase}/autoload.php"
     : require_once __DIR__ . "/{$vendorBase}/vip-autoload/autoload.php";
 
