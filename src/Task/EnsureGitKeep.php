@@ -75,9 +75,48 @@ final class EnsureGitKeep implements Task
             return;
         }
 
+        $hasFiles = $this->haveFiles(0, $dir);
+        $hasGitKeep = file_exists(realpath($dir) . '/.gitkeep');
+
+        if (!$hasFiles && !$hasGitKeep) {
+            file_put_contents("{$dir}/.gitkeep", "\n");
+        } elseif ($hasFiles && $hasGitKeep) {
+            @unlink("{$dir}/.gitkeep");
+        }
+    }
+
+    /**
+     * @param int $depth
+     * @param string ...$dirs
+     * @return bool
+     */
+    private function haveFiles(int $depth, string ...$dirs): bool
+    {
+        if (!$dirs) {
+            return false;
+        }
+
+        $newDirs = [];
+        foreach ($dirs as $dir) {
+            if ($this->hasFiles($dir, $newDirs, $depth)) {
+                return true;
+            }
+        }
+
+        return $this->haveFiles($depth + 1, ...$newDirs);
+    }
+
+    /**
+     * @param string $dir
+     * @param array $dirs
+     * @param int $depth
+     * @return bool
+     */
+    private function hasFiles(string $dir, array &$dirs, int $depth): bool
+    {
         $finder = (new Finder())
             ->in($dir)
-            ->files()
+            ->depth('== 0')
             ->filter(
                 function (SplFileInfo $info) use ($dir): bool {
                     $path = $this->filesystem->normalizePath($info->getPathname());
@@ -86,13 +125,19 @@ final class EnsureGitKeep implements Task
                 }
             );
 
-        $hasFiles = $finder->count() > 0;
-        $hasGitKeep = file_exists(realpath($dir) . '/.gitkeep');
+        /** @var SplFileInfo $info */
+        foreach ($finder as $info) {
+            if ($depth === 0 && $info->getFilename() === '.gitkeep') {
+                continue;
+            }
 
-        if (!$hasFiles && !$hasGitKeep) {
-            file_put_contents("{$dir}/.gitkeep", "\n");
-        } elseif ($hasFiles && $hasGitKeep) {
-            @unlink("{$dir}/.gitkeep");
+            if ($info->isFile()) {
+                return true;
+            }
+
+            $dirs[] = $info->getPathname();
         }
+
+        return false;
     }
 }
