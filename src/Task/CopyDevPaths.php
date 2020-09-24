@@ -148,23 +148,23 @@ final class CopyDevPaths implements Task
      * @return array
      *
      * phpcs:disable Inpsyde.CodeQuality.FunctionLength
+     * phpcs:disable Inpsyde.CodeQuality.NestingLevel
+     * phpcs:disable Generic.Metrics.CyclomaticComplexity
      */
     private function pathInfoForKey(string $key): array
     {
         // phpcs:enable Inpsyde.CodeQuality.FunctionLength
+        // phpcs:enable Inpsyde.CodeQuality.NestingLevel
+        // phpcs:enable Generic.Metrics.CyclomaticComplexity
 
         $sourceDir = $this->config[Config::DEV_PATHS_CONFIG_KEY][$key];
         $source = $this->filesystem->normalizePath($this->config->basePath() . "/{$sourceDir}");
 
         $finder = null;
         if (is_dir($source)) {
-            $finder = (new Finder())
-                ->in($source)
-                ->depth('== 0')
-                ->ignoreUnreadableDirs()
-                ->ignoreVCS(true);
+            $finder = new Finder();
+            $finder = $finder->in($source)->depth('== 0')->ignoreUnreadableDirs()->ignoreVCS(true);
         }
-
 
         switch ($key) {
             case Config::DEV_PATHS_MUPLUGINS_DIR_KEY:
