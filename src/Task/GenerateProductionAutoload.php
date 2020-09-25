@@ -89,7 +89,6 @@ final class GenerateProductionAutoload implements Task
 
         $vendorDir = $this->config->composerConfigValue('vendor-dir');
         $composerPath = "{$vendorDir}/autoload.php";
-        $composerContent = file_get_contents($composerPath);
 
         $autoloader = new AutoloadGenerator($this->composer->getEventDispatcher());
         $autoloader->setDevMode(false);
@@ -121,7 +120,6 @@ final class GenerateProductionAutoload implements Task
         $path = "{$vendorDir}/{$prodAutoloadDirname}";
 
         file_put_contents("{$path}/autoload.php", $autoloadEntrypoint);
-        file_put_contents($composerPath, $composerContent);
 
         $this->replaceVipPaths($path);
 
@@ -147,6 +145,10 @@ final class GenerateProductionAutoload implements Task
         ];
 
         foreach ($toReplace as $file) {
+            if (!file_exists($file)) {
+                continue;
+            }
+
             $content = file_get_contents("{$path}/{$file}");
             $content = preg_replace('~\$vendorDir(?:\s*=\s*)[^;]+;~', $vendorDirPath, $content, 1);
             $content = preg_replace('~\$baseDir(?:\s*=\s*)[^;]+;~', $baseDirPath, $content, 1);
