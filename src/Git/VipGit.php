@@ -288,6 +288,7 @@ class VipGit
             }
         }
 
+        $commands = [];
         $currentBranch === $targetBranch or $commands[] = "checkout {$targetBranch}";
         $commands[] = 'add .';
         $commands[] = 'commit -am "Merge-bot upstream sync."';
@@ -530,7 +531,7 @@ class VipGit
         }
 
         $push or $this->io->infoLine('Changes merged but not pushed.');
-        $messages[] = "Involved a total of {$total} files:";
+        $messages = ["Involved a total of {$total} files:"];
         $messages[] = "- {$counts['A']} added;";
         $messages[] = "- {$counts['M']} modified;";
         $messages[] = "- {$counts['D']} deleted.";
