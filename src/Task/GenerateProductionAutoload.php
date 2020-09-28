@@ -88,8 +88,6 @@ final class GenerateProductionAutoload implements Task
         $io->commentLine('Building production autoload...');
 
         $vendorDir = $this->config->composerConfigValue('vendor-dir');
-        $composerPath = "{$vendorDir}/autoload.php";
-
         $autoloader = new AutoloadGenerator($this->composer->getEventDispatcher());
         $autoloader->setDevMode(false);
         $autoloader->setApcu(false);
@@ -145,7 +143,7 @@ final class GenerateProductionAutoload implements Task
         ];
 
         foreach ($toReplace as $file) {
-            if (!file_exists($file)) {
+            if (!file_exists("{$path}/{$file}")) {
                 continue;
             }
 
