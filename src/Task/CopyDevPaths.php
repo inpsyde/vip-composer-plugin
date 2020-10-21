@@ -204,7 +204,7 @@ final class CopyDevPaths implements Task
             case Config::DEV_PATHS_YAML_CONFIG_DIR_KEY:
                 $what = 'Yaml config files';
                 $target = $this->directories->yamlConfigDir();
-                $finder and $finder->files()->filter(
+                $finder and $finder->files()->ignoreDotFiles(false)->filter(
                     static function (SplFileInfo $info) use ($source): bool {
                         return (bool)preg_match('~\.[^\.]+\.yml$~i', $info->getFilename());
                     }
@@ -213,6 +213,7 @@ final class CopyDevPaths implements Task
             case Config::DEV_PATHS_PRIVATE_DIR_KEY:
                 $what = 'Private files';
                 $target = $this->directories->privateDir();
+                $finder and $finder->files()->ignoreDotFiles(false);
                 break;
             default:
                 $what = '';
