@@ -114,28 +114,25 @@ final class EnsureGitKeep implements Task
      */
     private function hasFiles(string $dir, array &$dirs, int $depth): bool
     {
-        $finder = (new Finder())
+        $finder = Finder::create()
             ->in($dir)
             ->depth('== 0')
+            ->files()
+            ->ignoreDotFiles(false)
+            ->ignoreVCS(false)
             ->filter(
-                function (SplFileInfo $info) use ($dir): bool {
-                    $path = $this->filesystem->normalizePath($info->getPathname());
-
-                    return $path !== $this->filesystem->normalizePath("{$dir}/.gitkeep");
+                static function (SplFileInfo $info) use ($dir, $depth): bool {
+                    return $depth > 0 || $info->getBasename() !== '.gitkeep';
                 }
             );
 
-        /** @var SplFileInfo $info */
-        foreach ($finder as $info) {
-            if ($depth === 0 && $info->getFilename() === '.gitkeep') {
-                continue;
-            }
+        if ($finder->count() > 0) {
+            return true;
+        }
 
-            if ($info->isFile()) {
-                return true;
-            }
-
-            $dirs[] = $info->getPathname();
+        $finder = Finder::create()->in($dir)->depth('== 0')->directories();
+        foreach ($finder as $splFileInfo) {
+            $dirs[] = $splFileInfo->getPathname();
         }
 
         return false;
