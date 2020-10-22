@@ -213,7 +213,7 @@ final class CopyDevPaths implements Task
             case Config::DEV_PATHS_PRIVATE_DIR_KEY:
                 $what = 'Private files';
                 $target = $this->directories->privateDir();
-                $finder and $finder->files()->ignoreDotFiles(false);
+                $finder and $finder->ignoreDotFiles(false);
                 break;
             default:
                 $what = '';
