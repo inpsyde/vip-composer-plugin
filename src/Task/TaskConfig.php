@@ -65,14 +65,15 @@ final class TaskConfig
      */
     public function __construct(array $data)
     {
-        $this->data = array_merge(
-            self::DEFAULTS,
-            filter_var_array(
-                array_intersect_key($data, self::DEFAULTS),
-                self::FILTERS,
-                false
-            )
+        $customData = filter_var_array(
+            array_intersect_key($data, self::DEFAULTS),
+            self::FILTERS,
+            false
         );
+
+        $this->data = $customData
+            ? array_merge(self::DEFAULTS, (array)$customData)
+            : self::DEFAULTS;
 
         $this->validate();
     }
@@ -170,7 +171,13 @@ final class TaskConfig
      */
     public function gitUrl(): ?string
     {
-        return $this->isGit() ? ($this->data[self::GIT_URL] ?: null) : null;
+        if (!$this->isGit()) {
+            return null;
+        }
+
+        $url = $this->data[self::GIT_URL] ?: null;
+
+        return ($url && is_string($url)) ? $url : null;
     }
 
     /**
@@ -178,7 +185,13 @@ final class TaskConfig
      */
     public function gitBranch(): ?string
     {
-        return $this->isGit() ? ($this->data[self::GIT_BRANCH] ?: null) : null;
+        if (!$this->isGit()) {
+            return null;
+        }
+
+        $branch = $this->data[self::GIT_BRANCH] ?: null;
+
+        return ($branch && is_string($branch)) ? $branch : null;
     }
 
     /**

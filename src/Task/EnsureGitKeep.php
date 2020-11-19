@@ -96,12 +96,15 @@ final class EnsureGitKeep implements Task
             return false;
         }
 
+        /** @var array<string> $newDirs */
         $newDirs = [];
         foreach ($dirs as $dir) {
             if ($this->hasFiles($dir, $newDirs, $depth)) {
                 return true;
             }
         }
+
+        /** @psalm-suppress MixedArgument */
 
         return $this->haveFiles($depth + 1, ...$newDirs);
     }
@@ -131,6 +134,7 @@ final class EnsureGitKeep implements Task
         }
 
         $finder = Finder::create()->in($dir)->depth('== 0')->directories();
+        /** @var SplFileInfo $splFileInfo */
         foreach ($finder as $splFileInfo) {
             $dirs[] = $splFileInfo->getPathname();
         }

@@ -29,7 +29,7 @@ class Plugin implements PluginInterface, Capable, CommandProvider
     public const NAME = 'inpsyde/vip-composer-plugin';
 
     /**
-     * @return array|string[]
+     * @return array<string, string>
      */
     public function getCapabilities()
     {
@@ -46,12 +46,12 @@ class Plugin implements PluginInterface, Capable, CommandProvider
 
     /**
      * @param Composer $composer
-     * @param IOInterface $composerIo
+     * @param IOInterface $io
      * @return void
      */
-    public function activate(Composer $composer, IOInterface $composerIo)
+    public function activate(Composer $composer, IOInterface $io)
     {
-        $factory = new Factory($composer, $composerIo);
+        $factory = new Factory($composer, $io);
         $manager = $composer->getInstallationManager();
         $manager->addInstaller($factory->installer());
     }

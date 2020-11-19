@@ -16,9 +16,53 @@ namespace Inpsyde\VipComposer\Git;
 use Composer\Util\Filesystem;
 use Inpsyde\VipComposer\Io;
 use Inpsyde\VipComposer\Utils\Unzipper;
+use Symfony\Component\Finder\Finder;
+use Symfony\Component\Finder\SplFileInfo;
 
 class MirrorCopier
 {
+    private const EXCLUDED_FILES = [
+        '.composer_compiled_assets',
+        '.eslintrc',
+        '.phpstorm.meta.php',
+        '.phpunit.result.cache',
+        'bitbucket-pipelines.yml',
+        'changelog.md',
+        'changelog.txt',
+        'composer.json',
+        'gulpfile.js',
+        'gruntfile.js',
+        'node_modules',
+        'npm-shrinkwrap.json',
+        'package.json',
+        'package-lock.json',
+        'phpcs.xml',
+        'phpcs.xml.dist',
+        'phpunit.xml',
+        'phpunit.xml.dist',
+        'readme.md',
+        'readme.txt',
+        'studio.json',
+        'tsconfig.json',
+        'webpack.config.js',
+    ];
+
+    private const EXCLUDED_EXT = [
+        'coffee',
+        'error',
+        'jsx',
+        'less',
+        'lock',
+        'log',
+        'phar',
+        'sass',
+        'scss',
+        'temp',
+        'tmp',
+        'ts',
+    ];
+
+    private const NESTED_VENDOR_REGEX = '~client-mu-plugins/vendor/[^/]+/[^/]+/vendor/[^/]+~';
 
     /**
      * @var Io
@@ -41,58 +85,35 @@ class MirrorCopier
      */
     public static function accept(string $path): bool
     {
+        if (is_dir($path)) {
+            return static::acceptPath($path);
+        }
+
+        if (!is_file($path)) {
+            return false;
+        }
+
         $basename = basename($path);
         $ext = pathinfo($path, PATHINFO_EXTENSION);
 
-        $exclude = [
-            '.composer_compiled_assets',
-            '.eslintrc',
-            '.phpstorm.meta.php',
-            '.phpunit.result.cache',
-            'bitbucket-pipelines.yml',
-            'changelog.md',
-            'changelog.txt',
-            'composer.json',
-            'gulpfile.js',
-            'gruntfile.js',
-            'node_modules',
-            'npm-shrinkwrap.json',
-            'package.json',
-            'package-lock.json',
-            'phpcs.xml',
-            'phpcs.xml.dist',
-            'phpunit.xml',
-            'phpunit.xml.dist',
-            'readme.md',
-            'readme.txt',
-            'studio.json',
-            'tsconfig.json',
-            'webpack.config.js',
-        ];
+        return
+            !in_array(strtolower($basename), self::EXCLUDED_FILES, true)
+            && !in_array(strtolower($ext), self::EXCLUDED_EXT, true)
+            && static::acceptPath($path);
+    }
 
-        $excludeExt = [
-            'coffee',
-            'error',
-            'jsx',
-            'less',
-            'lock',
-            'log',
-            'phar',
-            'sass',
-            'scss',
-            'temp',
-            'tmp',
-            'ts',
-        ];
-
-        $nestedVendorRegEx = '~client-mu-plugins/vendor/[^/]+/[^/]+/vendor/[^/]+~';
+    /**
+     * @param string $path
+     * @return bool
+     */
+    private static function acceptPath(string $path): bool
+    {
+        $basename = is_file($path) ? basename($path) : '';
 
         return
-            !in_array(strtolower($basename), $exclude, true)
-            && !in_array(strtolower($ext), $excludeExt, true)
-            && strpos($path, 'node_modules/') === false
+            strpos($path, 'node_modules/') !== false
             && (strpos($path, '/.git') === false || $basename === '.gitkeep')
-            && !preg_match($nestedVendorRegEx, str_replace('\\', '/', $path));
+            && !preg_match(self::NESTED_VENDOR_REGEX, str_replace('\\', '/', $path));
     }
 
     /**
@@ -201,7 +222,7 @@ class MirrorCopier
     }
 
     /**
-     * @param array $linksPaths
+     * @param array<string, string> $linksPaths
      * @return bool
      */
     private function copyLinks(array $linksPaths): bool
@@ -238,12 +259,14 @@ class MirrorCopier
             return false;
         }
 
-        $files = glob("{$target}/*", GLOB_NOSORT);
-        foreach ($files as $file) {
-            if (!self::accept($file)) {
-                is_dir($file)
-                    ? $this->filesystem->removeDirectory($file)
-                    : unlink($file);
+        $contents = Finder::create()->in($target)->depth('== 0')->ignoreUnreadableDirs();
+        /** @var SplFileInfo $item */
+        foreach ($contents as $item) {
+            $itemPath = (string)$item->getPathname();
+            if (!self::accept($itemPath)) {
+                $item->isDir()
+                    ? $this->filesystem->removeDirectory($itemPath)
+                    : $this->filesystem->unlink($itemPath);
             }
         }
 

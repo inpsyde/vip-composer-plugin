@@ -66,7 +66,12 @@ class GitProcess
         ProcessExecutor $executor = null
     ) {
 
-        $this->workingDir = $workingDir ?: getcwd();
+        $cwd = $workingDir ?: getcwd();
+        if (!$cwd) {
+            throw new \Exception('Could not determine current dir');
+        }
+
+        $this->workingDir = $cwd;
         $this->origWorkingDir = $this->workingDir;
         $this->io = $io;
         $this->executor = $executor ?: new ProcessExecutor($io->composerIo());
@@ -101,8 +106,8 @@ class GitProcess
     }
 
     /**
-     * @param string[] $commands
-     * @return array
+     * @param array<string> $commands
+     * @return array{bool, string, array<string>}
      */
     public function exec(string ...$commands): array
     {
@@ -110,6 +115,7 @@ class GitProcess
             throw new \RuntimeException('Invalid working dir for Git operation.');
         }
 
+        /** @var array<string> $outputs */
         $outputs = [];
         $lastOutput = '';
         $exitCode = 0;
@@ -124,6 +130,10 @@ class GitProcess
                 $this->workingDir
             );
 
+            /**
+             * @var string $type
+             * @var string $lastOutput
+             */
             [$type, $lastOutput] = $this->captured;
             $this->captured = ['', ''];
             $outputs[] = $lastOutput;

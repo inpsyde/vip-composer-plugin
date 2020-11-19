@@ -124,6 +124,7 @@ final class GenerateMuPluginsLoader implements Task
                 continue;
             }
 
+            /** @psalm-suppress RedundantCondition */
             if (
                 $type === 'wordpress-plugin'
                 && !$this->shouldInclude($package, $packagesList, $includeByDefault)
@@ -159,7 +160,7 @@ final class GenerateMuPluginsLoader implements Task
     }
 
     /**
-     * @return array
+     * @return array{array<int,string>, bool}
      */
     private function buildIncludeConfig(): array
     {

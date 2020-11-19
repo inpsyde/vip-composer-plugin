@@ -16,12 +16,14 @@ namespace Inpsyde\VipComposer\Task;
 use Composer\Composer;
 use Composer\Package\Package;
 use Composer\Semver\Comparator;
+use Composer\Semver\Constraint\Constraint;
 use Composer\Semver\Semver;
 use Composer\Util\Filesystem;
 use Inpsyde\VipComposer\Config;
 use Inpsyde\VipComposer\Io;
 use Inpsyde\VipComposer\Utils\ArchiveDownloaderFactory;
 use Inpsyde\VipComposer\Utils\HttpClient;
+use JsonSchema\Constraints\ConstraintInterface;
 
 final class DownloadWpCore implements Task
 {
@@ -133,12 +135,7 @@ final class DownloadWpCore implements Task
             $downloader = $this->archiveDownloaderFactory->create('zip');
             $downloader->download($package, $wpCorePath);
         } catch (\Throwable $throwable) {
-            $error = sprintf(
-                'Error installing WordPress %s from %s.',
-                $version,
-                $zipUrl
-            );
-
+            $error = sprintf('Error installing WordPress %s from %s.', $version, $zipUrl);
             $io->errorLine($error);
             $io->verboseErrorLine($throwable->getMessage());
 
@@ -162,6 +159,7 @@ final class DownloadWpCore implements Task
      */
     private function discoverTargetVersion(Io $io): string
     {
+        /** @var string|null $version */
         $version = $this->config->wpConfig()[Config::WP_VERSION_KEY];
 
         if ($version === 'latest' || $version === '*') {
@@ -170,10 +168,14 @@ final class DownloadWpCore implements Task
 
         if (!$version) {
             $wpPackageVer = $this->discoverWpPackageVersion();
-            $wpPackageVer and $version = $wpPackageVer;
+            if (!$wpPackageVer) {
+                return $this->queryLastVersion($io);
+            }
+
+            $version = $wpPackageVer;
         }
 
-        $fixedTargetVersion = preg_match('/^[3|4]\.([0-9]){1}(\.[0-9])?+$/', $version) > 0;
+        $fixedTargetVersion = preg_match('/^[3|4]\.([0-9])(\.[0-9])?+$/', $version) > 0;
 
         return $fixedTargetVersion ? $this->normalizeVersionWp($version) : trim($version);
     }
@@ -201,6 +203,7 @@ final class DownloadWpCore implements Task
         $wp_version = '';
         require $versionFile;
 
+        /** @psalm-suppress RedundantCondition */
         if (!$wp_version) {
             return '';
         }
@@ -230,8 +233,9 @@ final class DownloadWpCore implements Task
         $repositoryManager = $this->composer->getRepositoryManager();
 
         foreach ($rootPackage->getRequires() as $link) {
+            /** @var ConstraintInterface $constraint */
             $constraint = $link->getConstraint();
-            if ($constraint === null) {
+            if (!$constraint instanceof Constraint) {
                 continue;
             }
             $package = $repositoryManager->findPackage($link->getTarget(), $constraint);
@@ -257,13 +261,14 @@ final class DownloadWpCore implements Task
      */
     private function resolveTargetVersion(string $version, Io $io): string
     {
+        /** @var array<string, string> $resolved */
         static $resolved = [];
 
         if (array_key_exists($version, $resolved)) {
             return $resolved[$version];
         }
 
-        $exact = preg_match('|^[0-9]+\.[0-9]{1}(\.[0-9]+)*(\.[0-9]+)*$|', $version);
+        $exact = preg_match('|^[0-9]+\.[0-9]+(?:\.[0-9]+)*(?:\.[0-9]+)*$|', $version);
 
         if ($exact) {
             $resolved[$version] = $this->normalizeVersionWp($version);
@@ -288,6 +293,7 @@ final class DownloadWpCore implements Task
         }
 
         $satisfied = Semver::rsort($satisfied);
+        /** @var string $last */
         $last = reset($satisfied);
         $resolved[$version] = $this->normalizeVersionWp($last);
 
@@ -327,7 +333,7 @@ final class DownloadWpCore implements Task
      * Cleanup existent paths.
      *
      * @param string $version
-     * @return array
+     * @return array{string, string}
      */
     private function preparePaths(string $version): array
     {
@@ -415,10 +421,11 @@ final class DownloadWpCore implements Task
      * Query wp.org API to get available versions for download.
      *
      * @param Io $io
-     * @return string[]
+     * @return array<string>
      */
     private function queryVersions(Io $io): array
     {
+        /** @var array<string>|null $versions */
         static $versions;
         if (is_array($versions)) {
             return $versions;
@@ -433,11 +440,15 @@ final class DownloadWpCore implements Task
         // phpcs:disable Inpsyde.CodeQuality.ArgumentTypeDeclaration
         $extractVer = function ($package): string {
             // phpcs:enable
-            if (!is_array($package) || empty($package['version'])) {
+            if (
+                !is_array($package)
+                || empty($package['version'])
+                || !is_scalar($package['version'])
+            ) {
                 return '';
             }
 
-            return $this->normalizeVersionWp($package['version']);
+            return $this->normalizeVersionWp((string)$package['version']);
         };
 
         try {
@@ -446,7 +457,9 @@ final class DownloadWpCore implements Task
                 return [];
             }
 
+            /** @var array<string> $parsed */
             $parsed = array_unique(array_filter(array_map($extractVer, (array)$data['offers'])));
+            /** @var array<string> $versions */
             $versions = $parsed ? Semver::rsort($parsed) : [];
 
             return $versions;
@@ -469,7 +482,7 @@ final class DownloadWpCore implements Task
         $beta = explode('-', trim($version, ". \t\n\r\0\x0B"), 2);
         $stable = $beta[0];
 
-        $pieces = explode('.', preg_replace('/[^0-9\.]/', '', $stable));
+        $pieces = explode('.', preg_replace('/[^0-9\.]/', '', $stable) ?? '');
         $pieces = array_map('intval', $pieces);
         isset($pieces[0]) or $pieces[0] = 0;
         isset($pieces[1]) or $pieces[1] = 0;

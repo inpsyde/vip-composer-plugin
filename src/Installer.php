@@ -11,13 +11,12 @@
 
 declare(strict_types=1);
 
-namespace Inpsyde\VipComposer\Installer;
+namespace Inpsyde\VipComposer;
 
 use Composer\Composer;
 use Composer\Installer\LibraryInstaller;
 use Composer\IO\IOInterface;
 use Composer\Package\PackageInterface;
-use Inpsyde\VipComposer\VipDirectories;
 
 /*
  * phpcs:disable Inpsyde.CodeQuality.ReturnTypeDeclaration

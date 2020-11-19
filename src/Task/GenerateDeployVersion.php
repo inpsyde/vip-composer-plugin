@@ -104,6 +104,10 @@ final class GenerateDeployVersion implements Task
     private function writeDeployTag(Io $io, string $targetDir): bool
     {
         $git = new GitProcess($io);
+        /**
+         * @var bool $success
+         * @var string $output
+         */
         [$success, $output] = $git->execSilently('describe --abbrev=0 --exact-match');
 
         if (!$success && (stripos($output, 'no names') !== false)) {

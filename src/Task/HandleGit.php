@@ -104,8 +104,8 @@ class HandleGit implements Task
         );
 
         $isPush = $taskConfig->isGitPush();
-        $gitUrl = $taskConfig->gitUrl();
-        $gitBranch = $taskConfig->gitBranch();
+        $gitUrl = $taskConfig->gitUrl() ?? '';
+        $gitBranch = $taskConfig->gitBranch() ?? '?';
         $success = $isPush ? $git->push($gitUrl, $gitBranch) : $git->sync($gitUrl, $gitBranch);
 
         if (!$success) {

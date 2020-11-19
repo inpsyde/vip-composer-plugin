@@ -129,8 +129,8 @@ final class GenerateProductionAutoload implements Task
      */
     private function replaceVipPaths(string $path): void
     {
-        $vendorDirPath = '$vendorDir = WPCOM_VIP_CLIENT_MU_PLUGIN_DIR . \'/vendor\';';
-        $baseDirPath = '$baseDir = ABSPATH;';
+        $vendorDir = '$vendorDir = WPCOM_VIP_CLIENT_MU_PLUGIN_DIR . \'/vendor\';';
+        $baseDir = '$baseDir = ABSPATH;';
         $staticLoader = '$useStaticLoader = false;';
         $vipDirBase = basename($this->directories->targetPath());
 
@@ -147,18 +147,18 @@ final class GenerateProductionAutoload implements Task
                 continue;
             }
 
-            $content = file_get_contents("{$path}/{$file}");
-            $content = preg_replace('~\$vendorDir(?:\s*=\s*)[^;]+;~', $vendorDirPath, $content, 1);
-            $content = preg_replace('~\$baseDir(?:\s*=\s*)[^;]+;~', $baseDirPath, $content, 1);
+            $content = file_get_contents("{$path}/{$file}") ?: '';
+            $content = preg_replace('~\$vendorDir(?:\s*=\s*)[^;]+;~', $vendorDir, $content, 1);
+            $content = preg_replace('~\$baseDir(?:\s*=\s*)[^;]+;~', $baseDir, $content ?: '', 1);
             $content = preg_replace(
                 '~\$baseDir\s*\.\s*\'/' . $vipDirBase . '/(plugins|themes)/~',
                 'WP_CONTENT_DIR . \'/$1/',
-                $content
+                $content ?: ''
             );
-            file_put_contents("{$path}/{$file}", $content);
+            file_put_contents("{$path}/{$file}", (string)$content);
         }
 
-        $real = file_get_contents("{$path}/autoload_real.php");
+        $real = file_get_contents("{$path}/autoload_real.php") ?: '';
         $real = preg_replace('~\$useStaticLoader(?:\s*=\s*)[^;]+;~', $staticLoader, $real, 1);
         file_put_contents("{$path}/autoload_real.php", $real);
     }

@@ -96,8 +96,7 @@ final class Config implements \ArrayAccess
      */
     public function __construct(Composer $composer, string $basePath)
     {
-
-        $extra = $composer->getPackage()->getExtra()[self::CONFIG_KEY] ?? [];
+        $extra = (array)($composer->getPackage()->getExtra()[self::CONFIG_KEY] ?? []);
         $this->composerConfig = $composer->getConfig();
 
         $this->config = [];
@@ -117,7 +116,7 @@ final class Config implements \ArrayAccess
      */
     public function basePath(): string
     {
-        return $this->offsetGet(self::BASE_PATH_KEY);
+        return (string)$this->offsetGet(self::BASE_PATH_KEY);
     }
 
     /**
@@ -125,7 +124,7 @@ final class Config implements \ArrayAccess
      */
     public function prodAutoloadDir(): string
     {
-        return $this->offsetGet(self::PROD_AUTOLOAD_DIR_KEY);
+        return (string)$this->offsetGet(self::PROD_AUTOLOAD_DIR_KEY);
     }
 
     /**
@@ -134,7 +133,7 @@ final class Config implements \ArrayAccess
      */
     public function composerConfigValue(string $key): string
     {
-        return $this->composerConfig->get($key);
+        return (string)$this->composerConfig->get($key);
     }
 
     /**
@@ -142,7 +141,7 @@ final class Config implements \ArrayAccess
      */
     public function vipConfig(): array
     {
-        return $this->offsetGet(self::VIP_CONFIG_KEY);
+        return (array)$this->offsetGet(self::VIP_CONFIG_KEY);
     }
 
     /**
@@ -150,7 +149,7 @@ final class Config implements \ArrayAccess
      */
     public function gitConfig(): array
     {
-        return $this->offsetGet(self::GIT_CONFIG_KEY);
+        return (array)$this->offsetGet(self::GIT_CONFIG_KEY);
     }
 
     /**
@@ -158,7 +157,7 @@ final class Config implements \ArrayAccess
      */
     public function wpConfig(): array
     {
-        return $this->offsetGet(self::WP_CONFIG_KEY);
+        return (array)$this->offsetGet(self::WP_CONFIG_KEY);
     }
 
     /**
@@ -166,8 +165,7 @@ final class Config implements \ArrayAccess
      */
     public function pluginsAutoloadConfig(): array
     {
-
-        return $this->offsetGet(self::PLUGINS_AUTOLOAD_KEY);
+        return (array)$this->offsetGet(self::PLUGINS_AUTOLOAD_KEY);
     }
 
     /**
@@ -175,7 +173,7 @@ final class Config implements \ArrayAccess
      */
     public function devPathsConfig(): array
     {
-        return $this->offsetGet(self::DEV_PATHS_CONFIG_KEY);
+        return (array)$this->offsetGet(self::DEV_PATHS_CONFIG_KEY);
     }
 
     /**
@@ -200,7 +198,7 @@ final class Config implements \ArrayAccess
         $target = $this->config;
         while ($keys) {
             $key = array_shift($keys);
-            if (!array_key_exists($key, $target) || (!is_array($target[$key]) && $keys)) {
+            if (!is_array($target) || !array_key_exists($key, $target)) {
                 return null;
             }
 

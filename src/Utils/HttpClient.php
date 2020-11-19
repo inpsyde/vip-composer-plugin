@@ -19,7 +19,7 @@ class HttpClient
     private $io;
 
     /**
-     * @var HttpDownloader|RemoteFilesystem|mixed
+     * @var HttpDownloader|RemoteFilesystem|null
      */
     private $client;
 

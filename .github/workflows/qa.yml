@@ -67,3 +67,6 @@ jobs:
 
             - name: Check code style
               run: composer cs
+
+            - name: Check Psalm
+              run: composer psalm

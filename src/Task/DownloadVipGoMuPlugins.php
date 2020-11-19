@@ -29,11 +29,6 @@ final class DownloadVipGoMuPlugins implements Task
     private $vipDirectories;
 
     /**
-     * @var GitProcess
-     */
-    private $git;
-
-    /**
      * @var Filesystem
      */
     private $filesystem;
@@ -83,11 +78,11 @@ final class DownloadVipGoMuPlugins implements Task
 
         $this->filesystem->ensureDirectoryExists($targetDir);
         $this->filesystem->emptyDirectory($targetDir, true);
-        $this->git = new GitProcess($io, $targetDir);
+        $git = new GitProcess($io, $targetDir);
 
         $timeout = ProcessExecutor::getTimeout();
         ProcessExecutor::setTimeout(0);
-        [, , $outputs] = $this->git->exec('clone --recursive ' . self::GIT_URL . ' .');
+        [, , $outputs] = $git->exec('clone --recursive ' . self::GIT_URL . ' .');
         ProcessExecutor::setTimeout($timeout);
 
         if (!$this->alreadyInstalled()) {

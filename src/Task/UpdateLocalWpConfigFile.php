@@ -79,7 +79,7 @@ final class UpdateLocalWpConfigFile implements Task
 
         $io->commentLine("Updating 'wp-config.php'...");
 
-        $currentContent = file_get_contents($wpConfigPath);
+        $currentContent = file_get_contents($wpConfigPath) ?: '';
 
         $wpCommentRegex = "~/\* That's all, stop editing!(?:[^\*]+)\*/~";
         preg_match($wpCommentRegex, $currentContent, $matches);

@@ -34,7 +34,7 @@ final class CopyDevPaths implements Task
     ];
 
     /**
-     * @var array
+     * @var Config
      */
     private $config;
 
@@ -113,16 +113,14 @@ final class CopyDevPaths implements Task
      */
     private function copyCustomPath(string $pathConfigKey, Io $io): int
     {
-        /** @var Finder $sourcePaths */
         [, $source, $target, $sourcePaths] = $this->pathInfoForKey($pathConfigKey);
 
         $this->cleanupTarget($pathConfigKey, $target, $source);
 
+        $errors = 0;
         if (!$sourcePaths) {
             return 0;
         }
-
-        $errors = 0;
 
         /** @var SplFileInfo $sourcePathInfo */
         foreach ($sourcePaths as $sourcePathInfo) {
@@ -145,7 +143,7 @@ final class CopyDevPaths implements Task
 
     /**
      * @param string $key
-     * @return array
+     * @return array{string, string, string, Finder|null}
      *
      * phpcs:disable Inpsyde.CodeQuality.FunctionLength
      * phpcs:disable Inpsyde.CodeQuality.NestingLevel
@@ -157,7 +155,8 @@ final class CopyDevPaths implements Task
         // phpcs:enable Inpsyde.CodeQuality.NestingLevel
         // phpcs:enable Generic.Metrics.CyclomaticComplexity
 
-        $sourceDir = $this->config[Config::DEV_PATHS_CONFIG_KEY][$key];
+        /** @psalm-suppress MixedArrayAccess */
+        $sourceDir = (string)$this->config[Config::DEV_PATHS_CONFIG_KEY][$key];
         $source = $this->filesystem->normalizePath($this->config->basePath() . "/{$sourceDir}");
 
         $finder = null;
@@ -205,7 +204,7 @@ final class CopyDevPaths implements Task
                 $what = 'Yaml config files';
                 $target = $this->directories->yamlConfigDir();
                 $finder and $finder->files()->ignoreDotFiles(false)->filter(
-                    static function (SplFileInfo $info) use ($source): bool {
+                    static function (SplFileInfo $info): bool {
                         return (bool)preg_match('~\.[^\.]+\.yml$~i', $info->getFilename());
                     }
                 );
@@ -251,38 +250,47 @@ final class CopyDevPaths implements Task
          * `/vip` e.g. `/vip/themes/my-theme`, empty the target sub-folder before copying from
          * source to make sure files deleted on the source will not be there.
          */
-        $sourceDirs = glob("{$source}/*", GLOB_ONLYDIR | GLOB_NOSORT);
+        $sourceDirs = Finder::create()
+            ->in($source)
+            ->directories()
+            ->depth('== 0')
+            ->ignoreUnreadableDirs();
+
+        /** @var SplFileInfo $sourceDir */
         foreach ($sourceDirs as $sourceDir) {
-            $sourceBasename = basename($sourceDir);
-            if (
-                $sourceBasename !== '.'
-                && $sourceBasename !== '..'
-                && is_dir("{$target}/{$sourceBasename}")
-            ) {
+            $sourceBasename = $sourceDir->getBasename();
+            if (is_dir("{$target}/{$sourceBasename}")) {
                 $this->filesystem->emptyDirectory("{$target}/{$sourceBasename}");
             }
         }
 
         $isMu = $key === Config::DEV_PATHS_MUPLUGINS_DIR_KEY;
         $isPrivate = $key === Config::DEV_PATHS_PRIVATE_DIR_KEY;
-        foreach (glob("{$target}/*", GLOB_NOSORT) as $item) {
+
+        $targets = Finder::create()
+            ->in($target)
+            ->ignoreUnreadableDirs()
+            ->depth('== 0');
+
+        /** @var SplFileInfo $item */
+        foreach ($targets as $item) {
             /*
              * We need to preserve `/vip/private/deploy-id` and `/vip/private/deploy-ver` files,
              * but anything else in /vip/private` can be deleted before copying, as no Composer nor
              * any other source is expected to write there.
              */
-            if ($isPrivate && is_dir($item)) {
-                $this->filesystem->removeDirectory($item);
+            if ($isPrivate && $item->isDir()) {
+                $this->filesystem->removeDirectory($item->getPathname());
                 continue;
             }
 
-            $basename = ($item && is_file($item)) ? basename($item) : null;
+            $basename = $item->isFile() ? $item->getBasename() : null;
             if (
                 $basename
                 && (!$isMu || ($basename !== '__loader.php'))
                 && (!$isPrivate || !in_array($basename, ['deploy-id', 'deploy-ver'], true))
             ) {
-                $this->filesystem->unlink($item);
+                $this->filesystem->unlink($item->getPathname());
             }
         }
     }

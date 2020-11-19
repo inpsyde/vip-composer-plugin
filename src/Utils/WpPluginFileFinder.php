@@ -14,7 +14,7 @@ declare(strict_types=1);
 namespace Inpsyde\VipComposer\Utils;
 
 use Composer\Package\PackageInterface;
-use Inpsyde\VipComposer\Installer\Installer;
+use Inpsyde\VipComposer\Installer;
 
 class WpPluginFileFinder
 {
@@ -65,6 +65,10 @@ class WpPluginFileFinder
     private function isPluginFile(string $file): bool
     {
         $handle = fopen($file, 'r');
+        if (!$handle) {
+            return false;
+        }
+
         $data = fread($handle, 8192);
         fclose($handle);
         if (!$data) {

@@ -22,7 +22,7 @@ use Composer\Repository\InstalledRepositoryInterface;
 class InstalledPackages
 {
     /**
-     * @var array[][]
+     * @var array<string, array<string, array|InstalledRepositoryInterface>>
      */
     private static $cache;
 
@@ -40,19 +40,25 @@ class InstalledPackages
     }
 
     /**
-     * @return PackageInterface[]
+     * @return array<PackageInterface>
      */
     public function devPackages(): array
     {
-        return $this->parse()['devPackages'];
+        /** @var array<PackageInterface> $packages */
+        $packages = $this->parse()['devPackages'];
+
+        return $packages;
     }
 
     /**
-     * @return string[]
+     * @return array<string>
      */
     public function devPackageNames(): array
     {
-        return $this->parse()['devNames'];
+        /** @var array<string> $names */
+        $names = $this->parse()['devNames'];
+
+        return $names;
     }
 
     /**
@@ -60,23 +66,32 @@ class InstalledPackages
      */
     public function devRepository(): InstalledRepositoryInterface
     {
-        return $this->parse()['devRepo'];
+        /** @var InstalledRepositoryInterface $repo */
+        $repo = $this->parse()['devRepo'];
+
+        return $repo;
     }
 
     /**
-     * @return PackageInterface[]
+     * @return array<PackageInterface>
      */
     public function noDevPackages(): array
     {
-        return $this->parse()['noDevPackages'];
+        /** @var array<PackageInterface> $packages */
+        $packages = $this->parse()['noDevPackages'];
+
+        return $packages;
     }
 
     /**
-     * @return string[]
+     * @return array<string>
      */
     public function noDevPackageNames(): array
     {
-        return $this->parse()['noDevNames'];
+        /** @var array<string> $names */
+        $names = $this->parse()['noDevNames'];
+
+        return $names;
     }
 
     /**
@@ -84,11 +99,14 @@ class InstalledPackages
      */
     public function noDevRepository(): InstalledRepositoryInterface
     {
-        return $this->parse()['noDevRepo'];
+        /** @var InstalledRepositoryInterface $repo */
+        $repo = $this->parse()['noDevRepo'];
+
+        return $repo;
     }
 
     /**
-     * @return array
+     * @return array<string, array|InstalledArrayRepository> $cache
      */
     private function parse(): array
     {
@@ -96,17 +114,20 @@ class InstalledPackages
         $key = spl_object_hash($locker);
 
         if (!empty(self::$cache[$key])) {
-            return self::$cache[$key];
-        }
+            /** @var array<string, array|InstalledArrayRepository> $cache */
+            $cache = self::$cache[$key];
 
-        self::$cache[$key] = [];
+            return $cache;
+        }
 
         $lock = $locker->getLockData();
         $loader = new ArrayLoader(null, true);
 
-        $cache = self::$cache[$key];
+        $cache = [];
         $cache = $this->buildCache((array)($lock['packages'] ?? []), false, $cache, $loader);
         $cache = $this->buildCache((array)($lock['packages-dev'] ?? []), true, $cache, $loader);
+
+        /** @var array<string, array|InstalledArrayRepository> $cache */
 
         self::$cache[$key] = $cache;
 
@@ -127,7 +148,7 @@ class InstalledPackages
         $repo = new InstalledArrayRepository();
 
         foreach ($data as $packageData) {
-            if (isset($packageData['name'])) {
+            if (is_array($packageData) && isset($packageData['name'])) {
                 $package = $loader->load($packageData);
                 $names[] = $package->getName();
                 $packages[] = $package;

@@ -76,10 +76,10 @@ class VipDirectories
     {
         $configData = $config->vipConfig();
 
-        $configTargetPath = $configData[Config::VIP_LOCAL_DIR_KEY];
+        $configTargetPath = (string)$configData[Config::VIP_LOCAL_DIR_KEY];
         $targetPath = Platform::expandPath($configTargetPath);
 
-        $configVipMuPluginsPath = $configData[Config::VIP_MUPLUGINS_LOCAL_DIR_KEY];
+        $configVipMuPluginsPath = (string)$configData[Config::VIP_MUPLUGINS_LOCAL_DIR_KEY];
         $vipMuPluginsPath = Platform::expandPath($configVipMuPluginsPath);
 
         $this->filesystem = $filesystem;

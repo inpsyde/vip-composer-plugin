@@ -129,7 +129,7 @@ class Unzipper
     {
         $zipArchive = new \ZipArchive();
 
-        return $zipArchive->open($zipFile) === true && $zipArchive->extractTo($target) === true;
+        return $zipArchive->open($zipFile) === true && $zipArchive->extractTo($target);
     }
 
     /**

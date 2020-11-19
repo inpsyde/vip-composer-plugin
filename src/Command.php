@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace Inpsyde\VipComposer;
 
 use Composer\Command\BaseCommand;
+use Composer\Composer;
 use Inpsyde\VipComposer\Task\TaskConfig;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -152,8 +153,9 @@ class Command extends BaseCommand
     {
         try {
             $this->resetComposer();
+            /** @var Composer $composer */
             $composer = $this->getComposer(true);
-            if (!file_exists(getcwd() . '/composer.lock')) {
+            if (!file_exists((getcwd() ?: '.') . '/composer.lock')) {
                 throw new \RuntimeException(
                     'Composer lock file not found. Please install via Composer first.'
                 );

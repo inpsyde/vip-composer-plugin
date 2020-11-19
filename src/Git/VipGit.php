@@ -41,19 +41,14 @@ class VipGit
     private $directories;
 
     /**
-     * @var Filesystem
-     */
-    private $filesystem;
-
-    /**
-     * @var GitProcess
-     */
-    private $git;
-
-    /**
      * @var InstalledPackages
      */
     private $packages;
+
+    /**
+     * @var Filesystem
+     */
+    private $filesystem;
 
     /**
      * @var Unzipper
@@ -64,6 +59,11 @@ class VipGit
      * @var array
      */
     private $gitConfig;
+
+    /**
+     * @var GitProcess|null
+     */
+    private $git;
 
     /**
      * @param Io $io
@@ -116,6 +116,7 @@ class VipGit
      */
     public function mirrorDir(): string
     {
+        /** @var string|null $mirrorPath */
         static $mirrorPath;
         if ($mirrorPath) {
             return $mirrorPath;
@@ -133,6 +134,8 @@ class VipGit
      * @param string|null $url
      * @param string|null $branch
      * @return bool
+     *
+     * @psalm-assert GitProcess $this->git
      */
     private function syncAndPush(bool $push, string $url = null, string $branch = null): bool
     {
@@ -174,24 +177,29 @@ class VipGit
 
         $this->io->infoLine(ucfirst("{$operation} done successfully!"));
 
-        return $success;
+        return true;
     }
 
     /**
      * @param string|null $customUrl
      * @param string|null $customBranch
-     * @return array
+     * @return array{string,string}|array{null,null}
      */
     private function init(string $customUrl = null, string $customBranch = null): array
     {
+        /**
+         * @vase string|null $httpsUrl
+         * @vase string|null $sshUrl
+         */
         [$httpsUrl, $sshUrl] = $this->gitUrls($customUrl);
         if (!$httpsUrl && !$sshUrl) {
             return [null, null];
         }
 
-        $url = $sshUrl ?: $httpsUrl;
-        $branch = $customBranch ?? $this->gitConfig[Config::GIT_BRANCH_KEY];
+        $url = (string)($sshUrl ?: $httpsUrl);
+        $branch = (string)($customBranch ?? $this->gitConfig[Config::GIT_BRANCH_KEY]);
 
+        /** @var GitProcess $this->git */
         [$success] = $this->git->exec("clone {$url} .");
 
         $success and $this->io->infoLine('Repository initialized.');
@@ -264,7 +272,7 @@ class VipGit
      * @param bool $push
      * @param string $remoteUrl
      * @param string $targetBranch
-     * @return mixed
+     * @return bool
      */
     private function mergeAndPush(
         string $mirrorDir,
@@ -273,6 +281,8 @@ class VipGit
         string $targetBranch
     ): bool {
 
+        /** @var GitProcess $this->git */
+
         [$success, $output] = $this->git->exec('branch');
         if (!$success) {
             $this->io->errorLine('Failed reading branches.');
@@ -280,7 +290,7 @@ class VipGit
             return false;
         }
 
-        $branches = explode($output, "\n");
+        $branches = explode($output, "\n") ?: [];
         $currentBranch = '';
         foreach ($branches as $branch) {
             if (strpos(trim($branch), '* ')) {
@@ -315,7 +325,7 @@ class VipGit
         }
 
         $changes = $this->gitStats($push, $mirrorDir);
-        if ($changes < 0 && $push) {
+        if ($changes < 0) {
             $this->io->errorLine('Sorry, failed determining git status.');
             $push
                 ? $this->io->commentLine('Will try to push anyway.')
@@ -327,6 +337,7 @@ class VipGit
         }
 
         $this->io->commentLine("Pushing to <<<{$remoteUrl}>>>");
+        /** @var bool $success */
         [$success] = $this->git->exec('push origin');
 
         return $success;
@@ -334,10 +345,11 @@ class VipGit
 
     /**
      * @param string|null $customUrl
-     * @return array
+     * @return array{string,string}|array{null,null}
      */
     private function gitUrls(string $customUrl = null): array
     {
+        /** @var string $url */
         $url = $customUrl ?? $this->gitConfig[Config::GIT_URL_KEY];
 
         if (
@@ -372,6 +384,8 @@ class VipGit
      */
     private function checkoutBranch(string $targetBranch): bool
     {
+        /** @var GitProcess $this->git */
+
         [$success, $output] = $this->git->exec('branch -a');
         if (!$success) {
             return false;
@@ -495,6 +509,8 @@ class VipGit
      */
     private function gitStats(bool $push, string $mirrorDir): int
     {
+        /** @var GitProcess $this->git */
+
         [$success, $output] = $this->git->exec('diff-tree --no-commit-id --name-status -r HEAD');
         if (!$success) {
             $push or $this->io->infoLine('Changes merged but not pushed.');
@@ -519,6 +535,7 @@ class VipGit
         array_walk(
             $files,
             static function (string $file) use (&$counts): void {
+                /** @var array<string, int> $counts */
                 $letter = strtoupper($file[0] ?? '');
                 array_key_exists($letter, $counts) and $counts[$letter]++;
             }
@@ -529,6 +546,8 @@ class VipGit
 
             return 0;
         }
+
+        /** @var array<string, int> $counts */
 
         $push or $this->io->infoLine('Changes merged but not pushed.');
         $messages = ["Involved a total of {$total} files:"];

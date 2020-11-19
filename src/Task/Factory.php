@@ -24,7 +24,7 @@ class Factory
     private $factory;
 
     /**
-     * @var array
+     * @var array<string, object>
      */
     private $services = [];
 
@@ -48,7 +48,8 @@ class Factory
      */
     public function tasks(): Tasks
     {
-        return $this->service(
+        /** @var Tasks $tasks */
+        $tasks = $this->service(
             Tasks::class,
             function (): Tasks {
                 return new Tasks(
@@ -60,6 +61,8 @@ class Factory
                 );
             }
         );
+
+        return $tasks;
     }
 
     /**
@@ -67,7 +70,8 @@ class Factory
      */
     public function copyDevPaths(): CopyDevPaths
     {
-        return $this->service(
+        /** @var CopyDevPaths $copyDevPaths */
+        $copyDevPaths = $this->service(
             CopyDevPaths::class,
             function (): CopyDevPaths {
                 return new CopyDevPaths(
@@ -77,6 +81,8 @@ class Factory
                 );
             }
         );
+
+        return $copyDevPaths;
     }
 
     /**
@@ -84,7 +90,8 @@ class Factory
      */
     public function downloadVipGoMuPlugins(): DownloadVipGoMuPlugins
     {
-        return $this->service(
+        /** @var DownloadVipGoMuPlugins $downloadVipGoMuPlugins */
+        $downloadVipGoMuPlugins = $this->service(
             DownloadVipGoMuPlugins::class,
             function (): DownloadVipGoMuPlugins {
                 return new DownloadVipGoMuPlugins(
@@ -93,6 +100,8 @@ class Factory
                 );
             }
         );
+
+        return $downloadVipGoMuPlugins;
     }
 
     /**
@@ -100,7 +109,8 @@ class Factory
      */
     public function downloadWpCore(): DownloadWpCore
     {
-        return $this->service(
+        /** @var DownloadWpCore $downloadWpCore */
+        $downloadWpCore = $this->service(
             DownloadWpCore::class,
             function (): DownloadWpCore {
                 return new DownloadWpCore(
@@ -112,6 +122,8 @@ class Factory
                 );
             }
         );
+
+        return $downloadWpCore;
     }
 
     /**
@@ -119,7 +131,8 @@ class Factory
      */
     public function generateMuPluginsLoader(): GenerateMuPluginsLoader
     {
-        return $this->service(
+        /** @var GenerateMuPluginsLoader $generateMuPluginsLoader */
+        $generateMuPluginsLoader = $this->service(
             GenerateMuPluginsLoader::class,
             function (): GenerateMuPluginsLoader {
                 $packages = $this->factory->composer()
@@ -136,6 +149,8 @@ class Factory
                 );
             }
         );
+
+        return $generateMuPluginsLoader;
     }
 
     /**
@@ -143,7 +158,8 @@ class Factory
      */
     public function generateProductionAutoload(): GenerateProductionAutoload
     {
-        return $this->service(
+        /** @var GenerateProductionAutoload $generateProductionAutoload */
+        $generateProductionAutoload = $this->service(
             GenerateProductionAutoload::class,
             function (): GenerateProductionAutoload {
                 return new GenerateProductionAutoload(
@@ -154,6 +170,8 @@ class Factory
                 );
             }
         );
+
+        return $generateProductionAutoload;
     }
 
     /**
@@ -161,7 +179,8 @@ class Factory
      */
     public function handleGit(): HandleGit
     {
-        return $this->service(
+        /** @var HandleGit $handleGit */
+        $handleGit = $this->service(
             HandleGit::class,
             function (): HandleGit {
                 return new HandleGit(
@@ -173,6 +192,8 @@ class Factory
                 );
             }
         );
+
+        return $handleGit;
     }
 
     /**
@@ -180,7 +201,8 @@ class Factory
      */
     public function symlinkVipGoDir(): SymlinkVipGoDir
     {
-        return $this->service(
+        /** @var SymlinkVipGoDir $symlinkVipGoDir */
+        $symlinkVipGoDir = $this->service(
             SymlinkVipGoDir::class,
             function (): SymlinkVipGoDir {
                 return new SymlinkVipGoDir(
@@ -190,6 +212,8 @@ class Factory
                 );
             }
         );
+
+        return $symlinkVipGoDir;
     }
 
     /**
@@ -197,7 +221,8 @@ class Factory
      */
     public function updateLocalWpConfigFile(): UpdateLocalWpConfigFile
     {
-        return $this->service(
+        /** @var UpdateLocalWpConfigFile $updateLocalWpConfigFile */
+        $updateLocalWpConfigFile = $this->service(
             UpdateLocalWpConfigFile::class,
             function (): UpdateLocalWpConfigFile {
                 return new UpdateLocalWpConfigFile(
@@ -207,6 +232,8 @@ class Factory
                 );
             }
         );
+
+        return $updateLocalWpConfigFile;
     }
 
     /**
@@ -214,12 +241,15 @@ class Factory
      */
     public function generateDeployVersion(): GenerateDeployVersion
     {
-        return $this->service(
+        /** @var GenerateDeployVersion $deployVersion */
+        $deployVersion = $this->service(
             GenerateDeployVersion::class,
             function (): GenerateDeployVersion {
                 return new GenerateDeployVersion($this->factory->vipDirectories());
             }
         );
+
+        return $deployVersion;
     }
 
     /**
@@ -227,7 +257,8 @@ class Factory
      */
     public function ensureGitKeep(): EnsureGitKeep
     {
-        return $this->service(
+        /** @var EnsureGitKeep $gitKeep */
+        $gitKeep = $this->service(
             EnsureGitKeep::class,
             function (): EnsureGitKeep {
                 return new EnsureGitKeep(
@@ -236,16 +267,18 @@ class Factory
                 );
             }
         );
+
+        return $gitKeep;
     }
 
     /**
      * @param string $class
-     * @param callable $factory
-     * @return mixed
+     * @param callable():object $factory
+     * @return object
      *
      * phpcs:disable Inpsyde.CodeQuality.ReturnTypeDeclaration
      */
-    private function service(string $class, callable $factory)
+    private function service(string $class, callable $factory): object
     {
         // phpcs:enable Inpsyde.CodeQuality.ReturnTypeDeclaration
 
