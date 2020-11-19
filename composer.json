@@ -24,7 +24,8 @@
     },
     "require-dev": {
         "composer/composer": "^2",
-        "inpsyde/php-coding-standards": "^1@dev"
+        "inpsyde/php-coding-standards": "^1@dev",
+        "phpcompatibility/php-compatibility": "^9.3.0"
     },
     "autoload": {
         "psr-4": {
@@ -36,8 +37,10 @@
     },
     "scripts": {
         "cs": "@php ./vendor/squizlabs/php_codesniffer/bin/phpcs",
+        "phpcompat": "@php ./vendor/squizlabs/php_codesniffer/bin/phpcs -p . --standard=PHPCompatibility --ignore=*/vendor/* --extensions=php --basepath=./ --runtime-set testVersion 5.6-",
         "qa": [
-            "@cs"
+            "@cs",
+            "@phpcompat"
         ]
     }
 }

@@ -1,25 +1,65 @@
-name: PHP Quality Assurance
-on: [push]
+name: Quality Assurance
+on: [push, pull_request]
 jobs:
-    build:
+
+    cross_version:
         runs-on: ubuntu-latest
         if: "!contains(github.event.head_commit.message, 'ci skip')"
         strategy:
             matrix:
-                php-versions: ['7.2', '7.3', '7.4']
+                php: [ '7.3', '7.4' ],
+                tools: [ 'composer:v2', 'composer:v1' ]
+                prefer: [ 'lowest', 'highest' ]
+                ignore-platform: [ '' ]
+                experimental: [ false ]
+                include:
+                    - php: "8.0"
+                      prefer: "highest"
+                      ignore-platform: "--ignore-platform-reqs"
+                      experimental: true
+                      tools: "composer:v2"
+                    - php: "8.0"
+                      prefer: "highest"
+                      ignore-platform: "--ignore-platform-reqs"
+                      experimental: true
+                      tools: "composer:v1"
+            continue-on-error: ${{ matrix.experimental }}
         steps:
-            -   uses: actions/checkout@v2
+            - name: Checkout
+              uses: actions/checkout@v2
 
-            -   name: Setup PHP
-                uses: shivammathur/setup-php@v2
-                with:
-                    php-version: ${{ matrix.php-versions }}
+            - name: Setup PHP
+              uses: shivammathur/setup-php@v2
+              with:
+                php-version: ${{ matrix.php-versions }}
+                tools: ${{ matrix.tools }}
 
-            -   name: Check syntax error in sources
-                run: find ./src/ ./tests/ -type f -name '*.php' -print0 | xargs -0 -L 1 -P 4 -- php -l
+            - name: Check syntax error in sources
+              run: find ./src/ -type f -name '*.php' -print0 | xargs -0 -L 1 -P 4 -- php -l
 
-            -   name: Install dependencies
-                run: composer install -q -n -a --no-progress --prefer-dist
+            - name: Install dependencies
+              uses: "ramsey/composer-install@v1"
+              with:
+                dependency-versions: ${{ matrix.prefer }}
+                composer-options: ${{ matrix.ignore-platform }}
 
-            -   name: Check code styles
-                run: ./vendor/bin/phpcs
+    qa:
+        runs-on: ubuntu-latest
+        if: "!contains(github.event.head_commit.message, 'ci skip')"
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v2
+
+            - name: Setup PHP
+              uses: shivammathur/setup-php@v2
+              with:
+                  php-version: 7.4
+
+            - name: Install dependencies
+              uses: "ramsey/composer-install@v1"
+
+            - name: Check cross-version PHP compatibility
+              run: composer phpcompat
+
+            - name: Check code style
+              run: composer cs
