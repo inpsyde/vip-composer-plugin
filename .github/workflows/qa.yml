@@ -5,9 +5,10 @@ jobs:
     cross_version:
         runs-on: ubuntu-latest
         if: "!contains(github.event.head_commit.message, 'ci skip')"
+
         strategy:
             matrix:
-                php: [ '7.3', '7.4' ],
+                php: [ '7.3', '7.4' ]
                 tools: [ 'composer:v2', 'composer:v1' ]
                 prefer: [ 'lowest', 'highest' ]
                 ignore-platform: [ '' ]
@@ -23,7 +24,9 @@ jobs:
                       ignore-platform: "--ignore-platform-reqs"
                       experimental: true
                       tools: "composer:v1"
-            continue-on-error: ${{ matrix.experimental }}
+
+        continue-on-error: ${{ matrix.experimental }}
+
         steps:
             - name: Checkout
               uses: actions/checkout@v2
@@ -46,6 +49,7 @@ jobs:
     qa:
         runs-on: ubuntu-latest
         if: "!contains(github.event.head_commit.message, 'ci skip')"
+
         steps:
             - name: Checkout
               uses: actions/checkout@v2
