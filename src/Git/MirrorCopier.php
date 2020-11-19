@@ -60,6 +60,7 @@ class MirrorCopier
         'temp',
         'tmp',
         'ts',
+        'tsx',
     ];
 
     /**
