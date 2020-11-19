@@ -111,7 +111,7 @@ class MirrorCopier
         $basename = is_file($path) ? basename($path) : '';
 
         return
-            strpos($path, 'node_modules/') !== false
+            strpos($path, 'node_modules/') === false
             && (strpos($path, '/.git') === false || $basename === '.gitkeep')
             && !preg_match(self::NESTED_VENDOR_REGEX, str_replace('\\', '/', $path));
     }
