@@ -196,6 +196,11 @@ class Command extends BaseCommand
     private function createConfig(InputInterface $input): Task\TaskConfig
     {
         $options = [];
+        /**
+         * @var string $key
+         * @var string $taskKey
+         * @var bool $default
+         */
         foreach (self::OPTIONS as $key => [$taskKey, $default]) {
             $options[$taskKey] = $this->optionValue($input, $key, $default);
         }

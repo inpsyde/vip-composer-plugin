@@ -197,7 +197,14 @@ class VipGit
         }
 
         $url = (string)($sshUrl ?: $httpsUrl);
-        $branch = (string)($customBranch ?? $this->gitConfig[Config::GIT_BRANCH_KEY]);
+        /** @var string|null $branch */
+        $branch = $customBranch ?? $this->gitConfig[Config::GIT_BRANCH_KEY];
+        if (!$branch) {
+            $this->io->errorLine('Git branch not configured in composer.json.');
+            $this->io->errorLine('Use `--git-branch` flag to pass a branch name.');
+
+            return [null, null];
+        }
 
         /** @var GitProcess $this->git */
         [$success] = $this->git->exec("clone {$url} .");

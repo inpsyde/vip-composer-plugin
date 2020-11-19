@@ -115,12 +115,16 @@ final class CopyDevPaths implements Task
     {
         [, $source, $target, $sourcePaths] = $this->pathInfoForKey($pathConfigKey);
 
-        $this->cleanupTarget($pathConfigKey, $target, $source);
+        if (is_dir($target)) {
+            $this->cleanupTarget($pathConfigKey, $target);
+            $sourcePaths and $this->cleanupSource($source, $target);
+        }
 
-        $errors = 0;
         if (!$sourcePaths) {
             return 0;
         }
+
+        $errors = 0;
 
         /** @var SplFileInfo $sourcePathInfo */
         foreach ($sourcePaths as $sourcePathInfo) {
@@ -161,8 +165,11 @@ final class CopyDevPaths implements Task
 
         $finder = null;
         if (is_dir($source)) {
-            $finder = new Finder();
-            $finder = $finder->in($source)->depth('== 0')->ignoreUnreadableDirs()->ignoreVCS(true);
+            $finder = Finder::create()
+                ->in($source)
+                ->depth('== 0')
+                ->ignoreUnreadableDirs()
+                ->ignoreVCS(true);
         }
 
         switch ($key) {
@@ -226,10 +233,9 @@ final class CopyDevPaths implements Task
     /**
      * @param string $key
      * @param string $target
-     * @param string $source
      * @return void
      */
-    private function cleanupTarget(string $key, string $target, string $source): void
+    private function cleanupTarget(string $key, string $target): void
     {
         // Do nothing for languages: emptying the folder would conflict with translation downloader.
         if ($key === Config::DEV_PATHS_LANGUAGES_DIR_KEY) {
@@ -245,32 +251,10 @@ final class CopyDevPaths implements Task
                 return;
         }
 
-        /*
-         * If dev path has sub-folder (e.g. `/themes/my-theme`), and that sub-folder exists under
-         * `/vip` e.g. `/vip/themes/my-theme`, empty the target sub-folder before copying from
-         * source to make sure files deleted on the source will not be there.
-         */
-        $sourceDirs = Finder::create()
-            ->in($source)
-            ->directories()
-            ->depth('== 0')
-            ->ignoreUnreadableDirs();
-
-        /** @var SplFileInfo $sourceDir */
-        foreach ($sourceDirs as $sourceDir) {
-            $sourceBasename = $sourceDir->getBasename();
-            if (is_dir("{$target}/{$sourceBasename}")) {
-                $this->filesystem->emptyDirectory("{$target}/{$sourceBasename}");
-            }
-        }
-
         $isMu = $key === Config::DEV_PATHS_MUPLUGINS_DIR_KEY;
         $isPrivate = $key === Config::DEV_PATHS_PRIVATE_DIR_KEY;
 
-        $targets = Finder::create()
-            ->in($target)
-            ->ignoreUnreadableDirs()
-            ->depth('== 0');
+        $targets = Finder::create()->in($target)->ignoreUnreadableDirs()->depth('== 0');
 
         /** @var SplFileInfo $item */
         foreach ($targets as $item) {
@@ -291,6 +275,33 @@ final class CopyDevPaths implements Task
                 && (!$isPrivate || !in_array($basename, ['deploy-id', 'deploy-ver'], true))
             ) {
                 $this->filesystem->unlink($item->getPathname());
+            }
+        }
+    }
+
+    /**
+     * @param string $target
+     * @param string $source
+     * @return void
+     */
+    private function cleanupSource(string $target, string $source): void
+    {
+        /*
+         * If dev path has sub-folder (e.g. `/themes/my-theme`), and that sub-folder exists under
+         * `/vip` e.g. `/vip/themes/my-theme`, empty the target sub-folder before copying from
+         * source to make sure files deleted on the source will not be there.
+         */
+        $sourceDirs = Finder::create()
+            ->in($source)
+            ->directories()
+            ->depth('== 0')
+            ->ignoreUnreadableDirs();
+
+        /** @var SplFileInfo $sourceDir */
+        foreach ($sourceDirs as $sourceDir) {
+            $sourceBasename = $sourceDir->getBasename();
+            if (is_dir("{$target}/{$sourceBasename}")) {
+                $this->filesystem->emptyDirectory("{$target}/{$sourceBasename}");
             }
         }
     }

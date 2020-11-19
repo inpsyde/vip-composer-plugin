@@ -104,8 +104,8 @@ class HandleGit implements Task
         );
 
         $isPush = $taskConfig->isGitPush();
-        $gitUrl = $taskConfig->gitUrl() ?? '';
-        $gitBranch = $taskConfig->gitBranch() ?? '?';
+        $gitUrl = $taskConfig->gitUrl();
+        $gitBranch = $taskConfig->gitBranch();
         $success = $isPush ? $git->push($gitUrl, $gitBranch) : $git->sync($gitUrl, $gitBranch);
 
         if (!$success) {
@@ -113,7 +113,7 @@ class HandleGit implements Task
                 ? 'Failed Git merge and push to %s (%s).'
                 : 'Failed Git merge with %s (%s).';
 
-            throw new \RuntimeException(sprintf($format, $gitUrl, $gitBranch));
+            throw new \RuntimeException(sprintf($format, $gitUrl ?? '', $gitBranch ?? ''));
         }
 
         if ($isPush && $taskConfig->isLocal()) {
