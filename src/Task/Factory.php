@@ -56,7 +56,7 @@ class Factory
                     $this->taskConfig,
                     $this->factory->vipDirectories(),
                     $this->factory->io(),
-                    $this->factory->fileSystem()
+                    $this->factory->filesystem()
                 );
             }
         );
@@ -73,7 +73,7 @@ class Factory
                 return new CopyDevPaths(
                     $this->factory->config(),
                     $this->factory->vipDirectories(),
-                    $this->factory->fileSystem()
+                    $this->factory->filesystem()
                 );
             }
         );
@@ -89,7 +89,7 @@ class Factory
             function (): DownloadVipGoMuPlugins {
                 return new DownloadVipGoMuPlugins(
                     $this->factory->vipDirectories(),
-                    $this->factory->fileSystem()
+                    $this->factory->filesystem()
                 );
             }
         );
@@ -106,9 +106,9 @@ class Factory
                 return new DownloadWpCore(
                     $this->factory->config(),
                     $this->factory->composer(),
-                    $this->factory->remoteFileSystem(),
-                    $this->factory->fileSystem(),
-                    $this->factory->zipDownloader()
+                    $this->factory->filesystem(),
+                    $this->factory->httpClient(),
+                    $this->factory->archiveDownloaderFactory()
                 );
             }
         );
@@ -131,7 +131,7 @@ class Factory
                     $this->factory->config(),
                     $this->factory->vipDirectories(),
                     $this->factory->wpPluginFileFinder(),
-                    $this->factory->fileSystem(),
+                    $this->factory->filesystem(),
                     ...$packages
                 );
             }
@@ -168,7 +168,7 @@ class Factory
                     $this->factory->config(),
                     $this->factory->vipDirectories(),
                     $this->factory->installedPackages(),
-                    $this->factory->fileSystem(),
+                    $this->factory->filesystem(),
                     $this->factory->unzipper()
                 );
             }
@@ -186,7 +186,7 @@ class Factory
                 return new SymlinkVipGoDir(
                     $this->factory->config(),
                     $this->factory->vipDirectories(),
-                    $this->factory->fileSystem()
+                    $this->factory->filesystem()
                 );
             }
         );
@@ -203,7 +203,7 @@ class Factory
                 return new UpdateLocalWpConfigFile(
                     $this->factory->config(),
                     $this->factory->vipDirectories(),
-                    $this->factory->fileSystem()
+                    $this->factory->filesystem()
                 );
             }
         );
@@ -232,7 +232,7 @@ class Factory
             function (): EnsureGitKeep {
                 return new EnsureGitKeep(
                     $this->factory->vipDirectories(),
-                    $this->factory->fileSystem()
+                    $this->factory->filesystem()
                 );
             }
         );

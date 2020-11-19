@@ -33,7 +33,8 @@ class WpPluginFileFinder
     }
 
     /**
-     * @inheritdoc
+     * @param PackageInterface $package
+     * @return string
      */
     public function pathForPluginPackage(PackageInterface $package): string
     {
@@ -58,7 +59,7 @@ class WpPluginFileFinder
     }
 
     /**
-     * @param $file
+     * @param string $file
      * @return bool
      */
     private function isPluginFile(string $file): bool

@@ -14,11 +14,11 @@ declare(strict_types=1);
 namespace Inpsyde\VipComposer;
 
 use Composer\Composer;
-use Composer\Downloader\ZipDownloader;
 use Composer\IO\IOInterface;
 use Composer\Util\Filesystem;
 use Composer\Util\ProcessExecutor;
-use Composer\Util\RemoteFilesystem;
+use Inpsyde\VipComposer\Utils\ArchiveDownloaderFactory;
+use Inpsyde\VipComposer\Utils\HttpClient;
 
 class Factory
 {
@@ -92,7 +92,7 @@ class Factory
         return $this->service(
             VipDirectories::class,
             function (): VipDirectories {
-                $directories = new VipDirectories($this->fileSystem(), $this->config());
+                $directories = new VipDirectories($this->filesystem(), $this->config());
                 $directories->createDirs();
 
                 return $directories;
@@ -144,21 +144,32 @@ class Factory
     }
 
     /**
-     * @return ZipDownloader
+     * @return ArchiveDownloaderFactory
      */
-    public function zipDownloader(): ZipDownloader
+    public function archiveDownloaderFactory(): ArchiveDownloaderFactory
     {
         return $this->service(
-            ZipDownloader::class,
-            function (): ZipDownloader {
-                return new ZipDownloader(
-                    $this->composerIo,
-                    $this->composer->getConfig(),
-                    null,
-                    null,
+            ArchiveDownloaderFactory::class,
+            function (): ArchiveDownloaderFactory {
+                return ArchiveDownloaderFactory::new(
+                    $this->io(),
+                    $this->composer,
                     $this->processExecutor(),
-                    $this->remoteFileSystem()
+                    $this->filesystem()
                 );
+            }
+        );
+    }
+
+    /**
+     * @return HttpClient
+     */
+    public function httpClient(): HttpClient
+    {
+        return $this->service(
+            HttpClient::class,
+            function (): HttpClient {
+                return HttpClient::new($this->io(), $this->composer);
             }
         );
     }
@@ -172,8 +183,9 @@ class Factory
             Utils\Unzipper::class,
             function (): Utils\Unzipper {
                 return new Utils\Unzipper(
-                    $this->composerIo,
-                    $this->composer->getConfig()
+                    $this->io(),
+                    $this->processExecutor(),
+                    $this->filesystem()
                 );
             }
         );
@@ -182,28 +194,12 @@ class Factory
     /**
      * @return Filesystem
      */
-    public function fileSystem(): Filesystem
+    public function filesystem(): Filesystem
     {
         return $this->service(
             Filesystem::class,
             static function (): Filesystem {
                 return new Filesystem();
-            }
-        );
-    }
-
-    /**
-     * @return RemoteFilesystem
-     */
-    public function remoteFileSystem(): RemoteFilesystem
-    {
-        return $this->service(
-            RemoteFilesystem::class,
-            function (): RemoteFilesystem {
-                return new RemoteFilesystem(
-                    $this->composerIo,
-                    $this->composer->getConfig()
-                );
             }
         );
     }

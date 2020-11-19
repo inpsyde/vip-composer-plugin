@@ -18,6 +18,7 @@ use Composer\Package\PackageInterface;
 use Composer\Repository\InstalledRepositoryInterface;
 use Inpsyde\VipComposer\Io;
 use InvalidArgumentException;
+use React\Promise\PromiseInterface;
 
 /**
  * The plugin this class is part of has the only aim to download WordPress as a zip artifact,
@@ -97,20 +98,21 @@ class NoopCoreInstaller implements InstallerInterface
         PackageInterface $initial,
         PackageInterface $target
     ) {
-        // do nothing
+
         $name = $target->getName();
         $this->io->commentLine("Skipping update of {$name}...");
     }
 
     /**
-     * We don't support uninstall, at the moment.
+     * Do nothing. Just inform user that we are skipping the package uninstall.
      *
      * @param InstalledRepositoryInterface $repo repository in which to check
      * @param PackageInterface $package package instance
      */
     public function uninstall(InstalledRepositoryInterface $repo, PackageInterface $package)
     {
-        // do nothing
+        $name = $package->getName();
+        $this->io->commentLine("Skipping uninstall of {$name}...");
     }
 
     /**
@@ -123,5 +125,46 @@ class NoopCoreInstaller implements InstallerInterface
     public function getInstallPath(PackageInterface $package)
     {
         return getcwd();
+    }
+
+    /**
+     * Do nothing. Just inform user that we are skipping the package download.
+     *
+     * @param PackageInterface $package
+     * @param PackageInterface|null $prevPackage
+     * @return PromiseInterface|void|null
+     */
+    public function download(PackageInterface $package, PackageInterface $prevPackage = null)
+    {
+        $name = $package->getName();
+        $this->io->commentLine("Skipping download of {$name}...");
+    }
+
+    /**
+     * Do nothing. Just inform user that we are skipping the package preparation.
+     *
+     * @param string $type
+     * @param PackageInterface $package
+     * @param PackageInterface|null $prevPackage
+     * @return PromiseInterface|void|null
+     */
+    public function prepare($type, PackageInterface $package, PackageInterface $prevPackage = null)
+    {
+        $name = $package->getName();
+        $this->io->commentLine("Skipping preparation of {$name}...");
+    }
+
+    /**
+     * Do nothing. Just inform user that we are skipping the package cleanup.
+     *
+     * @param string $type
+     * @param PackageInterface $package
+     * @param PackageInterface|null $prevPackage
+     * @return PromiseInterface|void|null
+     */
+    public function cleanup($type, PackageInterface $package, PackageInterface $prevPackage = null)
+    {
+        $name = $package->getName();
+        $this->io->commentLine("Skipping cleanup of {$name}...");
     }
 }

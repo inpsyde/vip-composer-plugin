@@ -14,17 +14,14 @@ declare(strict_types=1);
 namespace Inpsyde\VipComposer\Task;
 
 use Composer\Composer;
-use Composer\Downloader\ZipDownloader;
-use Composer\Package\Link;
 use Composer\Package\Package;
 use Composer\Semver\Comparator;
 use Composer\Semver\Semver;
 use Composer\Util\Filesystem;
-use Composer\Util\RemoteFilesystem;
 use Inpsyde\VipComposer\Config;
 use Inpsyde\VipComposer\Io;
-use Inpsyde\VipComposer\Utils\Unzipper;
-use Symfony\Component\Finder\Finder;
+use Inpsyde\VipComposer\Utils\ArchiveDownloaderFactory;
+use Inpsyde\VipComposer\Utils\HttpClient;
 
 final class DownloadWpCore implements Task
 {
@@ -42,40 +39,40 @@ final class DownloadWpCore implements Task
     private $composer;
 
     /**
-     * @var RemoteFilesystem
-     */
-    private $remoteFilesystem;
-
-    /**
      * @var Filesystem
      */
     private $filesystem;
 
     /**
-     * @var ZipDownloader
+     * @var HttpClient
      */
-    private $zipDownloader;
+    private $http;
+
+    /**
+     * @var ArchiveDownloaderFactory
+     */
+    private $archiveDownloaderFactory;
 
     /**
      * @param Config $config
      * @param Composer $composer
-     * @param RemoteFilesystem $remoteFilesystem
      * @param Filesystem $filesystem
-     * @param ZipDownloader $zipDownloader
+     * @param HttpClient $http
+     * @param ArchiveDownloaderFactory $archiveDownloaderFactory
      */
     public function __construct(
         Config $config,
         Composer $composer,
-        RemoteFilesystem $remoteFilesystem,
         Filesystem $filesystem,
-        ZipDownloader $zipDownloader
+        HttpClient $http,
+        ArchiveDownloaderFactory $archiveDownloaderFactory
     ) {
 
         $this->config = $config;
         $this->composer = $composer;
-        $this->remoteFilesystem = $remoteFilesystem;
         $this->filesystem = $filesystem;
-        $this->zipDownloader = $zipDownloader;
+        $this->http = $http;
+        $this->archiveDownloaderFactory = $archiveDownloaderFactory;
     }
 
     /**
@@ -129,10 +126,12 @@ final class DownloadWpCore implements Task
 
         $io->commentLine("Installing WordPress {$version}...");
         try {
+            $this->filesystem->emptyDirectory($wpCorePath, true);
             $package = new Package('wordpress/wordpress', $version, $version);
             $package->setDistType('zip');
             $package->setDistUrl($zipUrl);
-            $this->zipDownloader->download($package, $wpCorePath, false);
+            $downloader = $this->archiveDownloaderFactory->create('zip');
+            $downloader->download($package, $wpCorePath);
         } catch (\Throwable $throwable) {
             $error = sprintf(
                 'Error installing WordPress %s from %s.',
@@ -230,7 +229,6 @@ final class DownloadWpCore implements Task
         $rootPackage = $this->composer->getPackage();
         $repositoryManager = $this->composer->getRepositoryManager();
 
-        /** @var Link $link */
         foreach ($rootPackage->getRequires() as $link) {
             $constraint = $link->getConstraint();
             if ($constraint === null) {
@@ -394,30 +392,6 @@ final class DownloadWpCore implements Task
     }
 
     /**
-     * @param string $zipFile
-     * @param string $wpCoreDir
-     * @param Io $io
-     */
-    private function cleanUp(string $zipFile, string $wpCoreDir, Io $io): void
-    {
-        $io->verboseCommentLine('Cleaning previous WordPress files...');
-
-        // Delete leftover zip file if found
-        if (file_exists($zipFile)) {
-            $this->filesystem->unlink($zipFile);
-        }
-
-        $dirs = (new Finder())
-            ->in($wpCoreDir)
-            ->depth('== 0')
-            ->ignoreDotFiles(true);
-
-        foreach ($dirs as $dir) {
-            $this->filesystem->remove($dir->getPathname());
-        }
-    }
-
-    /**
      * Query wp.org API to get the last version.
      *
      * @param Io $io
@@ -451,9 +425,8 @@ final class DownloadWpCore implements Task
         }
 
         $io->verboseCommentLine('Retrieving WordPress versions info...');
-        $content = $this->remoteFilesystem->getContents('wordpress.org', self::RELEASES_URL, false);
-        $code = $this->remoteFilesystem->findStatusCode($this->remoteFilesystem->getLastHeaders());
-        if ($code !== 200) {
+        $content = $this->http->get(self::RELEASES_URL);
+        if (!$content) {
             return [];
         }
 

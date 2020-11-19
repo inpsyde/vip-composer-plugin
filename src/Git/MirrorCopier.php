@@ -232,8 +232,7 @@ class MirrorCopier
     {
         $folderName = pathinfo($zipPath, PATHINFO_FILENAME);
         $target = dirname($zipPath) . "/{$folderName}/";
-        $this->unzipper->unzip($zipPath, $target);
-        if (!is_dir($target)) {
+        if (!$this->unzipper->unzip($zipPath, $target)) {
             $this->io->errorLine("Failed to copy {$folderName} package.");
 
             return false;

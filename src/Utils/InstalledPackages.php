@@ -14,12 +14,10 @@ declare(strict_types=1);
 namespace Inpsyde\VipComposer\Utils;
 
 use Composer\Composer;
+use Composer\Package\Loader\ArrayLoader;
 use Composer\Package\PackageInterface;
 use Composer\Repository\InstalledArrayRepository;
-use Composer\Repository\InstalledFilesystemRepository;
 use Composer\Repository\InstalledRepositoryInterface;
-use Composer\Repository\RepositoryInterface;
-use Inpsyde\VipComposer\Plugin;
 
 class InstalledPackages
 {
@@ -94,133 +92,53 @@ class InstalledPackages
      */
     private function parse(): array
     {
-        /** @var InstalledFilesystemRepository $localRepo */
-        $localRepo = $this->composer->getRepositoryManager()->getLocalRepository();
-
-        $key = spl_object_hash($localRepo);
+        $locker = $this->composer->getLocker();
+        $key = spl_object_hash($locker);
 
         if (!empty(self::$cache[$key])) {
             return self::$cache[$key];
         }
 
-        /** @var InstalledFilesystemRepository $localRepo */
-        $localRepo = $this->composer->getRepositoryManager()->getLocalRepository();
+        self::$cache[$key] = [];
 
-        // First we collect all dev packages and recursively their requires
-        $devRequires = $this->composer->getPackage()->getDevRequires();
-        [$devPackages, $devNames] = $this->findPackagesRecursive($devRequires, $localRepo);
+        $lock = $locker->getLockData();
+        $loader = new ArrayLoader(null, true);
 
-        // Then we collect all non-dev packages and recursively their requires
-        $requires = $this->composer->getPackage()->getRequires();
-        /** @var $noDevPackages PackageInterface[] */
-        [$noDevPackages, $noDevNames] = $this->findPackagesRecursive($requires, $localRepo);
+        $cache = self::$cache[$key];
+        $cache = $this->buildCache((array)($lock['packages'] ?? []), false, $cache, $loader);
+        $cache = $this->buildCache((array)($lock['packages-dev'] ?? []), true, $cache, $loader);
 
-        // After that, we remove from dev packages any package that is also non-dev
-        $devPackages = array_diff_key($devPackages, $noDevPackages);
-        $devNames = array_diff_key($devNames, $noDevNames);
+        self::$cache[$key] = $cache;
 
-        $noDevRepo = new InstalledArrayRepository();
-        $devRepo = new InstalledArrayRepository();
-
-        // then we fill repositories
-        foreach ($devPackages as $devPackage) {
-            $devRepo->addPackage($this->replaceRepository($devPackage, $devRepo));
-        }
-        foreach ($noDevPackages as $noDevPackage) {
-            $name = $noDevPackage->getName();
-            // This plugin repo is not in dev requirement, but must be considered as it would be.
-            if ($name === Plugin::NAME) {
-                $devPackage = $this->replaceRepository($noDevPackage, $devRepo);
-                unset($noDevPackages[$name], $noDevNames[$name]);
-                $devPackages[$name] = $devPackage;
-                $devNames[$name] = $name;
-                $devRepo->addPackage($this->replaceRepository($devPackage, $devRepo));
-                continue;
-            }
-            $noDevRepo->addPackage($this->replaceRepository($noDevPackage, $noDevRepo));
-        }
-
-        self::$cache[$key] = compact(
-            'devPackages',
-            'devNames',
-            'devRepo',
-            'noDevPackages',
-            'noDevNames',
-            'noDevRepo'
-        );
-
-        return self::$cache[$key];
+        return $cache;
     }
 
     /**
-     * @param array $requires
-     * @param RepositoryInterface $allRepo
-     * @param array $packages
-     * @param array $names
-     * @return string[]
+     * @param array $data
+     * @param bool $dev
+     * @param array $cache
+     * @param ArrayLoader $loader
+     * @return array
      */
-    private function findPackagesRecursive(
-        array $requires,
-        RepositoryInterface $allRepo,
-        array $packages = [],
-        array $names = []
-    ): array {
+    private function buildCache(array $data, bool $dev, array $cache, ArrayLoader $loader): array
+    {
+        $names = [];
+        $packages = [];
+        $repo = new InstalledArrayRepository();
 
-        foreach ($requires as $link) {
-            $package = $allRepo->findPackage($link->getTarget(), '*');
-            if (!$package) {
-                continue;
+        foreach ($data as $packageData) {
+            if (isset($packageData['name'])) {
+                $package = $loader->load($packageData);
+                $names[] = $package->getName();
+                $packages[] = $package;
+                $repo->addPackage($package);
             }
-
-            $name = $package->getName();
-            if (array_key_exists($name, $packages)) {
-                continue;
-            }
-
-            $packages[$name] = $package;
-            $names[$name] = $name;
-            [$packages, $names] = $this->findPackagesRecursive(
-                $package->getRequires(),
-                $allRepo,
-                $packages,
-                $names
-            );
         }
 
-        return [$packages, $names];
-    }
+        $dev ? $cache['devNames'] = $names : $cache['noDevNames'] = $names;
+        $dev ? $cache['devPackages'] = $packages : $cache['noDevPackages'] = $packages;
+        $dev ? $cache['devRepo'] = $repo : $cache['noDevRepo'] = $repo;
 
-    /**
-     * Replace a repository in a package.
-     * This is necessary to fill this class repo, because a package can be attached to on repo only.
-     *
-     * @param PackageInterface $package
-     * @param RepositoryInterface $repository
-     * @return PackageInterface
-     */
-    private function replaceRepository(
-        PackageInterface $package,
-        RepositoryInterface $repository
-    ): PackageInterface {
-
-        $old = $package->getRepository();
-        $package = clone $package;
-
-        if (!$old) {
-            $package->setRepository($repository);
-
-            return $package;
-        }
-
-        static $setter;
-        $setter or $setter = function (RepositoryInterface $repository) {
-            /** @noinspection PhpUndefinedFieldInspection */
-            $this->repository = $repository;
-        };
-
-        $bind = \Closure::bind($setter, $package, get_class($package));
-        $bind($repository);
-
-        return $package;
+        return $cache;
     }
 }

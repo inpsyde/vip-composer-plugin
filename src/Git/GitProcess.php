@@ -57,7 +57,7 @@ class GitProcess
 
     /**
      * @param Io $io
-     * @param string $workingDir
+     * @param string|null $workingDir
      * @param ProcessExecutor|null $executor
      */
     public function __construct(

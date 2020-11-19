@@ -26,21 +26,10 @@ use Composer\Plugin\PluginInterface;
  */
 class Plugin implements PluginInterface, Capable, CommandProvider
 {
-
     public const NAME = 'inpsyde/vip-composer-plugin';
 
     /**
-     * @var Installer\Installer
-     */
-    private $installer;
-
-    /**
-     * @var Installer\NoopCoreInstaller
-     */
-    private $noopCoreInstaller;
-
-    /**
-     * @inheritdoc
+     * @return array|string[]
      */
     public function getCapabilities()
     {
@@ -48,7 +37,7 @@ class Plugin implements PluginInterface, Capable, CommandProvider
     }
 
     /**
-     * @inheritdoc
+     * @return \Composer\Command\BaseCommand[]|Command[]
      */
     public function getCommands()
     {
@@ -61,14 +50,31 @@ class Plugin implements PluginInterface, Capable, CommandProvider
     public function activate(Composer $composer, IOInterface $composerIo)
     {
         $factory = new Factory($composer, $composerIo);
-        $this->installer = $factory->installer();
-        $this->noopCoreInstaller = new Installer\NoopCoreInstaller($factory->io());
-
         $manager = $composer->getInstallationManager();
-        $manager->addInstaller($this->installer);
-        $manager->addInstaller($this->noopCoreInstaller);
+        $manager->addInstaller($factory->installer());
+        $manager->addInstaller(new Installer\NoopCoreInstaller($factory->io()));
 
         $this->disableWordPressDefaultInstaller($composer);
+    }
+
+    /**
+     * @param Composer $composer
+     * @param IOInterface $io
+     * @return void
+     */
+    public function deactivate(Composer $composer, IOInterface $io)
+    {
+        // noop
+    }
+
+    /**
+     * @param Composer $composer
+     * @param IOInterface $io
+     * @return void
+     */
+    public function uninstall(Composer $composer, IOInterface $io)
+    {
+        // noop
     }
 
     /**

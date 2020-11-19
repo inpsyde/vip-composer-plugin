@@ -18,12 +18,12 @@
         }
     ],
     "require": {
-        "php": ">=7.2",
+        "php": ">=7.3",
         "ext-json": "*",
-        "composer-plugin-api": "^1.1"
+        "composer-plugin-api": "^1.1 || ^2"
     },
     "require-dev": {
-        "composer/composer": "^1.5",
+        "composer/composer": "^2",
         "inpsyde/php-coding-standards": "^1@dev"
     },
     "autoload": {

@@ -13,74 +13,169 @@ declare(strict_types=1);
 
 namespace Inpsyde\VipComposer\Utils;
 
-use Composer\Config;
-use Composer\Downloader\ZipDownloader;
-use Composer\IO\IOInterface;
-use Composer\Package\PackageInterface;
+use Composer\Util\Filesystem;
+use Composer\Util\Platform;
+use Composer\Util\ProcessExecutor;
+use Inpsyde\VipComposer\Io;
 use Symfony\Component\Process\ExecutableFinder;
 
-/**
- * Composer provides ZipDownloader class which extends ArchiveDownloader which in turn
- * extends FileDownloader.
- * So ZipDownloader is a "downloader", but we need just an "unzipper".
- *
- * This class exists because the `extract()` method of ZipDownloader, that is the only one we need,
- * is protected, so we need a subclass to access it.
- *
- * This class is final because four levels of inheritance are definitively enough.
- */
-final class Unzipper extends ZipDownloader
+class Unzipper
 {
+    /**
+     * @var bool|null
+     */
+    private static $hasSystemUnzip;
 
-    public function __construct(IOInterface $io, Config $config)
+    /**
+     * @var bool|null
+     */
+    private static $hasZipArchive;
+
+    /**
+     * @var Io
+     */
+    private $io;
+
+    /**
+     * @var ProcessExecutor
+     */
+    private $executor;
+
+    /**
+     * @var Filesystem
+     */
+    private $filesystem;
+
+    /**
+     * @param Io $io
+     * @param ProcessExecutor $executor
+     * @param Filesystem $filesystem
+     */
+    public function __construct(Io $io, ProcessExecutor $executor, Filesystem $filesystem)
     {
-        parent::__construct($io, $config);
+        $this->io = $io;
+        $this->executor = $executor;
+        $this->filesystem = $filesystem;
     }
 
     /**
      * Unzip a given zip file to given target path.
      *
-     * @param string $zipPath
-     * @param string $target
+     * @param string $zipFile
+     * @param string $targetPath
+     * @return bool
+     *
+     * @see unzipWithSystemZip
+     * @see unzipWithZipArchive
      */
-    public function unzip(string $zipPath, string $target)
+    public function unzip(string $zipFile, string $targetPath): bool
     {
-        $this->checkLibrary($zipPath);
-        parent::extract($zipPath, $target); // phpcs:ignore
+        try {
+            if (!is_file($zipFile) || !is_readable($zipFile)) {
+                throw new \Exception("Can't unzip unreadable file {$zipFile}.");
+            }
+
+            [$hasSystemUnzip, $hasZipArchive] = $this->checkLibrary($zipFile);
+
+            $this->filesystem->ensureDirectoryExists(dirname($targetPath));
+            $this->filesystem->emptyDirectory($targetPath, true);
+
+            /** @var array<callable(string, string):bool> $unzipCallbacks */
+            $unzipCallbacks = [];
+            $hasSystemUnzip and $unzipCallbacks[] = [$this, 'unzipWithSystemZip'];
+            $hasZipArchive and $unzipCallbacks[] = [$this, 'unzipWithZipArchive'];
+            if (Platform::isWindows() && count($unzipCallbacks) > 1) {
+                $unzipCallbacks = array_reverse($unzipCallbacks);
+            }
+
+            return $this->attemptUnzip($zipFile, $targetPath, ...$unzipCallbacks);
+        } catch (\Throwable $throwable) {
+            $this->io->error('  ' . $throwable->getMessage());
+
+            return false;
+        }
     }
 
     /**
-     * This this just un unzipper, we don't download anything.
-     *
-     * @param PackageInterface $package
-     * @param string $path
-     * @param bool $output
-     * @return string|void
-     *
-     * phpcs:disable Inpsyde.CodeQuality.ArgumentTypeDeclaration
+     * @param string $zipFile
+     * @param string $targetPath
+     * @param array<callable(string, string):bool> $attempts
+     * @return bool
      */
-    public function download(PackageInterface $package, $path, $output = true)
+    private function attemptUnzip(
+        string $zipFile,
+        string $targetPath,
+        callable ...$attempts
+    ): bool {
+
+        $result = false;
+        $count = 0;
+        while (!$result && $attempts) {
+            ($count > 0) and $this->filesystem->emptyDirectory($targetPath, true);
+            $attempt = array_shift($attempts);
+            $result = $attempt($zipFile, $targetPath);
+            $count++;
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param string $zipFile
+     * @param string $target
+     * @return bool
+     */
+    private function unzipWithZipArchive(string $zipFile, string $target): bool
     {
-        // phpcs:enable
+        $zipArchive = new \ZipArchive();
+
+        return $zipArchive->open($zipFile) === true && $zipArchive->extractTo($target) === true;
+    }
+
+    /**
+     * @param string $zipFile
+     * @param string $target
+     * @return bool
+     */
+    private function unzipWithSystemZip(string $zipFile, string $target): bool
+    {
+        $command = sprintf(
+            'unzip -qq -o %s -d %s',
+            ProcessExecutor::escape($zipFile),
+            ProcessExecutor::escape($target)
+        );
+
+        try {
+            $output = '';
+
+            return $this->executor->execute($command, $output) !== 0;
+        } catch (\Throwable $throwable) {
+            return false;
+        }
     }
 
     /**
      * Check that system unzip command or ZipArchive class is available.
      *
-     * Parent class do this in `download()` method that we can't use because it needs a package
-     * instance that we don't have and it runs an actual file download that we don't need.
-     *
      * @param string $zipPath
+     * @return array{bool, bool}
      */
-    private function checkLibrary(string $zipPath)
+    private function checkLibrary(string $zipPath): array
     {
-        $hasSystemUnzip = (new ExecutableFinder())->find('unzip');
+        if (isset(self::$hasSystemUnzip) && isset(self::$hasZipArchive)) {
+            return [self::$hasSystemUnzip, self::$hasZipArchive];
+        }
 
-        if (!$hasSystemUnzip && !class_exists('ZipArchive')) {
+        self::$hasSystemUnzip = (bool)(new ExecutableFinder())->find('unzip');
+        self::$hasZipArchive = (bool)class_exists('ZipArchive');
+
+        if (!self::$hasSystemUnzip && !self::$hasZipArchive) {
             $name = basename($zipPath);
             throw new \RuntimeException(
-                "Can't unzip '{$name}' because your system does not support unzip."
+                "Can't unzip '{$name}' because zip extension and unzip command are both missing."
             );
         }
+
+        return [self::$hasSystemUnzip, self::$hasZipArchive];
     }
 }
