@@ -117,7 +117,7 @@ final class CopyDevPaths implements Task
 
         if (is_dir($target)) {
             $this->cleanupTarget($pathConfigKey, $target);
-            $sourcePaths and $this->cleanupSource($source, $target);
+            $sourcePaths and $this->cleanupSource($target, $source);
         }
 
         if (!$sourcePaths) {
