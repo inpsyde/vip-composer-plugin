@@ -54,6 +54,8 @@ class Plugin implements PluginInterface, Capable, CommandProvider
         $factory = new Factory($composer, $io);
         $manager = $composer->getInstallationManager();
         $manager->addInstaller($factory->installer());
+
+        $this->disableWordPressDefaultInstaller($composer);
     }
 
     /**
@@ -74,5 +76,23 @@ class Plugin implements PluginInterface, Capable, CommandProvider
     public function uninstall(Composer $composer, IOInterface $io)
     {
         // noop
+    }
+
+    /**
+     * @param Composer $composer
+     */
+    private function disableWordPressDefaultInstaller(Composer $composer): void
+    {
+        $rootPackage = $composer->getPackage();
+        $rootPackageExtra = $rootPackage->getExtra();
+        $disabledInstallers = $rootPackageExtra['installer-disable'] ?? [];
+        if ($disabledInstallers === true) {
+            return;
+        }
+
+        is_array($disabledInstallers) or $disabledInstallers = [];
+        $disabledInstallers[] = 'wordpress'; // phpcs:ignore
+        $rootPackageExtra['installer-disable'] = $disabledInstallers;
+        $rootPackage->setExtra($rootPackageExtra);
     }
 }
