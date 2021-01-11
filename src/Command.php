@@ -155,18 +155,16 @@ class Command extends BaseCommand
             $this->resetComposer();
             /** @var Composer $composer */
             $composer = $this->getComposer(true);
-            if (!file_exists((getcwd() ?: '.') . '/composer.lock')) {
+            $factory = new Factory($composer, $this->getIO());
+            $config = $factory->config();
+
+            if (!file_exists($config->composerLockPath())) {
                 throw new \RuntimeException(
                     'Composer lock file not found. Please install via Composer first.'
                 );
             }
 
-            $io = $this->getIO();
-            $taskFactory = new Task\Factory(
-                new Factory($composer, $io),
-                $this->createConfig($input)
-            );
-
+            $taskFactory = new Task\Factory($factory, $this->createConfig($input));
             $taskFactory->tasks()
                 ->addTask($taskFactory->downloadWpCore())
                 ->addTask($taskFactory->downloadVipGoMuPlugins())

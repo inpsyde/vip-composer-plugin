@@ -110,8 +110,8 @@ class Tasks
      */
     private function beforeRun(): bool
     {
-        if (!file_exists($this->config->basePath() . '/composer.lock')) {
-            $this->io->error('"composer.lock" not found.');
+        if (!file_exists($this->config->composerLockPath())) {
+            $this->io->error('Composer lock file not found.');
             $this->io->errorLine('Please install or update via Composer first.');
 
             return false;

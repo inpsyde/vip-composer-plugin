@@ -137,6 +137,16 @@ final class Config implements \ArrayAccess
     }
 
     /**
+     * @return string
+     */
+    public function composerLockPath(): string
+    {
+        $composerJsonSource = $this->composerConfig->getConfigSource()->getName();
+
+        return (string)preg_replace('~\.json$~', '.lock', $composerJsonSource, 1);
+    }
+
+    /**
      * @return array
      */
     public function vipConfig(): array
