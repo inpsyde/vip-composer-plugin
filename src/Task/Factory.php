@@ -75,6 +75,7 @@ class Factory
             CopyDevPaths::class,
             function (): CopyDevPaths {
                 return new CopyDevPaths(
+                    $this->factory->composer(),
                     $this->factory->config(),
                     $this->factory->vipDirectories(),
                     $this->factory->filesystem()

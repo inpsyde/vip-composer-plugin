@@ -50,6 +50,8 @@ final class Config implements \ArrayAccess
     public const DEV_PATHS_YAML_CONFIG_DIR_KEY = 'config-dir';
     public const DEV_PATHS_PRIVATE_DIR_KEY = 'private-dir';
 
+    public const PACKAGE_TYPE_MULTIPLE_MU_PLUGINS = 'wordpress-multiple-mu-plugins';
+
     public const DEFAULTS = [
         self::VIP_CONFIG_KEY => [
             self::VIP_LOCAL_DIR_KEY => 'vip',

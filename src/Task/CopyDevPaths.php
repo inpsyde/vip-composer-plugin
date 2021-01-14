@@ -13,6 +13,9 @@ declare(strict_types=1);
 
 namespace Inpsyde\VipComposer\Task;
 
+use Composer\Composer;
+use Composer\Semver\Constraint\Constraint;
+use Composer\Semver\Constraint\ConstraintInterface;
 use Composer\Util\Filesystem;
 use Inpsyde\VipComposer\Config;
 use Inpsyde\VipComposer\Io;
@@ -34,6 +37,11 @@ final class CopyDevPaths implements Task
     ];
 
     /**
+     * @var Composer
+     */
+    private $composer;
+
+    /**
      * @var Config
      */
     private $config;
@@ -53,8 +61,13 @@ final class CopyDevPaths implements Task
      * @param VipDirectories $directories
      * @param Filesystem $filesystem
      */
-    public function __construct(Config $config, VipDirectories $directories, Filesystem $filesystem)
-    {
+    public function __construct(
+        Composer $composer,
+        Config $config,
+        VipDirectories $directories,
+        Filesystem $filesystem
+    ) {
+        $this->composer = $composer;
         $this->config = $config;
         $this->directories = $directories;
         $this->filesystem = $filesystem;
@@ -92,6 +105,8 @@ final class CopyDevPaths implements Task
             $failures += $this->copyCustomPath($dirName, $io);
         }
 
+        $failures += $this->copyMuPluginsPackages($io);
+
         if ($failures && !$taskConfig->isOnlyLocal()) {
             throw new \RuntimeException("{$failures} occurred copying dev paths to VIP folder.");
         }
@@ -124,12 +139,79 @@ final class CopyDevPaths implements Task
             return 0;
         }
 
-        $errors = 0;
+        return $this->copyFolder($sourcePaths, $target, $io);
+    }
 
+    /**
+     * @param Io $io
+     *
+     * @return int
+     */
+    private function copyMuPluginsPackages(Io $io)
+    {
+        $rootPackage = $this->composer->getPackage();
+        $repositoryManager = $this->composer->getRepositoryManager();
+
+        $errors = 0;
+        foreach ($rootPackage->getRequires() as $link) {
+            /** @var ConstraintInterface $constraint */
+            $constraint = $link->getConstraint();
+            if (!$constraint instanceof Constraint) {
+                continue;
+            }
+            $package = $repositoryManager->findPackage($link->getTarget(), $constraint);
+            if ($package && $package->getType() === Config::PACKAGE_TYPE_MULTIPLE_MU_PLUGINS) {
+                $packagePath = $this->composer->getConfig()->get('vendor-dir') . '/'. $package->getPrettyName();
+                $packageFiles = Finder::create()->in($packagePath)->files()->name('*.php');
+
+                $errors += $this->copyFiles($packageFiles, $io);
+            }
+        }
+        return $errors;
+    }
+
+    /**
+     * @param Finder $sourcePaths
+     * @param string $target
+     * @param Io $io
+     *
+     * @return int
+     */
+    private function copyFolder(Finder $sourcePaths, string $target, Io $io): int
+    {
+        return $this->_copy($sourcePaths, $target, $io);
+    }
+
+    /**
+     * @param Finder $sourcePaths
+     * @param Io $io
+     *
+     * @return int
+     */
+    private function copyFiles(Finder $sourcePaths, Io $io): int
+    {
+        return $this->_copy($sourcePaths, '', $io, true);
+    }
+
+    /**
+     * @param Finder $sourcePaths
+     * @param string $target
+     * @param Io $io
+     * @param bool $singleFiles If to copy the whole folder or single files inside it
+     *
+     * @return int The number of errors encountered. 0 if all the files have been copied correctly.
+     */
+    private function _copy(Finder $sourcePaths, string $target, Io $io, bool $singleFiles = false): int
+    {
+        $errors = 0;
         /** @var SplFileInfo $sourcePathInfo */
         foreach ($sourcePaths as $sourcePathInfo) {
             $sourcePath = $sourcePathInfo->getPathname();
-            $targetPath = "{$target}/" . $sourcePathInfo->getBasename();
+            if($singleFiles) {
+                $targetPath = $this->directories->muPluginsDir() . '/' . $sourcePathInfo->getFilename();
+            } else {
+                $targetPath = $target . '/' . $sourcePathInfo->getBasename();
+            }
 
             if ($this->filesystem->copy($sourcePath, $targetPath)) {
                 $from = "<comment>'{$sourcePath}'</comment>";
