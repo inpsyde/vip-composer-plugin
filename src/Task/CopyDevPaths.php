@@ -67,6 +67,7 @@ final class CopyDevPaths implements Task
         VipDirectories $directories,
         Filesystem $filesystem
     ) {
+
         $this->composer = $composer;
         $this->config = $config;
         $this->directories = $directories;
@@ -147,7 +148,7 @@ final class CopyDevPaths implements Task
      *
      * @return int
      */
-    private function copyMuPluginsPackages(Io $io)
+    private function copyMuPluginsPackages(Io $io): int
     {
         $rootPackage = $this->composer->getPackage();
         $repositoryManager = $this->composer->getRepositoryManager();
@@ -161,12 +162,14 @@ final class CopyDevPaths implements Task
             }
             $package = $repositoryManager->findPackage($link->getTarget(), $constraint);
             if ($package && $package->getType() === Config::PACKAGE_TYPE_MULTIPLE_MU_PLUGINS) {
-                $packagePath = $this->composer->getConfig()->get('vendor-dir') . '/'. $package->getPrettyName();
+                $vendorDir = $this->composer->getConfig()->get('vendor-dir');
+                $packagePath = $vendorDir . '/' . $package->getPrettyName();
                 $packageFiles = Finder::create()->in($packagePath)->files()->name('*.php');
 
                 $errors += $this->copyFiles($packageFiles, $io);
             }
         }
+
         return $errors;
     }
 
@@ -179,7 +182,7 @@ final class CopyDevPaths implements Task
      */
     private function copyFolder(Finder $sourcePaths, string $target, Io $io): int
     {
-        return $this->_copy($sourcePaths, $target, $io);
+        return $this->customCopy($sourcePaths, $target, $io);
     }
 
     /**
@@ -190,7 +193,7 @@ final class CopyDevPaths implements Task
      */
     private function copyFiles(Finder $sourcePaths, Io $io): int
     {
-        return $this->_copy($sourcePaths, '', $io, true);
+        return $this->customCopy($sourcePaths, '', $io, true);
     }
 
     /**
@@ -201,16 +204,16 @@ final class CopyDevPaths implements Task
      *
      * @return int The number of errors encountered. 0 if all the files have been copied correctly.
      */
-    private function _copy(Finder $sourcePaths, string $target, Io $io, bool $singleFiles = false): int
+    private function customCopy(Finder $sourcePaths, string $target, Io $io, bool $singleFiles = false): int
     {
         $errors = 0;
         /** @var SplFileInfo $sourcePathInfo */
         foreach ($sourcePaths as $sourcePathInfo) {
             $sourcePath = $sourcePathInfo->getPathname();
-            if($singleFiles) {
-                $targetPath = $this->directories->muPluginsDir() . '/' . $sourcePathInfo->getFilename();
-            } else {
-                $targetPath = $target . '/' . $sourcePathInfo->getBasename();
+            $targetPath = $target . '/' . $sourcePathInfo->getBasename();
+            if ($singleFiles) {
+                $muPluginsDir = $this->directories->muPluginsDir();
+                $targetPath = $muPluginsDir . '/' . $sourcePathInfo->getFilename();
             }
 
             if ($this->filesystem->copy($sourcePath, $targetPath)) {
