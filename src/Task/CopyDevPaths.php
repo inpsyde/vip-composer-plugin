@@ -140,7 +140,7 @@ final class CopyDevPaths implements Task
             return 0;
         }
 
-        return $this->copyFolder($sourcePaths, $target, $io);
+        return $this->copy($sourcePaths, $target, $io);
     }
 
     /**
@@ -152,6 +152,7 @@ final class CopyDevPaths implements Task
     {
         $rootPackage = $this->composer->getPackage();
         $repositoryManager = $this->composer->getRepositoryManager();
+        $target = $this->directories->muPluginsDir();
 
         $errors = 0;
         foreach ($rootPackage->getRequires() as $link) {
@@ -166,7 +167,7 @@ final class CopyDevPaths implements Task
                 $packagePath = $vendorDir . '/' . $package->getPrettyName();
                 $packageFiles = Finder::create()->in($packagePath)->files()->name('*.php');
 
-                $errors += $this->copyFiles($packageFiles, $io);
+                $errors += $this->copy($packageFiles, $target, $io, true);
             }
         }
 
@@ -177,44 +178,18 @@ final class CopyDevPaths implements Task
      * @param Finder $sourcePaths
      * @param string $target
      * @param Io $io
-     *
-     * @return int
-     */
-    private function copyFolder(Finder $sourcePaths, string $target, Io $io): int
-    {
-        return $this->customCopy($sourcePaths, $target, $io);
-    }
-
-    /**
-     * @param Finder $sourcePaths
-     * @param Io $io
-     *
-     * @return int
-     */
-    private function copyFiles(Finder $sourcePaths, Io $io): int
-    {
-        return $this->customCopy($sourcePaths, '', $io, true);
-    }
-
-    /**
-     * @param Finder $sourcePaths
-     * @param string $target
-     * @param Io $io
      * @param bool $singleFiles If to copy the whole folder or single files inside it
      *
      * @return int The number of errors encountered. 0 if all the files have been copied correctly.
      */
-    private function customCopy(Finder $sourcePaths, string $target, Io $io, bool $singleFiles = false): int
+    private function copy(Finder $sourcePaths, string $target, Io $io, bool $singleFiles = false): int
     {
         $errors = 0;
         /** @var SplFileInfo $sourcePathInfo */
         foreach ($sourcePaths as $sourcePathInfo) {
             $sourcePath = $sourcePathInfo->getPathname();
-            $targetPath = $target . '/' . $sourcePathInfo->getBasename();
-            if ($singleFiles) {
-                $muPluginsDir = $this->directories->muPluginsDir();
-                $targetPath = $muPluginsDir . '/' . $sourcePathInfo->getFilename();
-            }
+            $finalTarget = $singleFiles ? $sourcePathInfo->getFilename() : $sourcePathInfo->getBasename();
+            $targetPath = "{$target}/{$finalTarget}";
 
             if ($this->filesystem->copy($sourcePath, $targetPath)) {
                 $from = "<comment>'{$sourcePath}'</comment>";
