@@ -260,7 +260,7 @@ class MirrorCopier
         $contents = Finder::create()->in($target)->depth('== 0')->ignoreUnreadableDirs();
         /** @var SplFileInfo $item */
         foreach ($contents as $item) {
-            $itemPath = (string)$item->getPathname();
+            $itemPath = $item->getPathname();
             if (!self::accept($itemPath)) {
                 $item->isDir()
                     ? $this->filesystem->removeDirectory($itemPath)

@@ -143,7 +143,9 @@ final class Config implements \ArrayAccess
      */
     public function composerLockPath(): string
     {
-        $composerJsonSource = $this->composerConfig->getConfigSource()->getName();
+        /** @var ComposerConfig\ConfigSourceInterface $configSource */
+        $configSource = $this->composerConfig->getConfigSource();
+        $composerJsonSource = $configSource->getName();
 
         return (string)preg_replace('~\.json$~', '.lock', $composerJsonSource, 1);
     }
@@ -197,7 +199,7 @@ final class Config implements \ArrayAccess
     }
 
     /**
-     * @inheritdoc
+     * @param mixed $offset
      * @return mixed
      */
     public function offsetGet($offset)

@@ -38,11 +38,12 @@
     },
     "scripts": {
         "cs": "@php ./vendor/squizlabs/php_codesniffer/bin/phpcs",
-        "psalm": "@php ./vendor/vimeo/psalm/psalm --show-info=false --output-format=compact --no-progress",
+        "psalm": "@php ./vendor/vimeo/psalm/psalm --no-cache --show-info=false --output-format=compact --no-progress",
         "phpcompat": "@php ./vendor/squizlabs/php_codesniffer/bin/phpcs -p . --standard=PHPCompatibility --ignore=*/vendor/* --extensions=php --basepath=./ --runtime-set testVersion 7.3-",
         "qa": [
             "@cs",
-            "@phpcompat"
+            "@phpcompat",
+            "@psalm"
         ]
     }
 }
