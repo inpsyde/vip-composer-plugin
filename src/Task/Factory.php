@@ -77,6 +77,8 @@ class Factory
                 return new CopyDevPaths(
                     $this->factory->config(),
                     $this->factory->vipDirectories(),
+                    $this->factory->packageFinder(),
+                    $this->factory->composer()->getInstallationManager(),
                     $this->factory->filesystem()
                 );
             }

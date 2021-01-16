@@ -13,9 +13,11 @@ declare(strict_types=1);
 
 namespace Inpsyde\VipComposer\Task;
 
+use Composer\Installer\InstallationManager;
 use Composer\Util\Filesystem;
 use Inpsyde\VipComposer\Config;
 use Inpsyde\VipComposer\Io;
+use Inpsyde\VipComposer\Utils\PackageFinder;
 use Inpsyde\VipComposer\VipDirectories;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\Finder\SplFileInfo;
@@ -44,6 +46,16 @@ final class CopyDevPaths implements Task
     private $directories;
 
     /**
+     * @var PackageFinder
+     */
+    private $packageFinder;
+
+    /**
+     * @var InstallationManager
+     */
+    private $installationManager;
+
+    /**
      * @var Filesystem
      */
     private $filesystem;
@@ -51,12 +63,22 @@ final class CopyDevPaths implements Task
     /**
      * @param Config $config
      * @param VipDirectories $directories
+     * @param PackageFinder $packageFinder
+     * @param InstallationManager $installationManager
      * @param Filesystem $filesystem
      */
-    public function __construct(Config $config, VipDirectories $directories, Filesystem $filesystem)
-    {
+    public function __construct(
+        Config $config,
+        VipDirectories $directories,
+        PackageFinder $packageFinder,
+        InstallationManager $installationManager,
+        Filesystem $filesystem
+    ) {
+
         $this->config = $config;
         $this->directories = $directories;
+        $this->packageFinder = $packageFinder;
+        $this->installationManager = $installationManager;
         $this->filesystem = $filesystem;
     }
 
@@ -89,8 +111,10 @@ final class CopyDevPaths implements Task
 
         $failures = 0;
         foreach (self::PATHS as $dirName) {
-            $failures += $this->copyCustomPath($dirName, $io);
+            $failures += $this->copyDevPath($dirName, $io);
         }
+
+        $failures += $this->copyMultiMuPlugins($io);
 
         if ($failures && !$taskConfig->isOnlyLocal()) {
             throw new \RuntimeException("{$failures} occurred copying dev paths to VIP folder.");
@@ -111,9 +135,9 @@ final class CopyDevPaths implements Task
      * @param Io $io
      * @return int
      */
-    private function copyCustomPath(string $pathConfigKey, Io $io): int
+    private function copyDevPath(string $pathConfigKey, Io $io): int
     {
-        [, $source, $target, $sourcePaths] = $this->pathInfoForKey($pathConfigKey);
+        [$what, $source, $target, $sourcePaths] = $this->pathInfoForKey($pathConfigKey);
 
         if (is_dir($target)) {
             $this->cleanupTarget($pathConfigKey, $target);
@@ -124,25 +148,9 @@ final class CopyDevPaths implements Task
             return 0;
         }
 
-        $errors = 0;
+        $io->verboseCommentLine("Copying {$what} in dev path to VIP target folder...");
 
-        /** @var SplFileInfo $sourcePathInfo */
-        foreach ($sourcePaths as $sourcePathInfo) {
-            $sourcePath = $sourcePathInfo->getPathname();
-            $targetPath = "{$target}/" . $sourcePathInfo->getBasename();
-
-            if ($this->filesystem->copy($sourcePath, $targetPath)) {
-                $from = "<comment>'{$sourcePath}'</comment>";
-                $to = "<comment>'{$targetPath}'</comment>";
-                $io->verboseInfoLine("- copied</info> {$from} <info>to</info> {$to}<info>");
-                continue;
-            }
-
-            $errors++;
-            $io->errorLine("- failed copying '{$sourcePath}' to '{$targetPath}'.");
-        }
-
-        return $errors;
+        return $this->copySources($sourcePaths, $target, $io);
     }
 
     /**
@@ -231,6 +239,31 @@ final class CopyDevPaths implements Task
     }
 
     /**
+     * @param Io $io
+     * @return int
+     */
+    private function copyMultiMuPlugins(Io $io): int
+    {
+        $multiMuPackages = $this->packageFinder->findByType(Config::PACKAGE_TYPE_MULTI_MU_PLUGINS);
+        $multiMuTarget = $this->directories->muPluginsDir();
+
+        $errors = 0;
+        foreach ($multiMuPackages as $package) {
+            $path = $this->installationManager->getInstallPath($package);
+            if (!is_dir($path)) {
+                continue;
+            }
+
+            $name = $package->getPrettyName();
+            $io->verboseCommentLine("Copying {$name} MU plugin files to VIP target folder...");
+            $source = Finder::create()->in($path)->depth('== 0')->name('*.php');
+            $errors += $this->copySources($source, $multiMuTarget, $io);
+        }
+
+        return $errors;
+    }
+
+    /**
      * @param string $key
      * @param string $target
      * @return void
@@ -304,5 +337,34 @@ final class CopyDevPaths implements Task
                 $this->filesystem->emptyDirectory("{$target}/{$sourceBasename}");
             }
         }
+    }
+
+    /**
+     * @param Finder $sourcePaths
+     * @param string $target
+     * @param Io $io
+     * @return int
+     */
+    private function copySources(Finder $sourcePaths, string $target, Io $io): int
+    {
+        $errors = 0;
+
+        /** @var SplFileInfo $sourcePathInfo */
+        foreach ($sourcePaths as $sourcePathInfo) {
+            $sourcePath = $sourcePathInfo->getPathname();
+            $targetPath = "{$target}/" . $sourcePathInfo->getBasename();
+
+            if ($this->filesystem->copy($sourcePath, $targetPath)) {
+                $from = "<comment>'{$sourcePath}'</comment>";
+                $to = "<comment>'{$targetPath}'</comment>";
+                $io->verboseInfoLine("- copied</info> {$from} <info>to</info> {$to}<info>");
+                continue;
+            }
+
+            $errors++;
+            $io->errorLine("- failed copying '{$sourcePath}' to '{$targetPath}'.");
+        }
+
+        return $errors;
     }
 }
