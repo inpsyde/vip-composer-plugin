@@ -196,7 +196,7 @@ class VipGit
             return [null, null];
         }
 
-        $url = (string)($sshUrl ?: $httpsUrl);
+        $url = $sshUrl ?: $httpsUrl;
         /** @var string|null $branch */
         $branch = $customBranch ?? $this->gitConfig[Config::GIT_BRANCH_KEY];
         if (!$branch) {

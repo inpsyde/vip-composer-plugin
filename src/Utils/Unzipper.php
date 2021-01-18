@@ -167,7 +167,7 @@ class Unzipper
         }
 
         self::$hasSystemUnzip = (bool)(new ExecutableFinder())->find('unzip');
-        self::$hasZipArchive = (bool)class_exists('ZipArchive');
+        self::$hasZipArchive = class_exists('ZipArchive');
 
         if (!self::$hasSystemUnzip && !self::$hasZipArchive) {
             $name = basename($zipPath);

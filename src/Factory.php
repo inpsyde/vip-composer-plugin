@@ -249,6 +249,25 @@ class Factory
     }
 
     /**
+     * @return Utils\PackageFinder
+     */
+    public function packageFinder(): Utils\PackageFinder
+    {
+        /** @var Utils\PackageFinder $packageFinder */
+        $packageFinder = $this->service(
+            Utils\PackageFinder::class,
+            function (): Utils\PackageFinder {
+                return new Utils\PackageFinder(
+                    $this->composer()->getRepositoryManager()->getLocalRepository(),
+                    $this->filesystem()
+                );
+            }
+        );
+
+        return $packageFinder;
+    }
+
+    /**
      * @param string $class
      * @param callable():object $factory
      * @return object

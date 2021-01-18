@@ -50,6 +50,8 @@ final class Config implements \ArrayAccess
     public const DEV_PATHS_YAML_CONFIG_DIR_KEY = 'config-dir';
     public const DEV_PATHS_PRIVATE_DIR_KEY = 'private-dir';
 
+    public const PACKAGE_TYPE_MULTI_MU_PLUGINS = 'wordpress-multiple-mu-plugins';
+
     public const DEFAULTS = [
         self::VIP_CONFIG_KEY => [
             self::VIP_LOCAL_DIR_KEY => 'vip',
@@ -141,7 +143,9 @@ final class Config implements \ArrayAccess
      */
     public function composerLockPath(): string
     {
-        $composerJsonSource = $this->composerConfig->getConfigSource()->getName();
+        /** @var ComposerConfig\ConfigSourceInterface $configSource */
+        $configSource = $this->composerConfig->getConfigSource();
+        $composerJsonSource = $configSource->getName();
 
         return (string)preg_replace('~\.json$~', '.lock', $composerJsonSource, 1);
     }
@@ -195,7 +199,7 @@ final class Config implements \ArrayAccess
     }
 
     /**
-     * @inheritdoc
+     * @param mixed $offset
      * @return mixed
      */
     public function offsetGet($offset)
