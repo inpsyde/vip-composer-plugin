@@ -58,6 +58,7 @@ final class SymlinkVipGoDir implements Task
 
     /**
      * @param TaskConfig $taskConfig
+     *
      * @return bool
      */
     public function enabled(TaskConfig $taskConfig): bool
@@ -86,25 +87,23 @@ final class SymlinkVipGoDir implements Task
             $this->directories->vipMuPluginsDir() => "{$contentDirPath}/mu-plugins",
         ];
         foreach ($this->directories->toArray() as $dirPath) {
-            $map[$dirPath] =  "{$contentDirPath}/" . basename($dirPath);
+            $map[$dirPath] = "{$contentDirPath}/" . basename($dirPath);
         }
 
         $isWindows = Platform::isWindows();
 
         foreach ($map as $target => $link) {
-            if (is_dir($link)) {
-                $this->filesystem->removeDirectory($link);
-            }
-
+            $this->filesystem->removeDirectory($link);
             $this->filesystem->ensureDirectoryExists($target);
-            $this->filesystem->normalizePath($link);
+            $link = $this->filesystem->normalizePath($link);
 
             if ($isWindows) {
                 $this->filesystem->junction($target, $link);
                 continue;
             }
 
-            $this->filesystem->relativeSymlink($target, $link);
+            $success = $this->filesystem->relativeSymlink($target, $link);
+            !$success && $io->commentLine('[!] Relative symlink for ' . $link . ' to ' . $target . ' failed.');
         }
 
         file_put_contents("{$contentDirPath}index.php", "<?php\n// Silence is golden.\n");
