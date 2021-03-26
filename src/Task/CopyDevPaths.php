@@ -184,7 +184,7 @@ final class CopyDevPaths implements Task
             case Config::DEV_PATHS_MUPLUGINS_DIR_KEY:
                 $what = 'MU plugins';
                 $target = $this->directories->muPluginsDir();
-                $finder and $finder->files()->ignoreDotFiles(true);
+                $finder and $finder->ignoreDotFiles(true);
                 break;
             case Config::DEV_PATHS_PLUGINS_DIR_KEY:
                 $what = 'Plugins';
@@ -208,7 +208,7 @@ final class CopyDevPaths implements Task
             case Config::DEV_PATHS_IMAGES_DIR_KEY:
                 $what = 'Images';
                 $target = $this->directories->imagesDir();
-                $finder and $finder->files()->ignoreDotFiles(true);
+                $finder and $finder->ignoreDotFiles(true);
                 break;
             case Config::DEV_PATHS_PHP_CONFIG_DIR_KEY:
                 $what = 'PHP config files';
