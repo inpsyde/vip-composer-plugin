@@ -102,8 +102,9 @@ final class SymlinkVipGoDir implements Task
                 continue;
             }
 
-            $success = $this->filesystem->relativeSymlink($target, $link);
-            !$success && $io->commentLine('[!] Relative symlink for ' . $link . ' to ' . $target . ' failed.');
+            if (!$this->filesystem->relativeSymlink($target, $link)) {
+                $io->errorLine("Failed creating relative symlink for {$link} to {$target}.");
+            }
         }
 
         file_put_contents("{$contentDirPath}index.php", "<?php\n// Silence is golden.\n");
