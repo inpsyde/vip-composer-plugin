@@ -124,7 +124,7 @@ final class EnsureGitKeep implements Task
             ->ignoreDotFiles(false)
             ->ignoreVCS(false)
             ->filter(
-                static function (SplFileInfo $info) use ($dir, $depth): bool {
+                static function (SplFileInfo $info) use ($depth): bool {
                     return $depth > 0 || $info->getBasename() !== '.gitkeep';
                 }
             );

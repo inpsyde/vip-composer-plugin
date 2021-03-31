@@ -344,7 +344,6 @@ class VipGit
         }
 
         $this->io->commentLine("Pushing to <<<{$remoteUrl}>>>");
-        /** @var bool $success */
         [$success] = $this->git->exec('push origin');
 
         return $success;
