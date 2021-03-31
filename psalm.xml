@@ -26,5 +26,6 @@
         <MissingClosureReturnType errorLevel="suppress" />
         <UnresolvableInclude errorLevel="suppress" />
         <UndefinedConstant errorLevel="suppress" />
+        <UnnecessaryVarAnnotation errorLevel="suppress" />
     </issueHandlers>
 </psalm>
