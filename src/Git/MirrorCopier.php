@@ -107,11 +107,14 @@ class MirrorCopier
      */
     private static function acceptPath(string $path): bool
     {
-        $basename = is_file($path) ? basename($path) : '';
+        $path = str_replace('\\', '/', $path);
+        if (is_file($path) && basename($path) === '.gitkeep') {
+            return static::acceptPath(dirname($path));
+        }
 
         return
             strpos($path, 'node_modules/') === false
-            && (strpos($path, '/.git') === false || $basename === '.gitkeep');
+            && (strpos($path, '/.git') === false);
     }
 
     /**
