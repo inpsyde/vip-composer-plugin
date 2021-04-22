@@ -168,10 +168,10 @@ final class GenerateProductionAutoload implements Task
             $real = preg_replace(
                 '~\$loader->setClassMapAuthoritative\(\s*true\s*\);~i',
                 '$loader->setClassMapAuthoritative(false);',
-                $real,
+                $real ?? '',
                 1
             );
         }
-        file_put_contents("{$path}/autoload_real.php", $real);
+        file_put_contents("{$path}/autoload_real.php", $real ?? '');
     }
 }
