@@ -102,12 +102,11 @@ final class GenerateProductionAutoload implements Task
         }
 
         $prodAutoloadDirname = $this->config->prodAutoloadDir();
-        $package = $this->composer->getPackage();
 
         $autoloader->dump(
             $this->composer->getConfig(),
             $this->installedPackages->noDevRepository(),
-            $package,
+            $this->composer->getPackage(),
             $this->composer->getInstallationManager(),
             $prodAutoloadDirname,
             true,
@@ -120,18 +119,15 @@ final class GenerateProductionAutoload implements Task
 
         file_put_contents("{$path}/autoload.php", $autoloadEntrypoint);
 
-        $authoritative = empty($package->getAutoload()['exclude-from-classmap']);
-        $this->replaceVipPaths($path, $authoritative);
+        $this->replaceVipPaths($path);
 
         $io->infoLine('Done!');
     }
 
     /**
      * @param string $path
-     * @param bool $authoritative
-     * @return void
      */
-    private function replaceVipPaths(string $path, bool $authoritative = true): void
+    private function replaceVipPaths(string $path): void
     {
         $vendorDir = '$vendorDir = WPCOM_VIP_CLIENT_MU_PLUGIN_DIR . \'/vendor\';';
         $baseDir = '$baseDir = ABSPATH;';
@@ -164,14 +160,6 @@ final class GenerateProductionAutoload implements Task
 
         $real = file_get_contents("{$path}/autoload_real.php") ?: '';
         $real = preg_replace('~\$useStaticLoader(?:\s*=\s*)[^;]+;~', $staticLoader, $real, 1);
-        if (!$authoritative) {
-            $real = preg_replace(
-                '~\$loader->setClassMapAuthoritative\(\s*true\s*\);~i',
-                '$loader->setClassMapAuthoritative(false);',
-                $real,
-                1
-            );
-        }
         file_put_contents("{$path}/autoload_real.php", $real);
     }
 }
