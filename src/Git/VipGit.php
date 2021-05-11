@@ -139,7 +139,9 @@ class VipGit
      */
     private function syncAndPush(bool $push, string $url = null, string $branch = null): bool
     {
-        $this->io->commentLine('Starting Git sync...');
+        $message = 'Starting Git sync';
+        $push or $message .= ' (NO push will happen)';
+        $this->io->commentLine("{$message}...");
 
         $this->cleanupOrphanMirrors();
         $mirrorDir = $this->mirrorDir();
@@ -258,20 +260,23 @@ class VipGit
 
     /**
      * @param string $mirrorDir
-     * @return bool
+     * @return void
      */
-    private function fillMirror(string $mirrorDir): bool
+    private function fillMirror(string $mirrorDir): void
     {
         $copier = new MirrorCopier($this->io, $this->filesystem, $this->unzipper);
         $this->fillMirrorDirs($copier, $mirrorDir);
 
+        $gitignore = new EnsureGitIgnore();
+        $gitignore->ensure($mirrorDir);
+
         $toCopy = $this->packages->noDevPackages();
 
         if (!$toCopy) {
-            return true;
+            return;
         }
 
-        return $this->fillMirrorVendor($copier, $mirrorDir);
+        $this->fillMirrorVendor($copier, $mirrorDir);
     }
 
     /**
