@@ -397,7 +397,7 @@ class VipGit
     {
         /** @var GitProcess $this->git */
 
-        [$success, $output] = $this->git->exec('branch -a');
+        [$success, $output] = $this->git->exec("branch -r -l *{$targetBranch}");
         if (!$success) {
             return false;
         }
