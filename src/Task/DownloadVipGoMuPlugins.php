@@ -21,7 +21,7 @@ use Inpsyde\VipComposer\VipDirectories;
 
 final class DownloadVipGoMuPlugins implements Task
 {
-    public const GIT_URL = 'https://github.com/Automattic/vip-go-mu-plugins.git';
+    public const GIT_URL = 'git@github.com:Automattic/vip-go-mu-plugins-built';
 
     /**
      * @var VipDirectories
@@ -82,7 +82,7 @@ final class DownloadVipGoMuPlugins implements Task
 
         $timeout = ProcessExecutor::getTimeout();
         ProcessExecutor::setTimeout(0);
-        [, , $outputs] = $git->exec('clone --recursive ' . self::GIT_URL . ' .');
+        [, , $outputs] = $git->exec('clone --depth 1 ' . self::GIT_URL . ' .');
         ProcessExecutor::setTimeout($timeout);
 
         if (!$this->alreadyInstalled()) {
@@ -100,33 +100,8 @@ final class DownloadVipGoMuPlugins implements Task
 
         $installed = is_dir($targetDir)
             && file_exists("{$targetDir}/z-client-mu-plugins.php")
-            && file_exists("{$targetDir}/.gitmodules")
-            && $this->checkSubmodules("{$targetDir}/.gitmodules");
+            && file_exists("{$targetDir}/wpcom-vip-two-factor/set-providers.php");
 
         return $installed;
-    }
-
-    /**
-     * @param string $path
-     * @return bool
-     */
-    private function checkSubmodules(string $path): bool
-    {
-        $modules = file($path);
-        if (!$modules) {
-            return false;
-        }
-
-        $base = dirname($path);
-        foreach ($modules as $line) {
-            if (
-                preg_match("~^\s*path =(.+)$~", $line, $matches)
-                && !is_dir("{$base}/" . trim($matches[1]))
-            ) {
-                return false;
-            }
-        }
-
-        return true;
     }
 }
