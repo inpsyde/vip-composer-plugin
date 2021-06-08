@@ -29,7 +29,6 @@ class MirrorCopier
         'bitbucket-pipelines.yml',
         'changelog.md',
         'changelog.txt',
-        'composer.json',
         'gulpfile.js',
         'gruntfile.js',
         'node_modules',
