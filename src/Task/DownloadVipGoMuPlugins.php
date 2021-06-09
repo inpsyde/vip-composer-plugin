@@ -21,7 +21,7 @@ use Inpsyde\VipComposer\VipDirectories;
 
 final class DownloadVipGoMuPlugins implements Task
 {
-    public const GIT_URL = 'git@github.com:Automattic/vip-go-mu-plugins-built';
+    public const GIT_URL = 'https://github.com/Automattic/vip-go-mu-plugins-built.git';
 
     /**
      * @var VipDirectories
