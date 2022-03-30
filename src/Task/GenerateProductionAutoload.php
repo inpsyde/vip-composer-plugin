@@ -94,13 +94,6 @@ final class GenerateProductionAutoload implements Task
         $autoloader->setClassMapAuthoritative(true);
         $autoloader->setRunScripts(false);
 
-        $suffix = '';
-        $lockFile = $this->config->composerLockPath();
-        if (is_readable($lockFile)) {
-            $data = (array)(json_decode(file_get_contents($lockFile) ?: '', true) ?: []);
-            $suffix = $data['content-hash'] ?? '';
-        }
-
         $prodAutoloadDirname = $this->config->prodAutoloadDir();
 
         $autoloader->dump(
@@ -110,16 +103,19 @@ final class GenerateProductionAutoload implements Task
             $this->composer->getInstallationManager(),
             $prodAutoloadDirname,
             true,
-            $suffix ?: md5(uniqid('', true))
+            ''
         );
 
-        $autoloadEntrypoint = "<?php\nrequire_once __DIR__ . '/autoload_real.php';\n";
-        $autoloadEntrypoint .= "ComposerAutoloaderInit{$suffix}::getLoader();\n";
+        $autoloadEntrypoint = "<?php\nrequire_once __DIR__ . '/VipComposerAutoloader.php';\n";
+        $autoloadEntrypoint .= "\Inpsyde\VipComposerAutoloader::load();\n";
         $path = "{$vendorDir}/{$prodAutoloadDirname}";
 
         file_put_contents("{$path}/autoload.php", $autoloadEntrypoint);
+        @unlink("{$path}/autoload_real.php");
+        @unlink("{$path}/autoload_static.php");
 
         $this->replaceVipPaths($path);
+        $this->writeVipLoader($path);
 
         $io->infoLine('Done!');
     }
@@ -131,7 +127,6 @@ final class GenerateProductionAutoload implements Task
     {
         $vendorDir = '$vendorDir = WPCOM_VIP_CLIENT_MU_PLUGIN_DIR . \'/vendor\';';
         $baseDir = '$baseDir = ABSPATH;';
-        $staticLoader = '$useStaticLoader = false;';
         $vipDirBase = basename($this->directories->targetPath());
 
         $toReplace = [
@@ -157,9 +152,51 @@ final class GenerateProductionAutoload implements Task
             );
             file_put_contents("{$path}/{$file}", (string)$content);
         }
+    }
 
-        $real = file_get_contents("{$path}/autoload_real.php") ?: '';
-        $real = preg_replace('~\$useStaticLoader(?:\s*=\s*)[^;]+;~', $staticLoader, $real, 1);
-        file_put_contents("{$path}/autoload_real.php", $real);
+    /**
+     * @param string $path
+     * @return void
+     */
+    private function writeVipLoader(string $path): void
+    {
+        $vipComposerAutoloader = <<<'PHP'
+<?php
+
+namespace Inpsyde;
+
+class VipComposerAutoloader
+{
+    public static function load(): void
+    {
+        static $loaded;
+        if ($loaded) {
+            return;
+        }
+        $loaded = true;
+        
+        require __DIR__ . '/platform_check.php';
+        
+        class_exists(\Composer\Autoload\ClassLoader::class) or require __DIR__ . '/ClassLoader.php';
+        $loader = new \Composer\Autoload\ClassLoader(\dirname(__DIR__));
+
+        $classMap = require __DIR__ . '/autoload_classmap.php';
+        $classMap and $loader->addClassMap($classMap);
+        $loader->setClassMapAuthoritative(true);
+        $loader->register(true);
+
+        $includeFiles = require __DIR__ . '/autoload_files.php';
+        foreach ($includeFiles as $fileIdentifier => $file) {
+            if (empty($GLOBALS['__composer_autoload_files'][$fileIdentifier])) {
+                $GLOBALS['__composer_autoload_files'][$fileIdentifier] = true;
+        
+                require $file;
+            }
+        }
+    }
+}
+
+PHP;
+        file_put_contents("{$path}/VipComposerAutoloader.php", $vipComposerAutoloader);
     }
 }

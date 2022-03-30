@@ -82,6 +82,7 @@ class ArchiveDownloader
             /**
              * @noinspection PhpParamsInspection
              * @psalm-suppress PossiblyFalseArgument
+             * @psalm-suppress InvalidArgument
              */
             ($downloader instanceof FileDownloader)
                 ? $downloader->download($package, $path, false)
@@ -115,7 +116,7 @@ class ArchiveDownloader
     public function download(PackageInterface $package, string $path): bool
     {
         try {
-            $tempDir = dirname($path) . '/.tmp' . substr(md5(uniqid($path, true)), 0, 8);
+            $tempDir = dirname($path) . '/.tmp' . (string)substr(md5(uniqid($path, true)), 0, 8);
             $this->filesystem->ensureDirectoryExists($tempDir);
             ($this->downloadCallback)($package, $tempDir);
             $this->filesystem->ensureDirectoryExists($path);

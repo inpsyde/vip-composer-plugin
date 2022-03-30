@@ -153,8 +153,14 @@ class Command extends BaseCommand
     {
         try {
             $this->resetComposer();
-            /** @var Composer $composer */
-            $composer = $this->getComposer(true);
+            /**
+             * @psalm-suppress DeprecatedMethod
+             * @var Composer $composer
+             */
+            $composer = is_callable([$this, 'requireComposer'])
+                ? $this->requireComposer()
+                : $this->getComposer(true);
+
             $factory = new Factory($composer, $this->getIO());
             $config = $factory->config();
 

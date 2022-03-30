@@ -6,7 +6,6 @@ namespace Inpsyde\VipComposer\Git;
 
 final class EnsureGitIgnore
 {
-
     /**
      * @param string $dir
      * @return bool

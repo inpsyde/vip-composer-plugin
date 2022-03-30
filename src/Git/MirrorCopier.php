@@ -232,6 +232,9 @@ class MirrorCopier
         $copied = 0;
         foreach ($linksPaths as $link => $target) {
             $real = realpath($link);
+            if (!$real) {
+                continue;
+            }
             $targetParent = dirname($target);
             $saveIn = "{$targetParent}/" . pathinfo($real, PATHINFO_FILENAME) . '.zip';
             $git->cd($real)->exec("archive --format zip --output {$saveIn} master");

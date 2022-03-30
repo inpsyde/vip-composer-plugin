@@ -22,7 +22,6 @@ use Inpsyde\VipComposer\VipDirectories;
 
 final class GenerateMuPluginsLoader implements Task
 {
-
     /**
      * @var VipDirectories
      */

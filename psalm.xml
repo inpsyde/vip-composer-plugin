@@ -1,11 +1,8 @@
 <?xml version="1.0"?>
 <psalm
-    totallyTyped="true"
     useDocblockPropertyTypes="true"
     usePhpDocMethodsWithoutMagicCall="true"
     strictBinaryOperands="true"
-    allowPhpStormGenerics="true"
-    allowCoercionFromStringToClassConst="true"
     ignoreInternalFunctionFalseReturn="false"
     ignoreInternalFunctionNullReturn="false"
     hideExternalErrors="true"
@@ -26,6 +23,5 @@
         <MissingClosureReturnType errorLevel="suppress" />
         <UnresolvableInclude errorLevel="suppress" />
         <UndefinedConstant errorLevel="suppress" />
-        <UnnecessaryVarAnnotation errorLevel="suppress" />
     </issueHandlers>
 </psalm>

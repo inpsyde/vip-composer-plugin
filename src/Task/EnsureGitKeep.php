@@ -12,7 +12,6 @@ use Symfony\Component\Finder\SplFileInfo;
 
 final class EnsureGitKeep implements Task
 {
-
     /**
      * @var VipDirectories
      */
@@ -76,7 +75,7 @@ final class EnsureGitKeep implements Task
         }
 
         $hasFiles = $this->haveFiles(0, $dir);
-        $hasGitKeep = file_exists(realpath($dir) . '/.gitkeep');
+        $hasGitKeep = file_exists((string)realpath($dir) . '/.gitkeep');
 
         if (!$hasFiles && !$hasGitKeep) {
             file_put_contents("{$dir}/.gitkeep", "\n");

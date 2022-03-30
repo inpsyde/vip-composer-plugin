@@ -19,7 +19,6 @@ use Symfony\Component\Process\Process;
 
 class GitProcess
 {
-
     /**
      * @var string
      */

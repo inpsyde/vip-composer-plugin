@@ -5,14 +5,12 @@ declare(strict_types=1);
 namespace Inpsyde\VipComposer\Utils;
 
 use Composer\Composer;
-use Composer\Util\Http\Response;
 use Composer\Util\HttpDownloader;
 use Composer\Util\RemoteFilesystem;
 use Inpsyde\VipComposer\Io;
 
 class HttpClient
 {
-
     /**
      * @var Io
      */

@@ -24,9 +24,8 @@
     },
     "require-dev": {
         "composer/composer": "^2",
-        "inpsyde/php-coding-standards": "^1@dev",
-        "phpcompatibility/php-compatibility": "^9.3.0",
-        "vimeo/psalm": "^4.1.1"
+        "inpsyde/php-coding-standards": "^1",
+        "vimeo/psalm": "^4.22"
     },
     "autoload": {
         "psr-4": {
@@ -37,13 +36,16 @@
         "class": "Inpsyde\\VipComposer\\Plugin"
     },
     "scripts": {
-        "cs": "@php ./vendor/squizlabs/php_codesniffer/bin/phpcs",
-        "psalm": "@php ./vendor/vimeo/psalm/psalm --no-cache --show-info=false --output-format=compact --no-progress",
-        "phpcompat": "@php ./vendor/squizlabs/php_codesniffer/bin/phpcs -p . --standard=PHPCompatibility --ignore=*/vendor/* --extensions=php --basepath=./ --runtime-set testVersion 7.3-",
+        "phpcs": "@php ./vendor/squizlabs/php_codesniffer/bin/phpcs",
+        "psalm": "@php ./vendor/vimeo/psalm/psalm --no-cache --show-info=false --no-progress",
         "qa": [
-            "@cs",
-            "@phpcompat",
+            "@phpcs",
             "@psalm"
         ]
+    },
+    "config": {
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
     }
 }

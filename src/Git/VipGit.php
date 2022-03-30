@@ -305,9 +305,7 @@ class VipGit
         $branches = explode($output, "\n") ?: [];
         $currentBranch = '';
         foreach ($branches as $branch) {
-            if (strpos(trim($branch), '* ')) {
-                $currentBranch = ltrim($branch, '* ');
-            }
+            strpos(trim($branch), '* ') and $currentBranch = ltrim($branch, '* ');
         }
 
         $commands = [];
@@ -481,8 +479,8 @@ class VipGit
         $vendorDir = $this->config->composerConfigValue('vendor-dir');
         $vendorSource = $this->filesystem->normalizePath($vendorDir);
         $targetPath = $this->directories->targetPath();
-        $subdir = $this->filesystem->findShortestPath($targetPath, $vendorSource, true);
-        $vendorTarget = "{$mirrorDir}/{$subdir}";
+        $subDir = $this->filesystem->findShortestPath($targetPath, $vendorSource, true);
+        $vendorTarget = "{$mirrorDir}/{$subDir}";
         $this->filesystem->ensureDirectoryExists($vendorTarget);
         $toCopy = $this->packages->noDevPackages();
 
@@ -552,7 +550,7 @@ class VipGit
             }
         );
 
-        if ($total < 1) {
+        if (!$files) {
             $this->nothingToDoMessage($push);
 
             return 0;

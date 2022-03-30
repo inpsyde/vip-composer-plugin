@@ -18,7 +18,6 @@ use Inpsyde\VipComposer\Installer;
 
 class WpPluginFileFinder
 {
-
     /**
      * @var Installer
      */

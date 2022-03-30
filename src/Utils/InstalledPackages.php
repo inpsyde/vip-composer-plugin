@@ -120,7 +120,7 @@ class InstalledPackages
             return $cache;
         }
 
-        $lock = (array)($locker->getLockData() ?: []);
+        $lock = $locker->getLockData();
         $loader = new ArrayLoader(null, true);
 
         $cache = [];

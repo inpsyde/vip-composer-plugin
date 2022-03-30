@@ -4,7 +4,7 @@
 
 	<arg value="sp"/>
 	<arg name="colors"/>
-	<config name="testVersion" value="7.2-"/>
+	<config name="testVersion" value="7.3-"/>
 
     <rule ref="Inpsyde" />
 
