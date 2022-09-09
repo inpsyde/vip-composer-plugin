@@ -72,7 +72,7 @@ final class TaskConfig
         );
 
         $this->data = $customData
-            ? array_merge(self::DEFAULTS, (array)$customData)
+            ? array_merge(self::DEFAULTS, $customData)
             : self::DEFAULTS;
 
         $this->validate();

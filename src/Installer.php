@@ -49,7 +49,7 @@ class Installer extends LibraryInstaller
     }
 
     /**
-     * @inheritdoc
+     * @psalm-suppress MissingParamType
      */
     public function supports($packageType)
     {

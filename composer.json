@@ -25,7 +25,7 @@
     "require-dev": {
         "composer/composer": "^2",
         "inpsyde/php-coding-standards": "^1",
-        "vimeo/psalm": "^4.22"
+        "vimeo/psalm": "^4.27.0"
     },
     "autoload": {
         "psr-4": {
