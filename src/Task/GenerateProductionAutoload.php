@@ -146,7 +146,7 @@ final class GenerateProductionAutoload implements Task
             $content = preg_replace('~\$vendorDir(?:\s*=\s*)[^;]+;~', $vendorDir, $content, 1);
             $content = preg_replace('~\$baseDir(?:\s*=\s*)[^;]+;~', $baseDir, $content ?: '', 1);
             $content = preg_replace(
-                '~\$baseDir\s*\.\s*\'/' . $vipDirBase . '/(plugins|themes)/~',
+                '~\$baseDir\s*\.\s*\'/' . $vipDirBase . '/(client-mu-plugins|plugins|themes)/~',
                 'WP_CONTENT_DIR . \'/$1/',
                 $content ?: ''
             );
