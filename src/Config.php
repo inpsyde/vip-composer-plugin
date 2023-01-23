@@ -193,7 +193,7 @@ final class Config implements \ArrayAccess
     /**
      * @inheritdoc
      */
-    public function offsetExists($offset)
+    public function offsetExists($offset): bool
     {
         return $this->offsetGet($offset) !== null;
     }
@@ -202,6 +202,7 @@ final class Config implements \ArrayAccess
      * @param mixed $offset
      * @return mixed
      */
+    #[\ReturnTypeWillChange]
     public function offsetGet($offset)
     {
         if (!is_string($offset) || !$offset) {
@@ -225,7 +226,7 @@ final class Config implements \ArrayAccess
     /**
      * @inheritdoc
      */
-    public function offsetSet($offset, $value)
+    public function offsetSet($offset, $value): void
     {
         throw new \BadMethodCallException(
             sprintf(
@@ -239,7 +240,7 @@ final class Config implements \ArrayAccess
     /**
      * @inheritdoc
      */
-    public function offsetUnset($offset)
+    public function offsetUnset($offset): void
     {
         throw new \BadMethodCallException(
             sprintf(
