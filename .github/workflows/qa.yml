@@ -49,13 +49,18 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php-ver: [ '7.3', '7.4', '8.0' ]
+        php-ver: [ '7.3', '7.4', '8.0', '8.1', '8.2' ]
         composer: [ 'composer:v1', 'composer:2.0', 'composer:2.1', 'composer:2.2', 'composer:2.3' ]
         dependency-versions: [ 'lowest', 'highest' ]
-        include:
-          php-ver: [ '8.1', '8.2' ]
-          composer: [ 'composer:2.1', 'composer:2.2', 'composer:2.3' ]
-          dependency-versions: [ 'lowest', 'highest' ]
+        exclude:
+          - php-ver: '8.1'
+            composer: 'composer:v1'
+          - php-ver: '8.1'
+            composer: 'composer:2.0'
+          - php-ver: '8.2'
+            composer: 'composer:v1'
+          - php-ver: '8.2'
+            composer: 'composer:2.0'
     steps:
       -   name: Checkout
           uses: actions/checkout@v3
