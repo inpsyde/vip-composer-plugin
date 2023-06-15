@@ -154,14 +154,14 @@ final class CopyEnvConfigs implements Task
 
         $sourcesDirs = [];
         foreach ($packages as $package) {
-            $sourcesDirs[] = $this->installationManager->getInstallPath($package);
+            $sourcesDir = $this->installationManager->getInstallPath($package) ?? '';
+            if (is_dir($sourcesDir)) {
+                $sourcesDirs[] = $sourcesDir;
+            }
         }
 
         $sourceFiles = [];
         foreach ($sourcesDirs as $sourceDir) {
-            if (!is_dir($sourceDir)) {
-                continue;
-            }
             foreach (['all', 'development', 'staging', 'production'] as $env) {
                 $sourceFiles[$env] = $this->filesystem->normalizePath("{$sourceDir}/{$env}.php");
             }

@@ -245,7 +245,7 @@ final class CopyDevPaths implements Task
 
         $errors = 0;
         foreach ($multiMuPackages as $package) {
-            $path = $this->installationManager->getInstallPath($package);
+            $path = $this->installationManager->getInstallPath($package) ?? '';
             if (!is_dir($path)) {
                 continue;
             }
