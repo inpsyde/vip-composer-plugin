@@ -56,6 +56,7 @@ final class Config implements \ArrayAccess
         self::VIP_CONFIG_KEY => [
             self::VIP_LOCAL_DIR_KEY => 'vip',
             self::VIP_MUPLUGINS_LOCAL_DIR_KEY => 'vip-go-mu-plugins',
+            self::VIP_ENV_CONFIG_REPOSITORY => '',
         ],
         self::GIT_CONFIG_KEY => [
             self::GIT_URL_KEY => '',

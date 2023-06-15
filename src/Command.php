@@ -176,6 +176,7 @@ class Command extends BaseCommand
                 ->addTask($taskFactory->downloadVipGoMuPlugins())
                 ->addTask($taskFactory->symlinkVipGoDir())
                 ->addTask($taskFactory->copyDevPaths())
+                ->addTask($taskFactory->copyEnvConfig())
                 ->addTask($taskFactory->generateMuPluginsLoader())
                 ->addTask($taskFactory->generateProductionAutoload())
                 ->addTask($taskFactory->updateLocalWpConfigFile())

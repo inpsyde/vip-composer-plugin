@@ -88,6 +88,27 @@ class Factory
     }
 
     /**
+     * @return CopyEnvConfigs
+     */
+    public function copyEnvConfig(): CopyEnvConfigs
+    {
+        /** @var CopyEnvConfigs $copyEnvConfigs */
+        $copyEnvConfigs = $this->service(
+            CopyEnvConfigs::class,
+            function (): CopyEnvConfigs {
+                return new CopyEnvConfigs(
+                    $this->factory->vipDirectories(),
+                    $this->factory->packageFinder(),
+                    $this->factory->composer()->getInstallationManager(),
+                    $this->factory->filesystem()
+                );
+            }
+        );
+
+        return $copyEnvConfigs;
+    }
+
+    /**
      * @return DownloadVipGoMuPlugins
      */
     public function downloadVipGoMuPlugins(): DownloadVipGoMuPlugins
