@@ -111,8 +111,10 @@ final class GenerateProductionAutoload implements Task
 
         $vipAutoloadPath = "{$vendorDir}/{$prodAutoloadDirname}";
 
-        $this->replaceVipPaths($vipAutoloadPath);
         $loaderClass = $this->determineLoaderClassName($vipAutoloadPath, $suffix);
+
+        $this->replaceVipPaths($vipAutoloadPath);
+        $this->replaceStaticLoader($vipAutoloadPath);
 
         $autoloadEntrypoint = "<?php\n\nrequire_once __DIR__ . '/autoload_real.php';\n";
         $autoloadEntrypoint .= "return {$loaderClass}::getLoader();\n";
@@ -173,9 +175,9 @@ final class GenerateProductionAutoload implements Task
     }
 
     /**
-     * @param string $path
+     * @param string $vipAutoloadPath
      */
-    private function replaceVipPaths(string $path): void
+    private function replaceVipPaths(string $vipAutoloadPath): void
     {
         $vendorDir = '$vendorDir = WPCOM_VIP_CLIENT_MU_PLUGIN_DIR . \'/vendor\';';
         $baseDir = '$baseDir = ABSPATH;';
@@ -186,15 +188,14 @@ final class GenerateProductionAutoload implements Task
             'autoload_files.php',
             'autoload_namespaces.php',
             'autoload_psr4.php',
-            'autoload_static.php',
         ];
 
         foreach ($toReplace as $file) {
-            if (!file_exists("{$path}/{$file}")) {
+            if (!file_exists("{$vipAutoloadPath}/{$file}")) {
                 continue;
             }
 
-            $content = file_get_contents("{$path}/{$file}") ?: '';
+            $content = file_get_contents("{$vipAutoloadPath}/{$file}") ?: '';
             $content = preg_replace('~\$vendorDir\s*=\s*[^;]+;~', $vendorDir, $content, 1);
             $content = preg_replace('~\$baseDir\s*=\s*[^;]+;~', $baseDir, $content ?: '', 1);
             $content = preg_replace(
@@ -202,7 +203,45 @@ final class GenerateProductionAutoload implements Task
                 'WP_CONTENT_DIR . \'/$1/',
                 $content ?: ''
             );
-            file_put_contents("{$path}/{$file}", (string)$content);
+            file_put_contents("{$vipAutoloadPath}/{$file}", (string)$content);
         }
+    }
+
+    /**
+     * @param string $vipAutoloadPath
+     * @return void
+     */
+    private function replaceStaticLoader(string $vipAutoloadPath): void
+    {
+        $filepath = "{$vipAutoloadPath}/autoload_static.php";
+        $contents = file_get_contents($filepath) ?: '';
+
+        $vip = basename($this->directories->targetPath());
+
+        $exclude = [
+            $this->directories->privateDir(),
+            $this->directories->phpConfigDir(),
+            $this->directories->yamlConfigDir(),
+        ];
+
+        $paths = '';
+        foreach ($this->directories->toArray() as $path) {
+            if (!in_array($path, $exclude, true)) {
+                $paths and $paths .= '|';
+                $paths .= basename($path);
+            }
+        }
+
+        $contents = preg_replace(
+            '~=>.+?' . "{$vip}(/(?:{$paths})[^']+',)~",
+            '=> WP_CONTENT_DIR . \'$1',
+            $contents,
+        );
+
+        if (!$contents) {
+            throw new \Error('Generation of production static autoloaded class failed.');
+        }
+
+        file_put_contents($filepath, $contents);
     }
 }
