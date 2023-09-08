@@ -16,28 +16,21 @@ class PackageFinder
     private $packageRepo;
 
     /**
-     * @var ComposerFilesystem
-     */
-    private $filesystem;
-
-    /**
      * @var array<PackageInterface>|null
      */
     private $packages;
 
     /**
      * @param RepositoryInterface $packageRepo
-     * @param ComposerFilesystem $filesystem
      */
-    public function __construct(RepositoryInterface $packageRepo, ComposerFilesystem $filesystem)
+    public function __construct(RepositoryInterface $packageRepo)
     {
         $this->packageRepo = $packageRepo;
-        $this->filesystem = $filesystem;
     }
 
     /**
      * @param string $type
-     * @return PackageInterface[]
+     * @return array<PackageInterface>
      */
     public function findByType(string $type): array
     {

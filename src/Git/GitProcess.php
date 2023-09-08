@@ -74,7 +74,7 @@ class GitProcess
         $this->origWorkingDir = $this->workingDir;
         $this->io = $io;
         $this->executor = $executor ?: new ProcessExecutor($io->composerIo());
-        $this->outputCapture = function (string $type = '', string $buffer = '') {
+        $this->outputCapture = function (string $type = '', string $buffer = ''): void {
             $this->captured = [$type, $buffer];
         };
     }

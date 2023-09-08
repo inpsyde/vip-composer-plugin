@@ -208,8 +208,9 @@ class VipGit
             return [null, null];
         }
 
-        /** @var GitProcess $this->git */
-        [$success] = $this->git->exec("clone {$url} .");
+        $git = $this->git;
+        assert($git instanceof GitProcess);
+        [$success] = $git->exec("clone {$url} .");
 
         $success and $this->io->infoLine('Repository initialized.');
         if ($success) {
@@ -293,27 +294,28 @@ class VipGit
         string $targetBranch
     ): bool {
 
-        /** @var GitProcess $this->git */
+        $git = $this->git;
+        assert($git instanceof GitProcess);
 
-        [$success, $output] = $this->git->exec('branch');
+        [$success, $output] = $git->exec('branch');
         if (!$success) {
             $this->io->errorLine('Failed reading branches.');
 
             return false;
         }
 
-        $branches = explode($output, "\n") ?: [];
+        $branches = explode("\n", $output);
         $currentBranch = '';
         foreach ($branches as $branch) {
             strpos(trim($branch), '* ') and $currentBranch = ltrim($branch, '* ');
         }
 
         $commands = [];
-        $currentBranch === $targetBranch or $commands[] = "checkout {$targetBranch}";
+        ($currentBranch === $targetBranch) or $commands[] = "checkout {$targetBranch}";
         $commands[] = 'add .';
         $commands[] = 'commit -am "Merge-bot upstream sync."';
 
-        [$success, , $outputs] = $this->git->exec(...$commands);
+        [$success, , $outputs] = $git->exec(...$commands);
         $output = implode("\n", $outputs);
 
         $nothingToDo = strpos($output, 'up-to-date') !== false
@@ -347,7 +349,7 @@ class VipGit
         }
 
         $this->io->commentLine("Pushing to <<<{$remoteUrl}>>>");
-        [$success] = $this->git->exec('push origin');
+        [$success] = $git->exec('push origin');
 
         return $success;
     }
@@ -393,9 +395,10 @@ class VipGit
      */
     private function checkoutBranch(string $targetBranch): bool
     {
-        /** @var GitProcess $this->git */
+        $git = $this->git;
+        assert($git instanceof GitProcess);
 
-        [$success, $output] = $this->git->exec("branch -r -l *{$targetBranch}");
+        [$success, $output] = $git->exec("branch -r -l *{$targetBranch}");
         if (!$success) {
             return false;
         }
@@ -414,7 +417,7 @@ class VipGit
         }
 
         if ($branchIsThere) {
-            $branchIsCurrent or $this->git->exec("checkout {$targetBranch}");
+            $branchIsCurrent or $git->exec("checkout {$targetBranch}");
 
             return true;
         }
@@ -472,9 +475,9 @@ class VipGit
     /**
      * @param MirrorCopier $copier
      * @param string $mirrorDir
-     * @return bool
+     * @return void
      */
-    private function fillMirrorVendor(MirrorCopier $copier, string $mirrorDir): bool
+    private function fillMirrorVendor(MirrorCopier $copier, string $mirrorDir): void
     {
         $vendorDir = $this->config->composerConfigValue('vendor-dir');
         $vendorSource = $this->filesystem->normalizePath($vendorDir);
@@ -484,9 +487,6 @@ class VipGit
         $this->filesystem->ensureDirectoryExists($vendorTarget);
         $toCopy = $this->packages->noDevPackages();
 
-        $all = 0;
-        $done = 0;
-
         foreach ($toCopy as $package) {
             if (strpos($package->getType(), 'wordpress-') === 0) {
                 continue;
@@ -495,20 +495,16 @@ class VipGit
             $target = "{$vendorTarget}/" . $package->getName();
 
             if (is_dir($source)) {
-                $all++;
-                $copier->copy($source, $target) and $done++;
+                $copier->copy($source, $target);
             }
         }
 
         $prodAutoloadDirname = $this->config->prodAutoloadDir();
         $autoloadSource = "{$vendorSource}/{$prodAutoloadDirname}";
         if (is_dir($autoloadSource)) {
-            $all++;
             $autoloadTarget = "{$vendorTarget}/{$prodAutoloadDirname}";
-            $copier->copy($autoloadSource, $autoloadTarget) and $done++;
+            $copier->copy($autoloadSource, $autoloadTarget);
         }
-
-        return $all === $done;
     }
 
     /**
@@ -518,9 +514,10 @@ class VipGit
      */
     private function gitStats(bool $push, string $mirrorDir): int
     {
-        /** @var GitProcess $this->git */
+        $git = $this->git;
+        assert($git instanceof GitProcess);
 
-        [$success, $output] = $this->git->exec('diff-tree --no-commit-id --name-status -r HEAD');
+        [$success, $output] = $git->exec('diff-tree --no-commit-id --name-status -r HEAD');
         if (!$success) {
             $push or $this->io->infoLine('Changes merged but not pushed.');
 

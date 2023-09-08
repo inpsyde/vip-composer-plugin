@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace Inpsyde\VipComposer\Task;
 
 use Composer\Installer\InstallationManager;
+use Composer\Package\PackageInterface;
 use Composer\Util\Filesystem;
 use Inpsyde\VipComposer\Io;
 use Inpsyde\VipComposer\Utils\PackageFinder;
@@ -44,7 +45,7 @@ final class CopyEnvConfigs implements Task
     private $filesystem;
 
     /**
-     * @var \Composer\Package\PackageInterface[]|null
+     * @var array<PackageInterface>|null
      */
     private $packages = null;
 
@@ -104,7 +105,7 @@ final class CopyEnvConfigs implements Task
     }
 
     /**
-     * @return array
+     * @return array<PackageInterface>
      */
     private function findPackages(): array
     {
@@ -117,7 +118,7 @@ final class CopyEnvConfigs implements Task
 
     /**
      * @param Io $io
-     * @return \Composer\Package\PackageInterface[]
+     * @return array<PackageInterface>
      */
     private function findPackagesToProcess(Io $io): array
     {
@@ -139,7 +140,7 @@ final class CopyEnvConfigs implements Task
     }
 
     /**
-     * @param \Composer\Package\PackageInterface[] $packages
+     * @param array<PackageInterface> $packages
      * @return array{
      *     non-empty-string,
      *     array<'all'|'development'|'staging'|'production', string>
@@ -210,7 +211,7 @@ final class CopyEnvConfigs implements Task
      * @param Io $io
      * @param list<string> $all
      * @param list<string> $copied
-     * @param \Composer\Package\PackageInterface[] $packages
+     * @param array<PackageInterface> $packages
      * @return void
      */
     private function finalMessage(Io $io, array $all, array $copied, array $packages): void

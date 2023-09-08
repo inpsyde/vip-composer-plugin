@@ -68,10 +68,9 @@ final class GenerateDeployVersion implements Task
     /**
      * @param Io $io
      * @param string $targetDir
-     * @return bool
-     * @throws \Exception
+     * @return void
      */
-    private function writeDeployId(Io $io, string $targetDir): bool
+    private function writeDeployId(Io $io, string $targetDir): void
     {
         $deployId = sprintf(
             '%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
@@ -85,15 +84,12 @@ final class GenerateDeployVersion implements Task
             random_int(0, 0xffff)
         );
 
-        if (!file_put_contents("{$targetDir}/deploy-id", $deployId)) {
+        if (!file_put_contents("{$targetDir}/deploy-id", (string)$deployId)) {
             $io->errorLine("Failed writing deploy ID: '{$deployId}' to file.");
-
-            return false;
+            return;
         }
 
         $io->infoLine("Deploy ID: '{$deployId}' written to file.");
-
-        return true;
     }
 
     /**
