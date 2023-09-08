@@ -13,6 +13,21 @@ declare(strict_types=1);
 
 namespace Inpsyde\VipComposer\Task;
 
+/**
+ * @psalm-type config-data = array{
+ *      'deploy': bool|null,
+ *      'local': bool|null,
+ *      'git': bool|null,
+ *      'push': bool|null,
+ *      'git-url': string|null,
+ *      'git-branch': string|null,
+ *      'update-vip-mu-plugins': bool|null,
+ *      'skip-vip-mu-plugins': bool|null,
+ *      'update-wp': bool|null,
+ *      'skip-wp': bool|null,
+ *      'sync-dev-paths': bool|null
+ *  }
+ */
 final class TaskConfig
 {
     public const DEPLOY = 'deploy';
@@ -27,6 +42,9 @@ final class TaskConfig
     public const SKIP_CORE_UPDATE = 'skip-wp';
     public const SYNC_DEV_PATHS = 'sync-dev-paths';
 
+    /**
+     * @psalm-var config-data
+     */
     private const DEFAULTS = [
         self::DEPLOY => false,
         self::LOCAL => false,
@@ -47,7 +65,7 @@ final class TaskConfig
         self::GIT_NO_PUSH => FILTER_VALIDATE_BOOLEAN,
         self::GIT_PUSH => FILTER_VALIDATE_BOOLEAN,
         self::GIT_URL => FILTER_SANITIZE_URL,
-        self::GIT_BRANCH => FILTER_SANITIZE_STRING,
+        self::GIT_BRANCH => FILTER_UNSAFE_RAW,
         self::FORCE_VIP_MU => FILTER_VALIDATE_BOOLEAN,
         self::SKIP_VIP_MU => FILTER_VALIDATE_BOOLEAN,
         self::FORCE_CORE_UPDATE => FILTER_VALIDATE_BOOLEAN,
@@ -57,6 +75,7 @@ final class TaskConfig
 
     /**
      * @var array
+     * @psalm-var config-data
      */
     private $data;
 
@@ -65,6 +84,7 @@ final class TaskConfig
      */
     public function __construct(array $data)
     {
+        /** @var config-data|false $customData */
         $customData = filter_var_array(
             array_intersect_key($data, self::DEFAULTS),
             self::FILTERS,
@@ -171,13 +191,7 @@ final class TaskConfig
      */
     public function gitUrl(): ?string
     {
-        if (!$this->isGit()) {
-            return null;
-        }
-
-        $url = $this->data[self::GIT_URL] ?: null;
-
-        return ($url && is_string($url)) ? $url : null;
+        return $this->isGit() ? $this->data[self::GIT_URL] : null;
     }
 
     /**
@@ -185,13 +199,7 @@ final class TaskConfig
      */
     public function gitBranch(): ?string
     {
-        if (!$this->isGit()) {
-            return null;
-        }
-
-        $branch = $this->data[self::GIT_BRANCH] ?: null;
-
-        return ($branch && is_string($branch)) ? $branch : null;
+        return $this->isGit() ? $this->data[self::GIT_BRANCH] : null;
     }
 
     /**
@@ -199,6 +207,18 @@ final class TaskConfig
      */
     private function validate(): void
     {
+        $branch = $this->data[self::GIT_BRANCH] ?? null;
+        /** @see https://git-scm.com/docs/git-check-ref-format */
+        $regex = '{^(?!/|.*([/.]\.|//|@\{|\\\\))[^\040\177 ~^:?*\[]+(?<!\.lock|[/.])$}';
+        if (!is_string($branch) || ($branch === '') || !preg_match($regex, $branch)) {
+            throw new \LogicException(sprintf('Invalid configuration for "%s".', self::GIT_BRANCH));
+        }
+
+        /** @psalm-suppress DocblockTypeContradiction */
+        if (!is_string($this->data[self::GIT_URL] ?? '')) {
+            throw new \LogicException(sprintf('Invalid configuration for "%s".', self::GIT_URL));
+        }
+
         if (
             !$this->isLocal()
             && !$this->isDeploy()
