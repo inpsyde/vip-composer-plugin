@@ -39,13 +39,13 @@ Skip to [Command reference](#command-reference) section for detailed documentati
 
 ## PHP/Composer supported version table
 
-| PHP Ver | Composer Ver                   |
-|---------|--------------------------------|
-| 7.3     | 1 (latest), 2.0, 2.1, 2.2, 2.3 |
-| 7.4     | 1 (latest), 2.0, 2.1, 2.2, 2.3 |
-| 8.0     | 1 (latest), 2.0, 2.1, 2.2, 2.3 |
-| 8.1     | 2.1, 2.2, 2.3                  |
-| 8.2     | 2.1, 2.2, 2.3                  |
+| PHP Ver | Composer Ver          |
+|---------|-----------------------|
+| 7.3     | 1 (latest), 2.* < 2.4 |
+| 7.4     | 1 (latest), 2.* < 2.4 |
+| 8.0     | 1 (latest), 2.*       |
+| 8.1     | >= 2.4                |
+| 8.2     | >= 2.4                |
 
 ## Why
 
@@ -157,7 +157,7 @@ The whole set of settings available, with their defaults, looks like this:
     "config": {
         "vendor-dir": "vip/client-mu-plugins/vendor",
         "platform": {
-            "php": "7.3"
+            "php": "8.1"
         }
     },
     "extra": {
@@ -171,7 +171,7 @@ The whole set of settings available, with their defaults, looks like this:
                 "branch": ""
             },
             "wordpress": {
-                "version": "^5",
+                "version": "^6.2",
                 "local-dir": "public",
                 "uploads-local-dir": "uploads"
             },
@@ -299,7 +299,7 @@ Only the `config/vip-config.php` is mandatory all the other folders and their co
 
 
 
-## Folder structure *after* the command is ran
+## Folder structure *after* the command runs
 
 Assuming default configuration and a folder structure like the one shown in the screenshot under the [Prepare the local installation](#prepare-the-local-installation) section, after running:
 
@@ -347,7 +347,7 @@ The answer is: inside `/vip/client-mu-plugins`. As written above, the `/vip` fol
 
 #### `/wp-config.php`
 
-WordPress configuration file for the local environment. This is slightly different from a "standard" `wp-config.php` because it contains
+WordPress' configuration file for the local environment. This is slightly different from a "standard" `wp-config.php` because it contains
 - definition of `WPMU_PLUGIN_DIR` pointing `/vip-go-mu-plugins` as the source of MU plugins.
 - a `require` statement to load `vip-config/vip-config.php` simulating what happens in VIP Go
 
