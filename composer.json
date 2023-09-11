@@ -39,7 +39,11 @@
         }
     },
     "extra": {
-        "class": "Inpsyde\\VipComposer\\Plugin"
+        "class": "Inpsyde\\VipComposer\\Plugin",
+        "branch-alias": {
+            "dev-v1.x": "1.x-dev",
+            "dev-master": "2.x-dev"
+        }
     },
     "scripts": {
         "phpcs": "@php ./vendor/squizlabs/php_codesniffer/bin/phpcs",
