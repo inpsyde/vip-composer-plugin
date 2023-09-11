@@ -1,6 +1,6 @@
 <?php
 
-/*
+/**
  * This file is part of the vip-composer-plugin package.
  *
  * (c) Inpsyde GmbH
@@ -258,8 +258,7 @@ class Factory
             Utils\PackageFinder::class,
             function (): Utils\PackageFinder {
                 return new Utils\PackageFinder(
-                    $this->composer()->getRepositoryManager()->getLocalRepository(),
-                    $this->filesystem()
+                    $this->composer()->getRepositoryManager()->getLocalRepository()
                 );
             }
         );

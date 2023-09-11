@@ -25,11 +25,17 @@
     "require-dev": {
         "composer/composer": "^2",
         "inpsyde/php-coding-standards": "^1",
-        "vimeo/psalm": "^4.27.0"
+        "vimeo/psalm": "^4.30.0 || ^5.15.0",
+        "phpunit/phpunit": "^9.6.11"
     },
     "autoload": {
         "psr-4": {
             "Inpsyde\\VipComposer\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Inpsyde\\VipComposer\\Tests\\": ["tests/src/", "tests/unit/"]
         }
     },
     "extra": {
@@ -38,9 +44,12 @@
     "scripts": {
         "phpcs": "@php ./vendor/squizlabs/php_codesniffer/bin/phpcs",
         "psalm": "@php ./vendor/vimeo/psalm/psalm --no-cache --show-info=false --no-progress",
+        "tests": "@php ./vendor/phpunit/phpunit/phpunit --no-coverage",
+        "tests:coverage": "@php ./vendor/phpunit/phpunit/phpunit --coverage-clover",
         "qa": [
             "@phpcs",
-            "@psalm"
+            "@psalm",
+            "@tests"
         ]
     },
     "config": {

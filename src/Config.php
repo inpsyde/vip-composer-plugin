@@ -1,6 +1,6 @@
 <?php
 
-/*
+/**
  * This file is part of the vip-composer-plugin package.
  *
  * (c) Inpsyde GmbH
@@ -16,6 +16,9 @@ namespace Inpsyde\VipComposer;
 use Composer\Composer;
 use Composer\Config as ComposerConfig;
 
+/**
+ * @template-implements \ArrayAccess<mixed, mixed>
+ */
 final class Config implements \ArrayAccess
 {
     public const CONFIG_KEY = 'vip-composer';

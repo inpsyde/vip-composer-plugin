@@ -1,6 +1,6 @@
 <?php
 
-/*
+/**
  * This file is part of the vip-composer-plugin package.
  *
  * (c) Inpsyde GmbH
@@ -13,6 +13,21 @@ declare(strict_types=1);
 
 namespace Inpsyde\VipComposer\Task;
 
+/**
+ * @psalm-type config-data = array{
+ *      'deploy': bool,
+ *      'local': bool,
+ *      'git': bool,
+ *      'push': bool,
+ *      'git-url': string,
+ *      'git-branch': string,
+ *      'update-vip-mu-plugins': bool,
+ *      'skip-vip-mu-plugins': bool,
+ *      'update-wp': bool,
+ *      'skip-wp': bool,
+ *      'sync-dev-paths': bool
+ *  }
+ */
 final class TaskConfig
 {
     public const DEPLOY = 'deploy';
@@ -42,21 +57,55 @@ final class TaskConfig
     ];
 
     private const FILTERS = [
-        self::DEPLOY => FILTER_VALIDATE_BOOLEAN,
-        self::LOCAL => FILTER_VALIDATE_BOOLEAN,
-        self::GIT_NO_PUSH => FILTER_VALIDATE_BOOLEAN,
-        self::GIT_PUSH => FILTER_VALIDATE_BOOLEAN,
-        self::GIT_URL => FILTER_SANITIZE_URL,
-        self::GIT_BRANCH => FILTER_SANITIZE_STRING,
-        self::FORCE_VIP_MU => FILTER_VALIDATE_BOOLEAN,
-        self::SKIP_VIP_MU => FILTER_VALIDATE_BOOLEAN,
-        self::FORCE_CORE_UPDATE => FILTER_VALIDATE_BOOLEAN,
-        self::SKIP_CORE_UPDATE => FILTER_VALIDATE_BOOLEAN,
-        self::SYNC_DEV_PATHS => FILTER_VALIDATE_BOOLEAN,
+        self::DEPLOY => [
+            'filter' => FILTER_VALIDATE_BOOLEAN,
+            'flags' => FILTER_NULL_ON_FAILURE,
+        ],
+        self::LOCAL => [
+            'filter' => FILTER_VALIDATE_BOOLEAN,
+            'flags' => FILTER_NULL_ON_FAILURE,
+        ],
+        self::GIT_NO_PUSH => [
+            'filter' => FILTER_VALIDATE_BOOLEAN,
+            'flags' => FILTER_NULL_ON_FAILURE,
+        ],
+        self::GIT_PUSH => [
+            'filter' => FILTER_VALIDATE_BOOLEAN,
+            'flags' => FILTER_NULL_ON_FAILURE,
+        ],
+        self::GIT_URL => [
+            'filter' => FILTER_SANITIZE_URL,
+            'flags' => FILTER_NULL_ON_FAILURE,
+        ],
+        self::GIT_BRANCH => [
+            'filter' => FILTER_UNSAFE_RAW,
+            'flags' => FILTER_NULL_ON_FAILURE,
+        ],
+        self::FORCE_VIP_MU => [
+            'filter' => FILTER_VALIDATE_BOOLEAN,
+            'flags' => FILTER_NULL_ON_FAILURE,
+        ],
+        self::SKIP_VIP_MU => [
+            'filter' => FILTER_VALIDATE_BOOLEAN,
+            'flags' => FILTER_NULL_ON_FAILURE,
+        ],
+        self::FORCE_CORE_UPDATE => [
+            'filter' => FILTER_VALIDATE_BOOLEAN,
+            'flags' => FILTER_NULL_ON_FAILURE,
+        ],
+        self::SKIP_CORE_UPDATE => [
+            'filter' => FILTER_VALIDATE_BOOLEAN,
+            'flags' => FILTER_NULL_ON_FAILURE,
+        ],
+        self::SYNC_DEV_PATHS => [
+            'filter' => FILTER_VALIDATE_BOOLEAN,
+            'flags' => FILTER_NULL_ON_FAILURE,
+        ],
     ];
 
     /**
      * @var array
+     * @psalm-var config-data
      */
     private $data;
 
@@ -66,14 +115,13 @@ final class TaskConfig
     public function __construct(array $data)
     {
         $customData = filter_var_array(
-            array_intersect_key($data, self::DEFAULTS),
+            array_replace(self::DEFAULTS, array_intersect_key($data, self::DEFAULTS), $data),
             self::FILTERS,
             false
         );
 
-        $this->data = $customData
-            ? array_merge(self::DEFAULTS, $customData)
-            : self::DEFAULTS;
+        /** @psalm-suppress  MixedPropertyTypeCoercion data */
+        $this->data = $customData ?: self::DEFAULTS;
 
         $this->validate();
     }
@@ -83,7 +131,7 @@ final class TaskConfig
      */
     public function isLocal(): bool
     {
-        return (bool)$this->data[self::LOCAL];
+        return $this->data[self::LOCAL];
     }
 
     /**
@@ -99,7 +147,7 @@ final class TaskConfig
      */
     public function isDeploy(): bool
     {
-        return (bool)$this->data[self::DEPLOY];
+        return $this->data[self::DEPLOY];
     }
 
     /**
@@ -131,7 +179,7 @@ final class TaskConfig
      */
     public function skipVipMuPlugins(): bool
     {
-        return (bool)$this->data[self::SKIP_VIP_MU];
+        return $this->data[self::SKIP_VIP_MU];
     }
 
     /**
@@ -139,7 +187,7 @@ final class TaskConfig
      */
     public function forceVipMuPlugins(): bool
     {
-        return (bool)$this->data[self::FORCE_VIP_MU];
+        return $this->data[self::FORCE_VIP_MU];
     }
 
     /**
@@ -147,7 +195,7 @@ final class TaskConfig
      */
     public function forceCoreUpdate(): bool
     {
-        return (bool)$this->data[self::FORCE_CORE_UPDATE];
+        return $this->data[self::FORCE_CORE_UPDATE];
     }
 
     /**
@@ -155,7 +203,7 @@ final class TaskConfig
      */
     public function skipCoreUpdate(): bool
     {
-        return (bool)$this->data[self::SKIP_CORE_UPDATE];
+        return $this->data[self::SKIP_CORE_UPDATE];
     }
 
     /**
@@ -163,7 +211,7 @@ final class TaskConfig
      */
     public function syncDevPaths(): bool
     {
-        return (bool)$this->data[self::SYNC_DEV_PATHS];
+        return $this->data[self::SYNC_DEV_PATHS];
     }
 
     /**
@@ -171,13 +219,7 @@ final class TaskConfig
      */
     public function gitUrl(): ?string
     {
-        if (!$this->isGit()) {
-            return null;
-        }
-
-        $url = $this->data[self::GIT_URL] ?: null;
-
-        return ($url && is_string($url)) ? $url : null;
+        return $this->isGit() ? $this->data[self::GIT_URL] : null;
     }
 
     /**
@@ -185,13 +227,7 @@ final class TaskConfig
      */
     public function gitBranch(): ?string
     {
-        if (!$this->isGit()) {
-            return null;
-        }
-
-        $branch = $this->data[self::GIT_BRANCH] ?: null;
-
-        return ($branch && is_string($branch)) ? $branch : null;
+        return $this->isGit() ? $this->data[self::GIT_BRANCH] : null;
     }
 
     /**
@@ -199,6 +235,10 @@ final class TaskConfig
      */
     private function validate(): void
     {
+        $this->validateBranchName();
+        $this->validateUrl();
+        $this->validateBooleans();
+
         if (
             !$this->isLocal()
             && !$this->isDeploy()
@@ -223,6 +263,86 @@ final class TaskConfig
 
         if ($this->skipVipMuPlugins() && $this->forceVipMuPlugins()) {
             throw new \LogicException('Can\'t both *skip* and *force* VIP GO MU plugins update.');
+        }
+    }
+
+    /**
+     * @return void
+     *
+     * @see https://git-scm.com/docs/git-check-ref-format
+     */
+    private function validateBranchName(): void
+    {
+        $error = sprintf('Invalid configuration for "%s".', self::GIT_BRANCH);
+
+        $name = $this->data[self::GIT_BRANCH] ?? null;
+        if (!is_string($name) || ($name === '')) {
+            throw new \LogicException($error);
+        }
+
+        $invalidChars = array_merge(
+            range(chr(0), chr(40)),
+            [chr(177), '\\', ' ', '~', '^', ':', '?', '*', '[']
+        );
+
+        if (in_array($name, $invalidChars, true) || ($name === '@')) {
+            throw new \LogicException($error);
+        }
+
+        if ((trim($name, '/') !== $name) || (rtrim($name, '.') !== $name)) {
+            throw new \LogicException($error);
+        }
+
+        $invalidChars = array_map('preg_quote', $invalidChars);
+        if (preg_match('#' . implode('|', $invalidChars) . '|/\.|/{2,}|\.{2,}|@\{#', $name)) {
+            throw new \LogicException($error);
+        }
+    }
+
+    /**
+     * @return void
+     */
+    private function validateUrl(): void
+    {
+        $error = sprintf('Invalid configuration for "%s".', self::GIT_URL);
+
+        $url = $this->data[self::GIT_URL] ?? null;
+        /** @psalm-suppress DocblockTypeContradiction */
+        if (!is_string($url) || ($url === '')) {
+            throw new \LogicException($error);
+        }
+
+        if (preg_match('~^(?:git|ssh)@github.com:([^/]+/.+)$~i', $url, $matches)) {
+            $url = 'https://github.com/' . $matches[1];
+        }
+
+        if (!filter_var($url, FILTER_VALIDATE_URL)) {
+            throw new \LogicException("{$error} Please provide a valid GitHub repository URL.");
+        }
+
+        if (!preg_match('~^https://github.com/[^/]+/[^/.]+(?:/|\.git)?$~i', $url, $matches)) {
+            throw new \LogicException("{$error} Please provide a valid GitHub repository URL.");
+        }
+    }
+
+    /**
+     * @return void
+     */
+    private function validateBooleans(): void
+    {
+        $failures = [];
+        foreach (self::FILTERS as $key => $filters) {
+            if (
+                ($filters['filter'] === FILTER_VALIDATE_BOOLEAN)
+                && !is_bool($this->data[$key] ?? null)
+            ) {
+                $failures[] = $key;
+            }
+        }
+        if ($failures) {
+            throw new \LogicException(
+                sprintf('Invalid configuration for "%s".', implode('", "', $failures))
+            );
         }
     }
 }

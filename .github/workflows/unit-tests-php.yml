@@ -1,0 +1,78 @@
+name: PHP Unit Tests
+
+on:
+    push:
+        paths:
+            - '**workflows/unit-tests-php.yml'
+            - '**.php'
+            - '**phpunit.xml.dist'
+    pull_request:
+        paths:
+            - '**workflows/quality-assurance-php.yml'
+            - '**.php'
+            - '**phpcs.xml.dist'
+            - '**psalm.xml'
+    workflow_dispatch:
+
+concurrency:
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    unit-tests-php:
+        runs-on: ubuntu-latest
+        strategy:
+            fail-fast: false
+            matrix:
+                php-ver: [ '7.3', '7.4', '8.0', '8.1', '8.2' ]
+                composer: [ '1', '2', '2.1', '2.2', '2.3', '2.4', '2.5' ]
+                dependency-versions: [ 'lowest', 'highest' ]
+                exclude:
+                    -   php-ver: '7.3'
+                        composer: '2.4'
+                    -   php-ver: '7.3'
+                        composer: '2.5'
+                    -   php-ver: '7.3'
+                        composer: '2'
+                        dependency-versions: 'highest'
+                    -   php-ver: '7.4'
+                        composer: '2.4'
+                    -   php-ver: '7.4'
+                        composer: '2.5'
+                    -   php-ver: '7.4'
+                        composer: '2'
+                        dependency-versions: 'highest'
+                    -   php-ver: '8.1'
+                        composer: '1'
+                    -   php-ver: '8.1'
+                        composer: '2'
+                        dependency-versions: 'lowest'
+                    -   php-ver: '8.2'
+                        composer: '1'
+                    -   php-ver: '8.2'
+                        composer: '2'
+                        dependency-versions: 'lowest'
+        steps:
+            -   name: Checkout
+                uses: actions/checkout@v4
+
+            -   name: Setup PHP
+                uses: shivammathur/setup-php@v2
+                with:
+                    php-version: ${{ matrix.php-ver }}
+                    ini-values: zend.assertions=1, error_reporting=-1, display_errors=On
+                    coverage: none
+                    tools: cs2pr, "composer:${{ matrix.composer }}"
+
+            -   name: Adjust dependencies in 'composer.json'
+                run: |
+                    composer remove composer/composer inpsyde/php-coding-standards vimeo/psalm --dev --no-update
+                    composer require "composer/composer:~${{ matrix.composer }}.0" --dev --no-update
+
+            -   name: Install dependencies
+                uses: ramsey/composer-install@v2
+                with:
+                    dependency-versions: ${{ matrix.dependency-versions }}
+
+            -   name: Run unit tests
+                run: ./vendor/bin/phpunit --no-coverage

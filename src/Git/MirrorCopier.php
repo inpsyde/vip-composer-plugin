@@ -1,6 +1,6 @@
 <?php
 
-/*
+/**
  * This file is part of the vip-composer-plugin package.
  *
  * (c) Inpsyde GmbH
@@ -213,7 +213,7 @@ class MirrorCopier
     {
         $links = array_keys($linksPaths);
         foreach ($links as $link) {
-            if (strpos($path, $link) === 0) {
+            if (strpos($path, (string)$link) === 0) {
                 return true;
             }
         }

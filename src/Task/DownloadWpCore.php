@@ -1,6 +1,6 @@
 <?php
 
-/*
+/**
  * This file is part of the vip-composer-plugin package.
  *
  * (c) Inpsyde GmbH
@@ -54,6 +54,47 @@ final class DownloadWpCore implements Task
      * @var ArchiveDownloaderFactory
      */
     private $archiveDownloaderFactory;
+
+    /**
+     * Normalize a version string in the form x.x.x (where "x" is an integer)
+     * because Composer semver normalization returns versions in the form  x.x.x.x
+     * Moreover, things like x.x.0 are converted to x.x, because WordPress skip zeroes for
+     * minor versions.
+     *
+     * @param string $version
+     * @return string
+     */
+    public static function normalizeWpVersion(string $version): string
+    {
+        $stable = explode('-', trim(trim($version, '.')), 2)[0];
+        $pieces = explode('.', preg_replace(['{[^0-9\.]}', '{\.+}'], ['', '.'], $stable) ?? '');
+        /** @var array{0?:string, 1?:string, 2?:string} $parsed */
+        $parsed = [];
+        foreach ($pieces as $piece) {
+            if ($piece === '') {
+                continue;
+            }
+            $pieceInt = (int)$piece;
+            if ($parsed === []) {
+                $parsed[] = (string)$pieceInt;
+                continue;
+            }
+            $count = count($parsed);
+            if ($count > 2 || (($pieceInt === 0) && ($count === 2))) {
+                break;
+            }
+            if (($count === 1) && ($pieceInt > 9)) {
+                return '';
+            }
+            $parsed[] = (string)$pieceInt;
+        }
+
+        if (!$parsed || ($parsed === ['0']) || ($parsed === ['0', '0'])) {
+            return '';
+        }
+
+        return isset($parsed[1]) ? implode('.', $parsed) : "{$parsed[0]}.0";
+    }
 
     /**
      * @param Config $config
@@ -177,7 +218,7 @@ final class DownloadWpCore implements Task
 
         $fixedTargetVersion = preg_match('/^[3|4]\.([0-9])(\.[0-9])?+$/', $version) > 0;
 
-        return $fixedTargetVersion ? $this->normalizeVersionWp($version) : trim($version);
+        return $fixedTargetVersion ? static::normalizeWpVersion($version) : trim($version);
     }
 
     /**
@@ -201,18 +242,18 @@ final class DownloadWpCore implements Task
         }
 
         $wp_version = '';
-        require $versionFile;
-
-        /** @psalm-suppress RedundantCondition */
-        if (!$wp_version) {
-            return '';
-        }
-
         try {
-            return $this->normalizeVersionWp($wp_version);
+            require $versionFile;
         } catch (\UnexpectedValueException $version) {
             return '';
         }
+
+        /** @psalm-suppress TypeDoesNotContainType */
+        if (!is_string($wp_version)) {
+            return '';
+        }
+
+        return static::normalizeWpVersion($wp_version);
     }
 
     /**
@@ -268,12 +309,12 @@ final class DownloadWpCore implements Task
             return $resolved[$version];
         }
 
-        $exact = preg_match('|^[0-9]+\.[0-9]+(?:\.[0-9]+)*(?:\.[0-9]+)*$|', $version);
-
-        if ($exact) {
-            $resolved[$version] = $this->normalizeVersionWp($version);
+        if (
+            ($version !== '')
+            && preg_match('|^[0-9]+\.[0-9]+(?:\.[0-9]+)*(?:\.[0-9]+)*$|', $version)
+        ) {
             // good luck
-            return $resolved[$version];
+            return static::normalizeWpVersion($version);
         }
 
         $versions = $this->queryVersions($io);
@@ -284,7 +325,7 @@ final class DownloadWpCore implements Task
             return '';
         }
 
-        $satisfied = Semver::satisfiedBy($versions, $version);
+        $satisfied = ($version === '') ? $versions : Semver::satisfiedBy($versions, $version);
 
         if (!$satisfied) {
             $io->errorLine("No WordPress available version satisfies requirements '{$version}'.");
@@ -295,7 +336,7 @@ final class DownloadWpCore implements Task
         $satisfied = Semver::rsort($satisfied);
         /** @var string $last */
         $last = reset($satisfied);
-        $resolved[$version] = $this->normalizeVersionWp($last);
+        $resolved[$version] = static::normalizeWpVersion($last);
 
         return $resolved[$version];
     }
@@ -436,10 +477,13 @@ final class DownloadWpCore implements Task
         if (!$content) {
             return [];
         }
-
-        // phpcs:disable Inpsyde.CodeQuality.ArgumentTypeDeclaration
-        $extractVer = function ($package): string {
-            // phpcs:enable
+        /**
+         * @param mixed $package
+         * @return string
+         *
+         * @psalm-suppress MissingClosureParamType
+         */
+        $extractVer = static function ($package): string {
             if (
                 !is_array($package)
                 || empty($package['version'])
@@ -448,7 +492,7 @@ final class DownloadWpCore implements Task
                 return '';
             }
 
-            return $this->normalizeVersionWp((string)$package['version']);
+            return static::normalizeWpVersion((string)$package['version']);
         };
 
         try {
@@ -466,38 +510,5 @@ final class DownloadWpCore implements Task
         } catch (\Exception $exception) {
             return [];
         }
-    }
-
-    /**
-     * Normalize a version string in the form x.x.x (where "x" is an integer)
-     * because Composer semver normalization returns versions in the form  x.x.x.x
-     * Moreover, things like x.x.0 are converted to x.x, because WordPress skip zeroes for
-     * minor versions.
-     *
-     * @param string $version
-     * @return string
-     */
-    private function normalizeVersionWp(string $version): string
-    {
-        $beta = explode('-', trim($version, ". \t\n\r\0\x0B"), 2);
-        $stable = $beta[0];
-
-        $pieces = explode('.', preg_replace('/[^0-9\.]/', '', $stable) ?? '');
-        $pieces = array_map('intval', $pieces);
-        isset($pieces[0]) or $pieces[0] = 0;
-        isset($pieces[1]) or $pieces[1] = 0;
-        if ($pieces[1] > 9) {
-            $str = (string)$pieces[1];
-            $pieces[1] = $str[0];
-        }
-        if (empty($pieces[2])) {
-            return "{$pieces[0]}.{$pieces[1]}";
-        }
-        if ($pieces[2] > 9) {
-            $str = (string)$pieces[1];
-            $pieces[2] = $str[0];
-        }
-
-        return "{$pieces[0]}.{$pieces[1]}.{$pieces[2]}";
     }
 }
