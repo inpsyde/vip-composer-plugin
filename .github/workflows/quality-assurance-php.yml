@@ -6,7 +6,12 @@ on:
             - '**workflows/quality-assurance-php.yml'
             - '**.php'
             - '**phpcs.xml.dist'
-            - '**phpunit.xml.dist'
+            - '**psalm.xml'
+    pull_request:
+        paths:
+            - '**workflows/quality-assurance-php.yml'
+            - '**.php'
+            - '**phpcs.xml.dist'
             - '**psalm.xml'
     workflow_dispatch:
         inputs:
@@ -20,8 +25,6 @@ on:
                     - 'Run PHPCS only'
                     - 'Run Psalm only'
                     - 'Run lint only'
-                    - 'Run static analysis'
-                    - 'Run unit tests only'
 
 concurrency:
     group: ${{ github.workflow }}-${{ github.ref }}
@@ -29,7 +32,7 @@ concurrency:
 
 jobs:
     lint-php:
-        if: ${{ (github.event_name != 'workflow_dispatch') || ((github.event.inputs.jobs == 'Run all') || (github.event.inputs.jobs == 'Run lint only') || (github.event.inputs.jobs == 'Run static analysis')) }}
+        if: ${{ (github.event_name != 'workflow_dispatch') || ((github.event.inputs.jobs == 'Run all') || (github.event.inputs.jobs == 'Run lint only')) }}
         strategy:
             matrix:
                 php: [ "7.3", "7.4", "8.0", "8.1", "8.2" ]
@@ -39,11 +42,11 @@ jobs:
             LINT_ARGS: '-e php --colors --show-deprecated ./src'
 
     coding-standards-analysis-php:
-        if: ${{ (github.event_name != 'workflow_dispatch') || ((github.event.inputs.jobs == 'Run all') || (github.event.inputs.jobs == 'Run PHPCS only') || (github.event.inputs.jobs == 'Run static analysis')) }}
+        if: ${{ (github.event_name != 'workflow_dispatch') || ((github.event.inputs.jobs == 'Run all') || (github.event.inputs.jobs == 'Run PHPCS only')) }}
         uses: inpsyde/reusable-workflows/.github/workflows/coding-standards-php.yml@main
 
     static-code-analysis-php:
-        if: ${{ (github.event_name != 'workflow_dispatch') || ((github.event.inputs.jobs == 'Run all') || (github.event.inputs.jobs == 'Run Psalm only') || (github.event.inputs.jobs == 'Run static analysis')) }}
+        if: ${{ (github.event_name != 'workflow_dispatch') || ((github.event.inputs.jobs == 'Run all') || (github.event.inputs.jobs == 'Run Psalm only')) }}
         strategy:
             matrix:
                 php: [ "7.3", "7.4", "8.0", "8.1", "8.2" ]
@@ -51,13 +54,3 @@ jobs:
         with:
             PHP_VERSION: ${{ matrix.php }}
             PSALM_ARGS: --output-format=github --no-suggestions --no-cache --no-diff --find-unused-psalm-suppress --php-version=${{ matrix.php }}
-
-    tests-unit-php:
-        if: ${{ (github.event_name != 'workflow_dispatch') || ((github.event.inputs.jobs == 'Run all') || (github.event.inputs.jobs == 'Run unit tests only')) }}
-        uses: inpsyde/reusable-workflows/.github/workflows/tests-unit-php.yml@main
-        strategy:
-            matrix:
-                php: [ "7.3", "7.4", "8.0", "8.1", "8.2" ]
-        with:
-            PHP_VERSION: ${{ matrix.php }}
-            PHPUNIT_ARGS: '--no-coverage'
