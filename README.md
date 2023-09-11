@@ -37,15 +37,6 @@ If this is the first time you come here, it is suggested to read below for bette
 
 Skip to [Command reference](#command-reference) section for detailed documentation on the command and its available options.
 
-## PHP/Composer supported version table
-
-| PHP Ver | Composer Ver          |
-|---------|-----------------------|
-| 7.3     | 1 (latest), 2.* < 2.4 |
-| 7.4     | 1 (latest), 2.* < 2.4 |
-| 8.0     | 1 (latest), 2.*       |
-| 8.1     | >= 2.4                |
-| 8.2     | >= 2.4                |
 
 ## Why
 
