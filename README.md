@@ -671,6 +671,6 @@ composer vip --local --update-vip-mu-plugins
 
 
 
-## Copyright (c) 2020 Inpsyde GmbH
+## Copyright (c) 2023 Inpsyde GmbH
 
 This software is released under [MIT license](https://opensource.org/licenses/MIT).
