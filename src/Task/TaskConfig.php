@@ -19,8 +19,8 @@ namespace Inpsyde\VipComposer\Task;
  *      'local': bool,
  *      'git': bool,
  *      'push': bool,
- *      'git-url': string,
- *      'git-branch': string,
+ *      'git-url': string|null,
+ *      'git-branch': string|null,
  *      'update-vip-mu-plugins': bool,
  *      'skip-vip-mu-plugins': bool,
  *      'update-wp': bool,
@@ -74,12 +74,10 @@ final class TaskConfig
             'flags' => FILTER_NULL_ON_FAILURE,
         ],
         self::GIT_URL => [
-            'filter' => FILTER_SANITIZE_URL,
-            'flags' => FILTER_NULL_ON_FAILURE,
+            'filter' => FILTER_UNSAFE_RAW,
         ],
         self::GIT_BRANCH => [
             'filter' => FILTER_UNSAFE_RAW,
-            'flags' => FILTER_NULL_ON_FAILURE,
         ],
         self::FORCE_VIP_MU => [
             'filter' => FILTER_VALIDATE_BOOLEAN,
@@ -122,6 +120,18 @@ final class TaskConfig
 
         /** @psalm-suppress  MixedPropertyTypeCoercion data */
         $this->data = $customData ?: self::DEFAULTS;
+
+        // FILTER_UNSAFE_RAW will convert null into empty string
+        foreach (self::FILTERS as $key => $filters) {
+            if (
+                (($filters['filter'] ?? 0) === FILTER_UNSAFE_RAW)
+                && (($data[$key] ?? null) === null)
+                && (($this->data[$key] ?? null) === '')
+            ) {
+                /** @psalm-suppress MixedPropertyTypeCoercion */
+                $this->data[$key] = null;
+            }
+        }
 
         $this->validate();
     }
@@ -235,8 +245,8 @@ final class TaskConfig
      */
     private function validate(): void
     {
-        $this->validateBranchName();
-        $this->validateUrl();
+        $this->data[self::GIT_BRANCH] = $this->validateBranchName();
+        $this->data[self::GIT_URL] = $this->validateUrl();
         $this->validateBooleans();
 
         if (
@@ -267,62 +277,39 @@ final class TaskConfig
     }
 
     /**
-     * @return void
-     *
-     * @see https://git-scm.com/docs/git-check-ref-format
+     * @return non-empty-string|null
      */
-    private function validateBranchName(): void
+    private function validateBranchName(): ?string
     {
-        $error = sprintf('Invalid configuration for "%s".', self::GIT_BRANCH);
-
         $name = $this->data[self::GIT_BRANCH] ?? null;
+        if ($name === null) {
+             return null;
+        }
+
+        /** @psalm-suppress DocblockTypeContradiction */
         if (!is_string($name) || ($name === '')) {
-            throw new \LogicException($error);
+            throw new \LogicException(sprintf('Invalid command parameter "%s".', self::GIT_BRANCH));
         }
 
-        $invalidChars = array_merge(
-            range(chr(0), chr(40)),
-            [chr(177), '\\', ' ', '~', '^', ':', '?', '*', '[']
-        );
-
-        if (in_array($name, $invalidChars, true) || ($name === '@')) {
-            throw new \LogicException($error);
-        }
-
-        if ((trim($name, '/') !== $name) || (rtrim($name, '.') !== $name)) {
-            throw new \LogicException($error);
-        }
-
-        $invalidChars = array_map('preg_quote', $invalidChars);
-        if (preg_match('#' . implode('|', $invalidChars) . '|/\.|/{2,}|\.{2,}|@\{#', $name)) {
-            throw new \LogicException($error);
-        }
+        return $name;
     }
 
     /**
-     * @return void
+     * @return non-empty-string|null
      */
-    private function validateUrl(): void
+    private function validateUrl(): ?string
     {
-        $error = sprintf('Invalid configuration for "%s".', self::GIT_URL);
-
         $url = $this->data[self::GIT_URL] ?? null;
+        if ($url === null) {
+            return null;
+        }
+
         /** @psalm-suppress DocblockTypeContradiction */
         if (!is_string($url) || ($url === '')) {
-            throw new \LogicException($error);
+            throw new \LogicException(sprintf('Invalid command parameter "%s".', self::GIT_URL));
         }
 
-        if (preg_match('~^(?:git|ssh)@github.com:([^/]+/.+)$~i', $url, $matches)) {
-            $url = 'https://github.com/' . $matches[1];
-        }
-
-        if (!filter_var($url, FILTER_VALIDATE_URL)) {
-            throw new \LogicException("{$error} Please provide a valid GitHub repository URL.");
-        }
-
-        if (!preg_match('~^https://github.com/[^/]+/[^/.]+(?:/|\.git)?$~i', $url, $matches)) {
-            throw new \LogicException("{$error} Please provide a valid GitHub repository URL.");
-        }
+        return $url;
     }
 
     /**
@@ -333,7 +320,7 @@ final class TaskConfig
         $failures = [];
         foreach (self::FILTERS as $key => $filters) {
             if (
-                ($filters['filter'] === FILTER_VALIDATE_BOOLEAN)
+                (($filters['filter'] ?? 0) === FILTER_VALIDATE_BOOLEAN)
                 && !is_bool($this->data[$key] ?? null)
             ) {
                 $failures[] = $key;
@@ -341,7 +328,7 @@ final class TaskConfig
         }
         if ($failures) {
             throw new \LogicException(
-                sprintf('Invalid configuration for "%s".', implode('", "', $failures))
+                sprintf('Invalid command parameter(s) "%s".', implode('", "', $failures))
             );
         }
     }

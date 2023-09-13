@@ -42,23 +42,26 @@ class TaskConfigTest extends UnitTestCase
     /**
      * @test
      */
-    public function testFailureOnMissingGitBranch(): void
+    public function testMissingGitBranch(): void
     {
-        $this->expectExceptionMessageMatches('/git-branch/');
-
-        new TaskConfig(
+        $config = new TaskConfig(
             [
                 'git' => 'true',
                 'git-url' => 'https://github.com/foo/bar/',
             ]
         );
+
+        static::assertNull($config->gitBranch());
     }
 
     /**
      * @test
      * @dataProvider provideGitBranchNames
+     *
+     * @param mixed $name
+     * @param bool $expected
      */
-    public function testFailureOnInvalidGitBranch(string $name, bool $expected): void
+    public function testFailureOnInvalidGitBranch($name, bool $expected): void
     {
         $expected or $this->expectExceptionMessageMatches('/"git-branch"/');
 
@@ -70,29 +73,38 @@ class TaskConfigTest extends UnitTestCase
             ]
         );
 
-        $expected and static::assertSame($name, $config->gitBranch());
+        if (!$expected) {
+            return;
+        }
+
+        ($name === null)
+            ? static::assertNull($config->gitBranch())
+            : static::assertSame((string)$name, $config->gitBranch());
     }
 
     /**
      * @test
      */
-    public function testFailureOnMissingGitUrl(): void
+    public function testMissingGitUrl(): void
     {
-        $this->expectExceptionMessageMatches('/git-url/');
-
-        new TaskConfig(
+        $config = new TaskConfig(
             [
                 'git' => 'true',
                 'git-branch' => 'master',
             ]
         );
+
+        static::assertNull($config->gitUrl());
     }
 
     /**
      * @test
      * @dataProvider provideGitUrls
+     *
+     * @param mixed $url
+     * @param bool $expected
      */
-    public function testFailureOnNoInvalidGitUrl(string $url, bool $expected): void
+    public function testFailureOnNoInvalidGitUrl($url, bool $expected): void
     {
         $expected or $this->expectExceptionMessageMatches('/"git-url"/');
 
@@ -104,7 +116,13 @@ class TaskConfigTest extends UnitTestCase
             ]
         );
 
-        $expected and static::assertNotNull($config->gitUrl());
+        if (!$expected) {
+            return;
+        }
+
+        ($url === null)
+            ? static::assertNull($config->gitUrl())
+            : static::assertSame((string)$url, $config->gitUrl());
     }
 
     /**
@@ -124,69 +142,38 @@ class TaskConfigTest extends UnitTestCase
     }
 
     /**
-     * @return list<array{string, bool}>
+     * @return list<array{mixed, bool}>
      * @see https://git-scm.com/docs/git-check-ref-format
      */
     public static function provideGitBranchNames(): array
     {
         return [
-            0 => ['foo/.bar', false],
-            1 => ['foo..bar', false],
-            2 => ['foo~bar', false],
-            3 => ['foo^bar', false],
-            4 => ['foo:bar', false],
-            5 => ["foo\nbar", false],
-            6 => ["foo\tbar", false],
-            7 => ['foo?bar', false],
-            8 => ['foo*bar', false],
-            9 => ['foo[bar', false],
-            10 => ['/foo', false],
-            11 => ['foo/', false],
-            12 => ['foo//bar', false],
-            13 => ['foo.', false],
-            14 => ['foo@{bar', false],
-            15 => ['@', false],
-            16 => ['foo\bar', false],
-            17 => ['foo/bar', true],
-            18 => ['foo.bar', true],
-            19 => ['foo]bar', true],
-            20 => ['foo/bar/baz', true],
-            21 => ['foo{@bar', true],
-            22 => ['x', true],
-            23 => ['1', true],
-            24 => ['123', true],
-            25 => ['x/123', true],
-            26 => ['1/x', true],
-            27 => ['1/x/2', true],
-            28 => ['1-2-z/y', true],
+            0 => ['foo/bar', true],
+            1 => ['foo-bar', true],
+            2 => ['', false],
+            3 => [false, false], // filter will convert `false` to string "", failing
+            4 => [4, true], // filter will convert int to string
+            5 => [[], false],
+            6 => [null, true],
+            7 => [true, true], // filter will convert `true` to string "1"
+            8 => ['x', true],
         ];
     }
 
     /**
-     * @return list<array{string, bool}>
+     * @return list<array{mixed, bool}>
      */
     public static function provideGitUrls(): array
     {
         return [
             0 => ['https://github.com/foo/bar', true],
-            1 => ['https://github.com/foo/bar/', true],
-            2 => ['https://github.com/foo/bar.git', true],
-            3 => ['https://no-github.com/foo/bar', false],
-            4 => ['http://github.com/foo/bar', false],
-            5 => ['https://github.com/foo', false],
-            6 => ['https://github.com/foo.git', false],
-            7 => ['git@github.com:foo/bar', true],
-            8 => ['git@github.com:foo/bar/', true],
-            9 => ['git@github.com:foo/bar.git', true],
-            10 => ['git@no-github.com:foo/bar', false],
-            11 => ['git@github.com:foo', false],
-            12 => ['git@github.com:foo.git', false],
-            13 => ['ssh@github.com:foo/bar', true],
-            14 => ['ssh@github.com:foo/bar/', true],
-            15 => ['ssh@github.com:foo/bar.git', true],
-            16 => ['ssh@no-github.com:foo/bar', false],
-            17 => ['ssh@github.com:foo', false],
-            18 => ['ssh@github.com:foo.git', false],
+            1 => ['git@no-github.com:foo/bar', true],
+            2 => ['', false],
+            3 => [false, false],
+            4 => [4, true],
+            5 => [[], false],
+            6 => [null, true],
+            7 => [true, true],
         ];
     }
 }
