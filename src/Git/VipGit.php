@@ -15,6 +15,7 @@ namespace Inpsyde\VipComposer\Git;
 
 use Composer\Util\Filesystem;
 use Inpsyde\VipComposer\Config;
+use Inpsyde\VipComposer\Task\TaskConfig;
 use Inpsyde\VipComposer\Utils\InstalledPackages;
 use Inpsyde\VipComposer\Io;
 use Inpsyde\VipComposer\Utils\Unzipper;
@@ -200,11 +201,8 @@ class VipGit
 
         $url = $sshUrl ?: $httpsUrl;
         /** @var string|null $branch */
-        $branch = $customBranch ?? $this->gitConfig[Config::GIT_BRANCH_KEY];
+        $branch = $this->gitBranch($customBranch);
         if (!$branch) {
-            $this->io->errorLine('Git branch not configured in composer.json.');
-            $this->io->errorLine('Use `--git-branch` flag to pass a branch name.');
-
             return [null, null];
         }
 
@@ -380,6 +378,11 @@ class VipGit
 
             return [null, null];
         }
+        if (count(explode('/', trim($path, '/'))) !== 2) {
+            $this->io->errorLine("Git repo URL path in '{$url}' looks wrong.");
+
+            return [null, null];
+        }
 
         if (pathinfo(basename($url), PATHINFO_EXTENSION) !== 'git') {
             $url .= '.git';
@@ -387,6 +390,61 @@ class VipGit
         }
 
         return [$url, 'git@github.com:' . ltrim($path, '/')];
+    }
+
+    /**
+     * @param string|null $customBranch
+     * @return string|null
+     *
+     * @see https://git-scm.com/docs/git-check-ref-format
+     */
+    private function gitBranch(?string $customBranch): ?string
+    {
+        $branch = $customBranch ?? $this->gitConfig[Config::GIT_BRANCH_KEY];
+        $isCustom = $customBranch !== null;
+
+        $error = $isCustom
+            ? sprintf('Git branch name in "%s" command flag is invalid.', TaskConfig::GIT_BRANCH)
+            : sprintf('Git branch name in "%s" configuration is invalid.', Config::GIT_BRANCH_KEY);
+
+        if (!is_string($branch) || ($branch === '')) {
+            if (!$isCustom) {
+                $this->io->errorLine('Git branch not configured in composer.json.');
+                $this->io->errorLine('Use `--git-branch` flag to pass a branch name.');
+
+                return null;
+            }
+
+            $this->io->errorLine($error);
+
+            return null;
+        }
+
+        $invalidChars = array_merge(
+            range(chr(0), chr(40)),
+            [chr(177), '\\', ' ', '~', '^', ':', '?', '*', '[']
+        );
+
+        if (in_array($branch, $invalidChars, true) || ($branch === '@')) {
+            $this->io->errorLine($error);
+
+            return null;
+        }
+
+        if ((trim($branch, '/') !== $branch) || (rtrim($branch, '.') !== $branch)) {
+            $this->io->errorLine($error);
+
+            return null;
+        }
+
+        $invalidChars = array_map('preg_quote', $invalidChars);
+        if (preg_match('#' . implode('|', $invalidChars) . '|/\.|/{2,}|\.{2,}|@\{#', $branch)) {
+            $this->io->errorLine($error);
+
+            return null;
+        }
+
+        return $branch;
     }
 
     /**
