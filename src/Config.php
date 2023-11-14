@@ -204,10 +204,13 @@ final class Config implements \ArrayAccess
     /**
      * @param mixed $offset
      * @return mixed
+     *
+     * phpcs:disable Inpsyde.CodeQuality.ReturnTypeDeclaration.IncorrectNullReturn
      */
     #[\ReturnTypeWillChange]
-    public function offsetGet($offset)
+    public function offsetGet(mixed $offset): mixed
     {
+        // phpcs:enable Inpsyde.CodeQuality.ReturnTypeDeclaration.IncorrectNullReturn
         if (!is_string($offset) || !$offset) {
             return null;
         }

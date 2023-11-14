@@ -87,7 +87,7 @@ final class GenerateDeployVersion implements Task
             random_int(0, 0xffff)
         );
 
-        if (!file_put_contents("{$targetDir}/deploy-id", (string)$deployId)) {
+        if (!file_put_contents("{$targetDir}/deploy-id", $deployId)) {
             $io->errorLine("Failed writing deploy ID: '{$deployId}' to file.");
             return;
         }

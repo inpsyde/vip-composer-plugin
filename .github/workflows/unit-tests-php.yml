@@ -6,6 +6,7 @@ on:
             - '**workflows/unit-tests-php.yml'
             - '**.php'
             - '**phpunit.xml.dist'
+            - '**psalm.xml'
     pull_request:
         paths:
             - '**workflows/quality-assurance-php.yml'
@@ -44,7 +45,9 @@ jobs:
 
             -   name: Adjust dependencies in 'composer.json'
                 run: |
+                    composer remove composer-plugin-api --no-update
                     composer remove composer/composer inpsyde/php-coding-standards vimeo/psalm --dev --no-update
+                    composer require "composer-plugin-api:^${{ matrix.composer }}" --no-update
                     composer require "composer/composer:~${{ matrix.composer }}.0" --dev --no-update
 
             -   name: Install dependencies

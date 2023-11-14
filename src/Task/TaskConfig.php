@@ -328,7 +328,7 @@ final class TaskConfig
     {
         $name = $this->data[self::GIT_BRANCH] ?? null;
         if ($name === null) {
-             return null;
+            return null;
         }
 
         /** @psalm-suppress DocblockTypeContradiction */

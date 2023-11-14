@@ -483,7 +483,7 @@ final class DownloadWpCore implements Task
          *
          * @psalm-suppress MissingClosureParamType
          */
-        $extractVer = static function ($package): string {
+        $extractVer = static function (mixed $package): string {
             if (
                 !is_array($package)
                 || empty($package['version'])
