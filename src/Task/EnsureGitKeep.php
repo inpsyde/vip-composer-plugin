@@ -55,7 +55,7 @@ final class EnsureGitKeep implements Task
      */
     public function enabled(TaskConfig $taskConfig): bool
     {
-        return true;
+        return !$taskConfig->isVipDevEnv();
     }
 
     /**

@@ -83,7 +83,8 @@ final class GenerateMuPluginsLoader implements Task
      */
     public function enabled(TaskConfig $taskConfig): bool
     {
-        return (bool)$this->packages && ($taskConfig->isLocal() || $taskConfig->isDeploy());
+        return (bool)$this->packages
+            && ($taskConfig->isLocal() || $taskConfig->isDeploy() || $taskConfig->isVipDevEnv());
     }
 
     /**
@@ -216,15 +217,22 @@ final class GenerateMuPluginsLoader implements Task
 \$vipEnv = defined('VIP_GO_APP_ENVIRONMENT')
     ? VIP_GO_APP_ENVIRONMENT
     : (defined('VIP_GO_ENV') ? VIP_GO_ENV : 'local');
+\$isWipDevEnv = getenv('VIP_DEV_AUTOLOGIN_KEY') && (getenv('LANDO') === 'ON');
+
 define('VIP_GO_IS_LOCAL_ENV', (!\$vipEnv || \$vipEnv === 'local'));
-unset(\$vipEnv);
-VIP_GO_IS_LOCAL_ENV
+define('VIP_GO_IS_DEV_ENV', \$isWipDevEnv);
+unset(\$vipEnv, \$isWipDevEnv);
+
+(VIP_GO_IS_LOCAL_ENV && !VIP_GO_IS_DEV_ENV)
     ? require_once __DIR__ . "/{$vendorBase}/autoload.php"
     : require_once __DIR__ . "/{$vendorBase}/vip-autoload/autoload.php";
 
 
 PHP;
         $php .= <<<'PHP'
+if (VIP_GO_IS_LOCAL_ENV && VIP_GO_IS_DEV_ENV) {
+    add_filter('https_ssl_verify', '__return_false');
+}
 
 if (!function_exists('wpcom_vip_load_plugin')) {
     function wpcom_vip_load_plugin($path) {
@@ -250,7 +258,7 @@ PHP;
         $relative = $this->filesystem->findShortestPathCode($fromPath, $toPath, false);
 
         $php = <<<PHP
-VIP_GO_IS_LOCAL_ENV and wp_register_plugin_realpath({$relative});
+(VIP_GO_IS_LOCAL_ENV && !VIP_GO_IS_DEV_ENV) and wp_register_plugin_realpath({$relative});
 PHP;
         return $php;
     }

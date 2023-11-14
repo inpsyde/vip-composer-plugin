@@ -46,7 +46,10 @@ final class GenerateDeployVersion implements Task
      */
     public function enabled(TaskConfig $taskConfig): bool
     {
-        return $taskConfig->isLocal() || $taskConfig->isGit() || $taskConfig->syncDevPaths();
+        return $taskConfig->isLocal()
+            || $taskConfig->isGit()
+            || $taskConfig->syncDevPaths()
+            || $taskConfig->isVipDevEnv();
     }
 
     /**
