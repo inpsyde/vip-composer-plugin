@@ -47,7 +47,6 @@ jobs:
                 run: |
                     composer remove composer-plugin-api --no-update
                     composer remove composer/composer inpsyde/php-coding-standards vimeo/psalm --dev --no-update
-                    composer require "composer-plugin-api:^${{ matrix.composer }}" --no-update
                     composer require "composer/composer:~${{ matrix.composer }}.0" --dev --no-update
 
             -   name: Install dependencies
