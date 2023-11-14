@@ -43,9 +43,12 @@ class HttpClient
     /**
      * @param Io $io
      * @param Composer $composer
+     *
+     * phpcs:disable Inpsyde.CodeQuality.ReturnTypeDeclaration.IncorrectVoidReturn
      */
     private function __construct(Io $io, Composer $composer)
     {
+        // phpcs:enable Inpsyde.CodeQuality.ReturnTypeDeclaration.IncorrectVoidReturn
         $this->io = $io;
         if (is_callable([\Composer\Factory::class, 'createHttpDownloader'])) {
             $this->client = \Composer\Factory::createHttpDownloader(

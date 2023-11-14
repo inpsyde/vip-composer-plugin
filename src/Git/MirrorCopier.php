@@ -94,8 +94,7 @@ class MirrorCopier
         $basename = basename($path);
         $ext = pathinfo($path, PATHINFO_EXTENSION);
 
-        return
-            !in_array(strtolower($basename), self::EXCLUDED_FILES, true)
+        return !in_array(strtolower($basename), self::EXCLUDED_FILES, true)
             && !in_array(strtolower($ext), self::EXCLUDED_EXT, true)
             && static::acceptPath($path);
     }
@@ -107,13 +106,11 @@ class MirrorCopier
     private static function acceptPath(string $path): bool
     {
         $path = str_replace('\\', '/', $path);
-        if (is_file($path) && basename($path) === '.gitkeep') {
+        if (is_file($path) && (basename($path) === '.gitkeep')) {
             return static::acceptPath(dirname($path));
         }
 
-        return
-            strpos($path, 'node_modules/') === false
-            && (strpos($path, '/.git') === false);
+        return (!str_contains($path, 'node_modules/')) && (!str_contains($path, '/.git'));
     }
 
     /**

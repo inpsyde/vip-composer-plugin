@@ -61,7 +61,7 @@ class TaskConfigTest extends UnitTestCase
      * @param mixed $name
      * @param bool $expected
      */
-    public function testFailureOnInvalidGitBranch($name, bool $expected): void
+    public function testFailureOnInvalidGitBranch(mixed $name, bool $expected): void
     {
         $expected or $this->expectExceptionMessageMatches('/"git-branch"/');
 
@@ -104,7 +104,7 @@ class TaskConfigTest extends UnitTestCase
      * @param mixed $url
      * @param bool $expected
      */
-    public function testFailureOnNoInvalidGitUrl($url, bool $expected): void
+    public function testFailureOnNoInvalidGitUrl(mixed $url, bool $expected): void
     {
         $expected or $this->expectExceptionMessageMatches('/"git-url"/');
 

@@ -18,14 +18,14 @@
         }
     ],
     "require": {
-        "php": ">=7.3",
+        "php": ">=8.0",
         "ext-json": "*",
-        "composer-plugin-api": "^1.1 || ^2"
+        "composer-plugin-api": "^2.4"
     },
     "require-dev": {
-        "composer/composer": "^2",
-        "inpsyde/php-coding-standards": "^1",
-        "vimeo/psalm": "^4.30.0 || ^5.15.0",
+        "composer/composer": "^2.4",
+        "inpsyde/php-coding-standards": "^2@dev",
+        "vimeo/psalm": "^5.15.0",
         "phpunit/phpunit": "^9.6.11"
     },
     "autoload": {
