@@ -31,31 +31,6 @@ final class DownloadWpCore implements Task
     private const DOWNLOADS_BASE_URL = 'https://downloads.wordpress.org/release/wordpress-';
 
     /**
-     * @var Config
-     */
-    private $config;
-
-    /**
-     * @var Composer
-     */
-    private $composer;
-
-    /**
-     * @var Filesystem
-     */
-    private $filesystem;
-
-    /**
-     * @var HttpClient
-     */
-    private $http;
-
-    /**
-     * @var ArchiveDownloaderFactory
-     */
-    private $archiveDownloaderFactory;
-
-    /**
      * Normalize a version string in the form x.x.x (where "x" is an integer)
      * because Composer semver normalization returns versions in the form  x.x.x.x
      * Moreover, things like x.x.0 are converted to x.x, because WordPress skip zeroes for
@@ -104,18 +79,12 @@ final class DownloadWpCore implements Task
      * @param ArchiveDownloaderFactory $archiveDownloaderFactory
      */
     public function __construct(
-        Config $config,
-        Composer $composer,
-        Filesystem $filesystem,
-        HttpClient $http,
-        ArchiveDownloaderFactory $archiveDownloaderFactory
+        private Config $config,
+        private Composer $composer,
+        private Filesystem $filesystem,
+        private HttpClient $http,
+        private ArchiveDownloaderFactory $archiveDownloaderFactory
     ) {
-
-        $this->config = $config;
-        $this->composer = $composer;
-        $this->filesystem = $filesystem;
-        $this->http = $http;
-        $this->archiveDownloaderFactory = $archiveDownloaderFactory;
     }
 
     /**
@@ -244,7 +213,7 @@ final class DownloadWpCore implements Task
         $wp_version = '';
         try {
             require $versionFile;
-        } catch (\UnexpectedValueException $version) {
+        } catch (\UnexpectedValueException) {
             return '';
         }
 
@@ -507,7 +476,7 @@ final class DownloadWpCore implements Task
             $versions = $parsed ? Semver::rsort($parsed) : [];
 
             return $versions;
-        } catch (\Exception $exception) {
+        } catch (\Throwable) {
             return [];
         }
     }

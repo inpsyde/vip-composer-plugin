@@ -14,17 +14,11 @@ declare(strict_types=1);
 namespace Inpsyde\VipComposer;
 
 use Composer\Command\BaseCommand;
-use Composer\Composer;
 use Inpsyde\VipComposer\Task\TaskConfig;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
-/*
- * phpcs:disable Inpsyde.CodeQuality.ReturnTypeDeclaration
- * phpcs:disable Inpsyde.CodeQuality.ArgumentTypeDeclaration
- * phpcs:disable Inpsyde.CodeQuality.NoAccessors
- */
 class Command extends BaseCommand
 {
     private const OPT_DEPLOY = 'deploy';
@@ -53,7 +47,8 @@ class Command extends BaseCommand
     ];
 
     /**
-     * @inheritdoc
+     * @return void
+     *
      * phpcs:disable Inpsyde.CodeQuality.FunctionLength
      */
     protected function configure(): void
@@ -147,19 +142,18 @@ class Command extends BaseCommand
     }
 
     /**
-     * @inheritdoc
+     * @param InputInterface $input
+     * @param OutputInterface $output
+     * @return int
+     *
+     * phpcs:disable Inpsyde.CodeQuality.ReturnTypeDeclaration
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
+        // phpcs:enable Inpsyde.CodeQuality.ReturnTypeDeclaration
         try {
             $this->resetComposer();
-            /**
-             * @psalm-suppress DeprecatedMethod
-             * @var Composer $composer
-             */
-            $composer = is_callable([$this, 'requireComposer'])
-                ? $this->requireComposer()
-                : $this->getComposer(true);
+            $composer = $this->requireComposer();
 
             $factory = new Factory($composer, $this->getIO());
             $config = $factory->config();
@@ -212,9 +206,9 @@ class Command extends BaseCommand
      * @param InputInterface $input
      * @param string $option
      * @param bool|null $default
-     * @return mixed|null
+     * @return mixed
      */
-    private function optionValue(InputInterface $input, string $option, bool $default = null)
+    private function optionValue(InputInterface $input, string $option, bool $default = null): mixed
     {
         if (!$input->hasOption($option)) {
             return $default;

@@ -22,30 +22,8 @@ use Inpsyde\VipComposer\VipDirectories;
 
 final class GenerateMuPluginsLoader implements Task
 {
-    /**
-     * @var VipDirectories
-     */
-    private $directories;
-
-    /**
-     * @var WpPluginFileFinder
-     */
-    private $finder;
-
-    /**
-     * @var Config
-     */
-    private $config;
-
-    /**
-     * @var Filesystem
-     */
-    private $filesystem;
-
-    /**
-     * @var PackageInterface[] $packages
-     */
-    private $packages;
+    /** @var list<PackageInterface> $packages */
+    private array $packages;
 
     /**
      * @param Config $config
@@ -53,19 +31,17 @@ final class GenerateMuPluginsLoader implements Task
      * @param WpPluginFileFinder $finder
      * @param Filesystem $filesystem
      * @param PackageInterface[] $packages
+     *
+     * @no-named-arguments
      */
     public function __construct(
-        Config $config,
-        VipDirectories $directories,
-        WpPluginFileFinder $finder,
-        Filesystem $filesystem,
+        private Config $config,
+        private VipDirectories $directories,
+        private WpPluginFileFinder $finder,
+        private Filesystem $filesystem,
         PackageInterface ...$packages
     ) {
 
-        $this->directories = $directories;
-        $this->config = $config;
-        $this->finder = $finder;
-        $this->filesystem = $filesystem;
         $this->packages = $packages;
     }
 
@@ -83,7 +59,7 @@ final class GenerateMuPluginsLoader implements Task
      */
     public function enabled(TaskConfig $taskConfig): bool
     {
-        return (bool)$this->packages
+        return $this->packages
             && ($taskConfig->isLocal() || $taskConfig->isDeploy() || $taskConfig->isVipDevEnv());
     }
 
@@ -175,7 +151,7 @@ final class GenerateMuPluginsLoader implements Task
         $includeUnique = $include ? array_values(array_unique($include)) : [];
         $excludeUnique = $exclude ? array_values(array_unique($exclude)) : [];
 
-        $byDefault = ($includeUnique || $excludeUnique) ? (bool)$excludeUnique : true;
+        $byDefault = !($includeUnique || $excludeUnique) || $excludeUnique;
 
         return [$excludeUnique ?: $includeUnique, $byDefault];
     }
@@ -284,7 +260,7 @@ PHP;
         }
 
         foreach ($packagesList as $pattern) {
-            if (strpos($pattern, '*') === false) {
+            if (!str_contains($pattern, '*')) {
                 continue;
             }
 

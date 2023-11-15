@@ -115,11 +115,8 @@ final class TaskConfig
         ],
     ];
 
-    /**
-     * @var array
-     * @psalm-var config-data
-     */
-    private $data;
+    /** @var config-data */
+    private array $data;
 
     /**
      * @param array $data

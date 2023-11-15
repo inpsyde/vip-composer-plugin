@@ -36,31 +36,6 @@ final class CopyDevPaths implements Task
     ];
 
     /**
-     * @var Config
-     */
-    private $config;
-
-    /**
-     * @var VipDirectories
-     */
-    private $directories;
-
-    /**
-     * @var PackageFinder
-     */
-    private $packageFinder;
-
-    /**
-     * @var InstallationManager
-     */
-    private $installationManager;
-
-    /**
-     * @var Filesystem
-     */
-    private $filesystem;
-
-    /**
      * @param Config $config
      * @param VipDirectories $directories
      * @param PackageFinder $packageFinder
@@ -68,18 +43,12 @@ final class CopyDevPaths implements Task
      * @param Filesystem $filesystem
      */
     public function __construct(
-        Config $config,
-        VipDirectories $directories,
-        PackageFinder $packageFinder,
-        InstallationManager $installationManager,
-        Filesystem $filesystem
+        private Config $config,
+        private VipDirectories $directories,
+        private PackageFinder $packageFinder,
+        private InstallationManager $installationManager,
+        private Filesystem $filesystem
     ) {
-
-        $this->config = $config;
-        $this->directories = $directories;
-        $this->packageFinder = $packageFinder;
-        $this->installationManager = $installationManager;
-        $this->filesystem = $filesystem;
     }
 
     /**

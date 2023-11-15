@@ -85,15 +85,8 @@ final class Config implements \ArrayAccess
         ],
     ];
 
-    /**
-     * @var array
-     */
-    private $config;
-
-    /**
-     * @var ComposerConfig
-     */
-    private $composerConfig;
+    private array $config;
+    private ComposerConfig $composerConfig;
 
     /**
      * @param Composer $composer
@@ -204,13 +197,10 @@ final class Config implements \ArrayAccess
     /**
      * @param mixed $offset
      * @return mixed
-     *
-     * phpcs:disable Inpsyde.CodeQuality.ReturnTypeDeclaration.IncorrectNullReturn
      */
     #[\ReturnTypeWillChange]
     public function offsetGet(mixed $offset): mixed
     {
-        // phpcs:enable Inpsyde.CodeQuality.ReturnTypeDeclaration.IncorrectNullReturn
         if (!is_string($offset) || !$offset) {
             return null;
         }

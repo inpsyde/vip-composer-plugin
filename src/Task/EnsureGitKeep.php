@@ -22,23 +22,13 @@ use Symfony\Component\Finder\SplFileInfo;
 final class EnsureGitKeep implements Task
 {
     /**
-     * @var VipDirectories
-     */
-    private $directories;
-
-    /**
-     * @var Filesystem
-     */
-    private $filesystem;
-
-    /**
      * @param VipDirectories $directories
      * @param Filesystem $filesystem
      */
-    public function __construct(VipDirectories $directories, Filesystem $filesystem)
-    {
-        $this->directories = $directories;
-        $this->filesystem = $filesystem;
+    public function __construct(
+        private VipDirectories $directories,
+        private Filesystem $filesystem
+    ) {
     }
 
     /**
@@ -84,7 +74,7 @@ final class EnsureGitKeep implements Task
         }
 
         $hasFiles = $this->haveFiles(0, $dir);
-        $hasGitKeep = file_exists((string)realpath($dir) . '/.gitkeep');
+        $hasGitKeep = file_exists((realpath($dir) ?: '') . '/.gitkeep');
 
         if (!$hasFiles && !$hasGitKeep) {
             file_put_contents("{$dir}/.gitkeep", "\n");

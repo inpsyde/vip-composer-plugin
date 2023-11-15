@@ -24,42 +24,17 @@ use Inpsyde\VipComposer\VipDirectories;
 final class GenerateProductionAutoload implements Task
 {
     /**
-     * @var Config
-     */
-    private $config;
-
-    /**
-     * @var Composer
-     */
-    private $composer;
-
-    /**
-     * @var InstalledPackages
-     */
-    private $installedPackages;
-
-    /**
-     * @var VipDirectories
-     */
-    private $directories;
-
-    /**
      * @param Config $config
      * @param Composer $composer
      * @param InstalledPackages $devPackages
      * @param VipDirectories $directories
      */
     public function __construct(
-        Config $config,
-        Composer $composer,
-        InstalledPackages $devPackages,
-        VipDirectories $directories
+        private Config $config,
+        private Composer $composer,
+        private InstalledPackages $installedPackages,
+        private VipDirectories $directories
     ) {
-
-        $this->config = $config;
-        $this->composer = $composer;
-        $this->installedPackages = $devPackages;
-        $this->directories = $directories;
     }
 
     /**

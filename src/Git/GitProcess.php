@@ -19,40 +19,19 @@ use Symfony\Component\Process\Process;
 
 class GitProcess
 {
-    /**
-     * @var string
-     */
-    private $workingDir;
+    private string $workingDir;
 
-    /**
-     * @var string
-     */
-    private $origWorkingDir;
+    private ProcessExecutor $executor;
 
-    /**
-     * @var Io
-     */
-    private $io;
+    private string $origWorkingDir;
 
-    /**
-     * @var ProcessExecutor
-     */
-    private $executor;
-
-    /**
-     * @var callable
-     */
+    /** @var callable */
     private $outputCapture;
 
-    /**
-     * @var array
-     */
-    private $captured = ['', ''];
+    /** @var list{string, string} */
+    private array $captured = ['', ''];
 
-    /**
-     * @var bool
-     */
-    private $silent = false;
+    private bool $silent = false;
 
     /**
      * @param Io $io
@@ -60,7 +39,7 @@ class GitProcess
      * @param ProcessExecutor|null $executor
      */
     public function __construct(
-        Io $io,
+        private Io $io,
         string $workingDir = null,
         ProcessExecutor $executor = null
     ) {
@@ -72,7 +51,6 @@ class GitProcess
 
         $this->workingDir = $cwd;
         $this->origWorkingDir = $this->workingDir;
-        $this->io = $io;
         $this->executor = $executor ?: new ProcessExecutor($io->composerIo());
         $this->outputCapture = function (string $type = '', string $buffer = ''): void {
             $this->captured = [$type, $buffer];

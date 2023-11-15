@@ -19,16 +19,10 @@ use Inpsyde\VipComposer\Installer;
 class WpPluginFileFinder
 {
     /**
-     * @var Installer
-     */
-    private $installer;
-
-    /**
      * @param Installer $installer
      */
-    public function __construct(Installer $installer)
+    public function __construct(private Installer $installer)
     {
-        $this->installer = $installer;
     }
 
     /**

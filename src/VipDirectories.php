@@ -16,11 +16,6 @@ namespace Inpsyde\VipComposer;
 use Composer\Util\Filesystem;
 use Composer\Util\Platform;
 
-/*
- * phpcs:disable Inpsyde.CodeQuality.ReturnTypeDeclaration
- * phpcs:disable Inpsyde.CodeQuality.ArgumentTypeDeclaration
- * phpcs:disable Inpsyde.CodeQuality.NoAccessors
- */
 class VipDirectories
 {
     public const PLUGINS_DIR = 'plugins';
@@ -43,36 +38,17 @@ class VipDirectories
         self::IMAGES_DIR => self::IMAGES_DIR,
     ];
 
-    /**
-     * @var bool
-     */
-    private static $created = false;
+    private static bool $created = false;
 
-    /**
-     * @var Filesystem
-     */
-    private $filesystem;
-
-    /**
-     * @var string
-     */
-    private $targetPath;
-
-    /**
-     * @var string
-     */
-    private $vipMuPluginsPath;
-
-    /**
-     * @var string
-     */
-    private $basePath;
+    private string $targetPath;
+    private string $vipMuPluginsPath;
+    private string $basePath;
 
     /**
      * @param Filesystem $filesystem
      * @param Config $config
      */
-    public function __construct(Filesystem $filesystem, Config $config)
+    public function __construct(private Filesystem $filesystem, Config $config)
     {
         $configData = $config->vipConfig();
 
@@ -82,7 +58,6 @@ class VipDirectories
         $configVipMuPluginsPath = (string)$configData[Config::VIP_MUPLUGINS_LOCAL_DIR_KEY];
         $vipMuPluginsPath = Platform::expandPath($configVipMuPluginsPath);
 
-        $this->filesystem = $filesystem;
         $this->basePath = $config->basePath();
         $this->targetPath = $filesystem->normalizePath($targetPath);
         $this->vipMuPluginsPath = $filesystem->normalizePath($vipMuPluginsPath);
@@ -90,8 +65,6 @@ class VipDirectories
 
     /**
      * @return bool
-     *
-     * @throws \RuntimeException
      */
     public function createDirs(): bool
     {

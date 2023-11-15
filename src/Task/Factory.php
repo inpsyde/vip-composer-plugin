@@ -18,29 +18,17 @@ use Inpsyde\VipComposer\Tasks;
 
 class Factory
 {
-    /**
-     * @var DependenciesFactory
-     */
-    private $factory;
-
-    /**
-     * @var array<string, object>
-     */
-    private $services = [];
-
-    /**
-     * @var TaskConfig
-     */
-    private $taskConfig;
+    /** @var array<string, object> */
+    private array $services = [];
 
     /**
      * @param DependenciesFactory $factory
      * @param TaskConfig $taskConfig
      */
-    public function __construct(DependenciesFactory $factory, TaskConfig $taskConfig)
-    {
-        $this->factory = $factory;
-        $this->taskConfig = $taskConfig;
+    public function __construct(
+        private DependenciesFactory $factory,
+        private TaskConfig $taskConfig
+    ) {
     }
 
     /**
@@ -55,9 +43,7 @@ class Factory
                 return new Tasks(
                     $this->factory->config(),
                     $this->taskConfig,
-                    $this->factory->vipDirectories(),
-                    $this->factory->io(),
-                    $this->factory->filesystem()
+                    $this->factory->io()
                 );
             }
         );
@@ -168,7 +154,7 @@ class Factory
                     $this->factory->vipDirectories(),
                     $this->factory->wpPluginFileFinder(),
                     $this->factory->filesystem(),
-                    ...$packages
+                    ...array_values($packages)
                 );
             }
         );
@@ -298,13 +284,9 @@ class Factory
      * @param string $class
      * @param callable():object $factory
      * @return object
-     *
-     * phpcs:disable Inpsyde.CodeQuality.ReturnTypeDeclaration
      */
     private function service(string $class, callable $factory): object
     {
-        // phpcs:enable Inpsyde.CodeQuality.ReturnTypeDeclaration
-
         if (!array_key_exists($class, $this->services)) {
             $this->services[$class] = $factory();
         }

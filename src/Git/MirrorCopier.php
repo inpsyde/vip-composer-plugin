@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace Inpsyde\VipComposer\Git;
 
 use Composer\Util\Filesystem;
+use FilesystemIterator;
 use Inpsyde\VipComposer\Io;
 use Inpsyde\VipComposer\Utils\Unzipper;
 use Symfony\Component\Finder\Finder;
@@ -63,21 +64,6 @@ class MirrorCopier
     ];
 
     /**
-     * @var Io
-     */
-    private $io;
-
-    /**
-     * @var Filesystem
-     */
-    private $filesystem;
-
-    /**
-     * @var Unzipper
-     */
-    private $unzipper;
-
-    /**
      * @param string $path
      * @return bool
      */
@@ -118,11 +104,11 @@ class MirrorCopier
      * @param Filesystem $filesystem
      * @param Unzipper $unzipper
      */
-    public function __construct(Io $io, Filesystem $filesystem, Unzipper $unzipper)
-    {
-        $this->filesystem = $filesystem;
-        $this->io = $io;
-        $this->unzipper = $unzipper;
+    public function __construct(
+        private Io $io,
+        private Filesystem $filesystem,
+        private Unzipper $unzipper
+    ) {
     }
 
     /**
@@ -145,7 +131,7 @@ class MirrorCopier
 
         /** @var \RecursiveDirectoryIterator $iterator */
         $iterator = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($source, \RecursiveDirectoryIterator::SKIP_DOTS),
+            new \RecursiveDirectoryIterator($source, FilesystemIterator::SKIP_DOTS),
             \RecursiveIteratorIterator::SELF_FIRST
         );
 
@@ -178,7 +164,7 @@ class MirrorCopier
             }
         }
 
-        return $links ? $this->copyLinks($links) : true;
+        return !$links || $this->copyLinks($links);
     }
 
     /**
@@ -210,7 +196,7 @@ class MirrorCopier
     {
         $links = array_keys($linksPaths);
         foreach ($links as $link) {
-            if (strpos($path, (string)$link) === 0) {
+            if (str_starts_with($path, (string)$link)) {
                 return true;
             }
         }

@@ -13,61 +13,24 @@ declare(strict_types=1);
 
 namespace Inpsyde\VipComposer;
 
-use Composer\Util\Filesystem;
 use Inpsyde\VipComposer\Task\Task;
 use Inpsyde\VipComposer\Task\TaskConfig;
 
-/*
- * phpcs:disable Inpsyde.CodeQuality.ReturnTypeDeclaration
- * phpcs:disable Inpsyde.CodeQuality.ArgumentTypeDeclaration
- * phpcs:disable Inpsyde.CodeQuality.NoAccessors
- */
 class Tasks
 {
-    /**
-     * @var Config
-     */
-    private $config;
-
-    /**
-     * @var VipDirectories
-     */
-    private $directories;
-
-    /**
-     * @var TaskConfig
-     */
-    private $taskConfig;
-
-    /**
-     * @var Io
-     */
-    private $io;
-
-    /**
-     * @var \SplQueue
-     */
-    private $tasks;
+    private \SplQueue $tasks;
 
     /**
      * @param Config $config
      * @param TaskConfig $taskConfig
-     * @param VipDirectories $directories
      * @param Io $io
-     * @param Filesystem $filesystem
      */
     public function __construct(
-        Config $config,
-        TaskConfig $taskConfig,
-        VipDirectories $directories,
-        Io $io,
-        Filesystem $filesystem
+        private Config $config,
+        private TaskConfig $taskConfig,
+        private Io $io
     ) {
 
-        $this->config = $config;
-        $this->directories = $directories;
-        $this->taskConfig = $taskConfig;
-        $this->io = $io;
         $this->tasks = new \SplQueue();
     }
 
