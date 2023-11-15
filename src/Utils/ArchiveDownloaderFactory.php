@@ -14,9 +14,10 @@ declare(strict_types=1);
 namespace Inpsyde\VipComposer\Utils;
 
 use Composer\Composer;
+use Composer\Downloader\DownloadManager;
 use Composer\Util\Filesystem;
 use Composer\Util\ProcessExecutor;
-use Composer\Util\SyncHelper;
+use Composer\Util\Loop;
 use Inpsyde\VipComposer\Io;
 
 class ArchiveDownloaderFactory
@@ -28,40 +29,10 @@ class ArchiveDownloaderFactory
         ArchiveDownloader::TAR,
     ];
 
-    /**
-     * @var array<string, ArchiveDownloader>
-     */
-    private $downloaders = [];
-
-    /**
-     * @var Io
-     */
-    private $io;
-
-    /**
-     * @var \Composer\Config
-     */
-    private $config;
-
-    /**
-     * @var ProcessExecutor
-     */
-    private $process;
-
-    /**
-     * @var Filesystem
-     */
-    private $filesystem;
-
-    /**
-     * @var \Composer\Downloader\DownloadManager
-     */
-    private $downloadManager;
-
-    /**
-     * @var \Composer\Util\Loop|null
-     */
-    private $loop;
+    /** @var array<string, ArchiveDownloader> */
+    private array $downloaders = [];
+    private DownloadManager $downloadManager;
+    private Loop $loop;
 
     /**
      * @param string $type
@@ -77,40 +48,15 @@ class ArchiveDownloaderFactory
      * @param Composer $composer
      * @param ProcessExecutor $executor
      * @param Filesystem $filesystem
-     * @return ArchiveDownloaderFactory
      */
-    public static function new(
-        Io $io,
+    public function __construct(
+        private Io $io,
         Composer $composer,
-        ProcessExecutor $executor,
-        Filesystem $filesystem
-    ): ArchiveDownloaderFactory {
-
-        return new self($io, $composer, $executor, $filesystem);
-    }
-
-    /**
-     * @param Io $io
-     * @param Composer $composer
-     * @param ProcessExecutor $executor
-     * @param Filesystem $filesystem
-     */
-    private function __construct(
-        Io $io,
-        Composer $composer,
-        ProcessExecutor $executor,
-        Filesystem $filesystem
+        private Filesystem $filesystem
     ) {
 
-        $this->io = $io;
-        $this->config = $composer->getConfig();
         $this->downloadManager = $composer->getDownloadManager();
-        /** @psalm-suppress RedundantCondition */
-        if (is_callable([$composer, 'getLoop']) && class_exists(SyncHelper::class)) {
-            $this->loop = $composer->getLoop();
-        }
-        $this->process = $executor;
-        $this->filesystem = $filesystem;
+        $this->loop = $composer->getLoop();
     }
 
     /**
@@ -129,9 +75,12 @@ class ArchiveDownloaderFactory
 
         $downloader = $this->downloadManager->getDownloader($type);
 
-        $this->downloaders[$type] = $this->loop
-            ? ArchiveDownloader::viaLoop($this->loop, $downloader, $this->io, $this->filesystem)
-            : ArchiveDownloader::forV1($downloader, $this->io, $this->filesystem);
+        $this->downloaders[$type] = new ArchiveDownloader(
+            $this->loop,
+            $downloader,
+            $this->io,
+            $this->filesystem
+        );
 
         return $this->downloaders[$type];
     }

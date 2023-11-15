@@ -24,38 +24,23 @@ class Unzipper
     /**
      * @var bool|null
      */
-    private static $hasSystemUnzip;
+    private static ?bool $hasSystemUnzip = null;
 
     /**
      * @var bool|null
      */
-    private static $hasZipArchive;
-
-    /**
-     * @var Io
-     */
-    private $io;
-
-    /**
-     * @var ProcessExecutor
-     */
-    private $executor;
-
-    /**
-     * @var Filesystem
-     */
-    private $filesystem;
+    private static ?bool $hasZipArchive = null;
 
     /**
      * @param Io $io
      * @param ProcessExecutor $executor
      * @param Filesystem $filesystem
      */
-    public function __construct(Io $io, ProcessExecutor $executor, Filesystem $filesystem)
-    {
-        $this->io = $io;
-        $this->executor = $executor;
-        $this->filesystem = $filesystem;
+    public function __construct(
+        private Io $io,
+        private ProcessExecutor $executor,
+        private Filesystem $filesystem
+    ) {
     }
 
     /**
@@ -149,7 +134,7 @@ class Unzipper
             $output = '';
 
             return $this->executor->execute($command, $output) !== 0;
-        } catch (\Throwable $throwable) {
+        } catch (\Throwable) {
             return false;
         }
     }

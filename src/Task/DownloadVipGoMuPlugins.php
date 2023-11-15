@@ -24,23 +24,13 @@ final class DownloadVipGoMuPlugins implements Task
     public const GIT_URL = 'https://github.com/Automattic/vip-go-mu-plugins-built.git';
 
     /**
-     * @var VipDirectories
-     */
-    private $vipDirectories;
-
-    /**
-     * @var Filesystem
-     */
-    private $filesystem;
-
-    /**
-     * @param VipDirectories $directories
+     * @param VipDirectories $vipDirectories
      * @param Filesystem $filesystem
      */
-    public function __construct(VipDirectories $directories, Filesystem $filesystem)
-    {
-        $this->vipDirectories = $directories;
-        $this->filesystem = $filesystem;
+    public function __construct(
+        private VipDirectories $vipDirectories,
+        private Filesystem $filesystem
+    ) {
     }
 
     /**

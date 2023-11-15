@@ -15,26 +15,17 @@ namespace Inpsyde\VipComposer\Utils;
 
 use Composer\Package\PackageInterface;
 use Composer\Repository\RepositoryInterface;
-use Composer\Util\Filesystem as ComposerFilesystem;
 
 class PackageFinder
 {
-    /**
-     * @var RepositoryInterface
-     */
-    private $packageRepo;
-
-    /**
-     * @var array<PackageInterface>|null
-     */
-    private $packages;
+    /** @var list<PackageInterface>|null */
+    private ?array $packages = null;
 
     /**
      * @param RepositoryInterface $packageRepo
      */
-    public function __construct(RepositoryInterface $packageRepo)
+    public function __construct(private RepositoryInterface $packageRepo)
     {
-        $this->packageRepo = $packageRepo;
     }
 
     /**
@@ -80,7 +71,6 @@ class PackageFinder
                 || stripos($package->getName(), $vendor) === 0
             ) {
                 $list[] = $package;
-                continue;
             }
         }
 
@@ -90,12 +80,12 @@ class PackageFinder
     /**
      * @return array<PackageInterface>
      *
-     * @psalm-assert array<PackageInterface> $this->packages
+     * @psalm-assert list<PackageInterface> $this->packages
      */
     public function all(): array
     {
         if (!is_array($this->packages)) {
-            $this->packages = $this->packageRepo->getPackages();
+            $this->packages = array_values($this->packageRepo->getPackages());
         }
 
         return $this->packages;

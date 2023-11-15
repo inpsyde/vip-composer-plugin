@@ -21,7 +21,6 @@ use Composer\Plugin\PluginInterface;
 
 /*
  * phpcs:disable Inpsyde.CodeQuality.ReturnTypeDeclaration
- * phpcs:disable Inpsyde.CodeQuality.ArgumentTypeDeclaration
  * phpcs:disable Inpsyde.CodeQuality.NoAccessors
  */
 class Plugin implements PluginInterface, Capable, CommandProvider

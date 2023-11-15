@@ -29,92 +29,12 @@ class ArchiveDownloader
     public const XZ = 'xz'; // phpcs:ignore
     public const TAR = 'tar';
 
-    /**
-     * @var callable(PackageInterface,string):void
-     */
-    private $downloadCallback;
-
-    /**
-     * @var Io
-     */
-    private $io;
-
-    /**
-     * @var Filesystem
-     */
-    private $filesystem;
-
-    /**
-     * @param Loop $loop
-     * @param DownloaderInterface $downloader
-     * @param Io $io
-     * @param Filesystem $filesystem
-     * @return ArchiveDownloader
-     */
-    public static function viaLoop(
-        Loop $loop,
-        DownloaderInterface $downloader,
-        Io $io,
-        Filesystem $filesystem
-    ): ArchiveDownloader {
-
-        $downloadCallback = static function (
-            PackageInterface $package,
-            string $path
-        ) use (
-            $loop,
-            $downloader
-        ): void {
-
-            SyncHelper::downloadAndInstallPackageSync($loop, $downloader, $path, $package);
-        };
-
-        return new self($downloadCallback, $io, $filesystem);
-    }
-
-    /**
-     * @param DownloaderInterface $downloader
-     * @param Io $io
-     * @param Filesystem $filesystem
-     * @return ArchiveDownloader
-     */
-    public static function forV1(
-        DownloaderInterface $downloader,
-        Io $io,
-        Filesystem $filesystem
-    ): ArchiveDownloader {
-
-        $downloadCallback = static function (
-            PackageInterface $package,
-            string $path
-        ) use ($downloader): void {
-            /**
-             * @noinspection PhpParamsInspection
-             * @psalm-suppress PossiblyFalseArgument
-             * @psalm-suppress InvalidArgument
-             */
-            ($downloader instanceof FileDownloader)
-                ? $downloader->download($package, $path, false)
-                : $downloader->download($package, $path);
-        };
-
-        return new self($downloadCallback, $io, $filesystem);
-    }
-
-    /**
-     * @param callable(PackageInterface,string):void $downloadCallback
-     * @param Io $io
-     * @param Filesystem $filesystem
-     */
-    private function __construct(
-        callable $downloadCallback,
-        Io $io,
-        Filesystem $filesystem
+    public function __construct(
+        private Loop $loop,
+        private DownloaderInterface $downloader,
+        private Io $io,
+        private Filesystem $filesystem
     ) {
-
-        $this->downloadCallback = $downloadCallback;
-        $this->io = $io;
-        $this->filesystem = $filesystem;
     }
 
     /**
@@ -124,10 +44,15 @@ class ArchiveDownloader
      */
     public function download(PackageInterface $package, string $path): bool
     {
+        $tempDir = dirname($path) . '/.tmp' . substr(md5(uniqid($path, true)), 0, 8);
         try {
-            $tempDir = dirname($path) . '/.tmp' . substr(md5(uniqid($path, true)), 0, 8);
             $this->filesystem->ensureDirectoryExists($tempDir);
-            ($this->downloadCallback)($package, $tempDir);
+            SyncHelper::downloadAndInstallPackageSync(
+                $this->loop,
+                $this->downloader,
+                $tempDir,
+                $package
+            );
             $this->filesystem->ensureDirectoryExists($path);
 
             $finder = new Finder();
@@ -151,9 +76,7 @@ class ArchiveDownloader
 
             return false;
         } finally {
-            if (isset($tempDir)) {
-                $this->filesystem->removeDirectory($tempDir);
-            }
+            $this->filesystem->removeDirectory($tempDir);
         }
     }
 }

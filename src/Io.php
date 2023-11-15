@@ -34,16 +34,10 @@ class Io
     ];
 
     /**
-     * @var IOInterface
-     */
-    private $io;
-
-    /**
      * @param IOInterface $io
      */
-    public function __construct(IOInterface $io)
+    public function __construct(private IOInterface $io)
     {
-        $this->io = $io;
     }
 
     /**

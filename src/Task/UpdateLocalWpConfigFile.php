@@ -21,30 +21,15 @@ use Inpsyde\VipComposer\VipDirectories;
 final class UpdateLocalWpConfigFile implements Task
 {
     /**
-     * @var Config
-     */
-    private $config;
-
-    /**
-     * @var VipDirectories
-     */
-    private $directories;
-
-    /**
-     * @var Filesystem
-     */
-    private $filesystem;
-
-    /**
      * @param Config $config
      * @param VipDirectories $directories
      * @param Filesystem $filesystem
      */
-    public function __construct(Config $config, VipDirectories $directories, Filesystem $filesystem)
-    {
-        $this->config = $config;
-        $this->directories = $directories;
-        $this->filesystem = $filesystem;
+    public function __construct(
+        private Config $config,
+        private VipDirectories $directories,
+        private Filesystem $filesystem
+    ) {
     }
 
     /**

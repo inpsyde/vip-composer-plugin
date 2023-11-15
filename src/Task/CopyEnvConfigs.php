@@ -25,29 +25,9 @@ final class CopyEnvConfigs implements Task
     public const COMPOSER_TYPE = 'vip-composer-plugin-env-config';
 
     /**
-     * @var VipDirectories
-     */
-    private $directories;
-
-    /**
-     * @var PackageFinder
-     */
-    private $packageFinder;
-
-    /**
-     * @var InstallationManager
-     */
-    private $installationManager;
-
-    /**
-     * @var Filesystem
-     */
-    private $filesystem;
-
-    /**
      * @var array<PackageInterface>|null
      */
-    private $packages = null;
+    private ?array $packages = null;
 
     /**
      * @param VipDirectories $directories
@@ -56,16 +36,11 @@ final class CopyEnvConfigs implements Task
      * @param Filesystem $filesystem
      */
     public function __construct(
-        VipDirectories $directories,
-        PackageFinder $packageFinder,
-        InstallationManager $installationManager,
-        Filesystem $filesystem
+        private VipDirectories $directories,
+        private PackageFinder $packageFinder,
+        private InstallationManager $installationManager,
+        private Filesystem $filesystem
     ) {
-
-        $this->directories = $directories;
-        $this->packageFinder = $packageFinder;
-        $this->installationManager = $installationManager;
-        $this->filesystem = $filesystem;
     }
 
     /**

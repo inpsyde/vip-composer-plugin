@@ -24,31 +24,6 @@ use Inpsyde\VipComposer\VipDirectories;
 class HandleGit implements Task
 {
     /**
-     * @var Config
-     */
-    private $config;
-
-    /**
-     * @var VipDirectories
-     */
-    private $directories;
-
-    /**
-     * @var InstalledPackages
-     */
-    private $packages;
-
-    /**
-     * @var Filesystem
-     */
-    private $filesystem;
-
-    /**
-     * @var Unzipper
-     */
-    private $unzipper;
-
-    /**
      * @param Config $config
      * @param VipDirectories $directories
      * @param InstalledPackages $packages
@@ -56,18 +31,12 @@ class HandleGit implements Task
      * @param Unzipper $unzipper
      */
     public function __construct(
-        Config $config,
-        VipDirectories $directories,
-        InstalledPackages $packages,
-        Filesystem $filesystem,
-        Unzipper $unzipper
+        private Config $config,
+        private VipDirectories $directories,
+        private InstalledPackages $packages,
+        private Filesystem $filesystem,
+        private Unzipper $unzipper
     ) {
-
-        $this->config = $config;
-        $this->directories = $directories;
-        $this->packages = $packages;
-        $this->filesystem = $filesystem;
-        $this->unzipper = $unzipper;
     }
 
     /**
@@ -75,7 +44,7 @@ class HandleGit implements Task
      */
     public function name(): string
     {
-        return 'Git syncronization / push';
+        return 'Git synchronization / push';
     }
 
     /**

@@ -21,22 +21,14 @@ use Composer\Repository\InstalledRepositoryInterface;
 
 class InstalledPackages
 {
-    /**
-     * @var array<string, array<string, array|InstalledRepositoryInterface>>
-     */
-    private static $cache;
-
-    /**
-     * @var Composer
-     */
-    private $composer;
+    /** @var array<string, array<string, array|InstalledRepositoryInterface>> */
+    private static array $cache = [];
 
     /**
      * @param Composer $composer
      */
-    public function __construct(Composer $composer)
+    public function __construct(private Composer $composer)
     {
-        $this->composer = $composer;
     }
 
     /**

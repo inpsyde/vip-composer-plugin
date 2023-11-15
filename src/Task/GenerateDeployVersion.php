@@ -20,16 +20,10 @@ use Inpsyde\VipComposer\VipDirectories;
 final class GenerateDeployVersion implements Task
 {
     /**
-     * @var VipDirectories
-     */
-    private $directories;
-
-    /**
      * @param VipDirectories $directories
      */
-    public function __construct(VipDirectories $directories)
+    public function __construct(private VipDirectories $directories)
     {
-        $this->directories = $directories;
     }
 
     /**
@@ -98,9 +92,9 @@ final class GenerateDeployVersion implements Task
     /**
      * @param Io $io
      * @param string $targetDir
-     * @return bool
+     * @return void
      */
-    private function writeDeployTag(Io $io, string $targetDir): bool
+    private function writeDeployTag(Io $io, string $targetDir): void
     {
         $git = new GitProcess($io);
         /**
@@ -112,23 +106,21 @@ final class GenerateDeployVersion implements Task
         if (!$success && (stripos($output, 'no names') !== false)) {
             $io->infoLine('Deploy Git tag: No tag matches commit being deployed.');
 
-            return false;
+            return;
         }
 
         $tag = trim($output);
 
         if (!$tag || !preg_match('~^v?[0-9]+~', $tag)) {
-            return false;
+            return;
         }
 
         if (!file_put_contents("{$targetDir}/deploy-ver", $tag)) {
             $io->errorLine("Failed writing deploy Git tag: '{$tag}' to file.");
 
-            return false;
+            return;
         }
 
         $io->infoLine("Deploy Git tag: '{$tag}' written to file.");
-
-        return true;
     }
 }

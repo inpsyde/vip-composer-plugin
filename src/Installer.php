@@ -32,18 +32,15 @@ class Installer extends LibraryInstaller
     ];
 
     /**
-     * @var VipDirectories
-     */
-    private $directories;
-
-    /**
      * @param VipDirectories $directories
      * @param Composer $composer
      * @param IOInterface $io
      */
-    public function __construct(VipDirectories $directories, Composer $composer, IOInterface $io)
-    {
-        $this->directories = $directories;
+    public function __construct(
+        private VipDirectories $directories,
+        Composer $composer,
+        IOInterface $io
+    ) {
 
         parent::__construct($io, $composer);
     }
@@ -57,22 +54,19 @@ class Installer extends LibraryInstaller
     }
 
     /**
-     * @inheritdoc
+     * @param PackageInterface $package
+     * @return string
      */
     public function getInstallPath(PackageInterface $package)
     {
         $names = explode('/', $package->getName());
-        $dir = array_pop($names);
+        $dir = end($names);
 
-        switch ($package->getType()) {
-            case 'wordpress-plugin':
-                return $this->directories->pluginsDir() . "/{$dir}";
-            case 'wordpress-theme':
-                return $this->directories->themesDir() . "/{$dir}";
-            case 'wordpress-muplugin':
-                return $this->directories->muPluginsDir() . "/{$dir}";
-        }
-
-        return '';
+        return match ($package->getType()) {
+            'wordpress-plugin' => $this->directories->pluginsDir() . "/{$dir}",
+            'wordpress-theme' => $this->directories->themesDir() . "/{$dir}",
+            'wordpress-muplugin' => $this->directories->muPluginsDir() . "/{$dir}",
+            default => '',
+        };
     }
 }

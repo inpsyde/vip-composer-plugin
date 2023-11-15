@@ -20,32 +20,17 @@ use Composer\Util\ProcessExecutor;
 
 class Factory
 {
-    /**
-     * @var Composer
-     */
-    private $composer;
-
-    /**
-     * @var IOInterface
-     */
-    private $composerIo;
-
-    /**
-     * @var array<string, object>
-     */
-    private $services = [];
+    /** @var array<string, object> */
+    private array $services = [];
 
     /**
      * @param Composer $composer
      * @param IOInterface $composerIo
      */
     public function __construct(
-        Composer $composer,
-        IOInterface $composerIo
+        private Composer $composer,
+        private IOInterface $composerIo
     ) {
-
-        $this->composer = $composer;
-        $this->composerIo = $composerIo;
     }
 
     /**
@@ -53,15 +38,7 @@ class Factory
      */
     public function io(): Io
     {
-        /** @var Io $io */
-        $io = $this->service(
-            Io::class,
-            function (): Io {
-                return new Io($this->composerIo);
-            }
-        );
-
-        return $io;
+        return $this->service(Io::class, fn () => new Io($this->composerIo));
     }
 
     /**
@@ -77,15 +54,7 @@ class Factory
      */
     public function config(): Config
     {
-        /** @var Config $config */
-        $config = $this->service(
-            Config::class,
-            function (): Config {
-                return new Config($this->composer, getcwd() ?: '.');
-            }
-        );
-
-        return $config;
+        return $this->service(Config::class, fn () => new Config($this->composer, getcwd() ?: '.'));
     }
 
     /**
@@ -93,8 +62,7 @@ class Factory
      */
     public function vipDirectories(): VipDirectories
     {
-        /** @var VipDirectories $vipDirectories */
-        $vipDirectories = $this->service(
+        return $this->service(
             VipDirectories::class,
             function (): VipDirectories {
                 $directories = new VipDirectories($this->filesystem(), $this->config());
@@ -103,8 +71,6 @@ class Factory
                 return $directories;
             }
         );
-
-        return $vipDirectories;
     }
 
     /**
@@ -112,19 +78,10 @@ class Factory
      */
     public function installer(): Installer
     {
-        /** @var Installer $installer */
-        $installer = $this->service(
+        return $this->service(
             Installer::class,
-            function (): Installer {
-                return new Installer(
-                    $this->vipDirectories(),
-                    $this->composer,
-                    $this->composerIo
-                );
-            }
+            fn () => new Installer($this->vipDirectories(), $this->composer, $this->composerIo)
         );
-
-        return $installer;
     }
 
     /**
@@ -132,15 +89,10 @@ class Factory
      */
     public function installedPackages(): Utils\InstalledPackages
     {
-        /** @var Utils\InstalledPackages $installedPackages */
-        $installedPackages = $this->service(
+        return $this->service(
             Utils\InstalledPackages::class,
-            function (): Utils\InstalledPackages {
-                return new Utils\InstalledPackages($this->composer);
-            }
+            fn () => new Utils\InstalledPackages($this->composer)
         );
-
-        return $installedPackages;
     }
 
     /**
@@ -148,15 +100,10 @@ class Factory
      */
     public function wpPluginFileFinder(): Utils\WpPluginFileFinder
     {
-        /** @var Utils\WpPluginFileFinder $wpPluginFileFinder */
-        $wpPluginFileFinder = $this->service(
+        return $this->service(
             Utils\WpPluginFileFinder::class,
-            function (): Utils\WpPluginFileFinder {
-                return new Utils\WpPluginFileFinder($this->installer());
-            }
+            fn () => new Utils\WpPluginFileFinder($this->installer())
         );
-
-        return $wpPluginFileFinder;
     }
 
     /**
@@ -164,20 +111,16 @@ class Factory
      */
     public function archiveDownloaderFactory(): Utils\ArchiveDownloaderFactory
     {
-        /** @var Utils\ArchiveDownloaderFactory $archiveDownloaderFactory */
-        $archiveDownloaderFactory = $this->service(
+        return $this->service(
             Utils\ArchiveDownloaderFactory::class,
             function (): Utils\ArchiveDownloaderFactory {
-                return Utils\ArchiveDownloaderFactory::new(
+                return new Utils\ArchiveDownloaderFactory(
                     $this->io(),
                     $this->composer,
-                    $this->processExecutor(),
                     $this->filesystem()
                 );
             }
         );
-
-        return $archiveDownloaderFactory;
     }
 
     /**
@@ -185,15 +128,10 @@ class Factory
      */
     public function httpClient(): Utils\HttpClient
     {
-        /** @var Utils\HttpClient $httpClient */
-        $httpClient = $this->service(
+        return $this->service(
             Utils\HttpClient::class,
-            function (): Utils\HttpClient {
-                return Utils\HttpClient::new($this->io(), $this->composer);
-            }
+            fn () => new Utils\HttpClient($this->io(), $this->composer)
         );
-
-        return $httpClient;
     }
 
     /**
@@ -201,19 +139,10 @@ class Factory
      */
     public function unzipper(): Utils\Unzipper
     {
-        /** @var Utils\Unzipper $unzipper */
-        $unzipper = $this->service(
+        return $this->service(
             Utils\Unzipper::class,
-            function (): Utils\Unzipper {
-                return new Utils\Unzipper(
-                    $this->io(),
-                    $this->processExecutor(),
-                    $this->filesystem()
-                );
-            }
+            fn () => new Utils\Unzipper($this->io(), $this->processExecutor(), $this->filesystem())
         );
-
-        return $unzipper;
     }
 
     /**
@@ -221,15 +150,7 @@ class Factory
      */
     public function filesystem(): Filesystem
     {
-        /** @var Filesystem $filesystem */
-        $filesystem = $this->service(
-            Filesystem::class,
-            static function (): Filesystem {
-                return new Filesystem();
-            }
-        );
-
-        return $filesystem;
+        return $this->service(Filesystem::class, static fn () => new Filesystem());
     }
 
     /**
@@ -237,15 +158,10 @@ class Factory
      */
     public function processExecutor(): ProcessExecutor
     {
-        /** @var ProcessExecutor $processExecutor */
-        $processExecutor = $this->service(
+        return $this->service(
             ProcessExecutor::class,
-            function (): ProcessExecutor {
-                return new ProcessExecutor($this->composerIo);
-            }
+            fn () => new ProcessExecutor($this->composerIo)
         );
-
-        return $processExecutor;
     }
 
     /**
@@ -253,8 +169,7 @@ class Factory
      */
     public function packageFinder(): Utils\PackageFinder
     {
-        /** @var Utils\PackageFinder $packageFinder */
-        $packageFinder = $this->service(
+        return $this->service(
             Utils\PackageFinder::class,
             function (): Utils\PackageFinder {
                 return new Utils\PackageFinder(
@@ -262,25 +177,20 @@ class Factory
                 );
             }
         );
-
-        return $packageFinder;
     }
 
     /**
-     * @param string $class
-     * @param callable():object $factory
-     * @return object
-     *
-     * phpcs:disable Inpsyde.CodeQuality.ReturnTypeDeclaration
+     * @template T of object
+     * @param class-string<T> $class
+     * @param callable():T $factory
+     * @return T
      */
     private function service(string $class, callable $factory): object
     {
-        // phpcs:enable Inpsyde.CodeQuality.ReturnTypeDeclaration
-
         if (!array_key_exists($class, $this->services)) {
             $this->services[$class] = $factory();
         }
-
+        /** @var T */
         return $this->services[$class];
     }
 }

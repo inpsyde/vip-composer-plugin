@@ -26,45 +26,8 @@ class VipGit
 {
     private const MIRROR_PREFIX = '.vipgit';
 
-    /**
-     * @var Io
-     */
-    private $io;
-
-    /**
-     * @var Config
-     */
-    private $config;
-
-    /**
-     * @var VipDirectories
-     */
-    private $directories;
-
-    /**
-     * @var InstalledPackages
-     */
-    private $packages;
-
-    /**
-     * @var Filesystem
-     */
-    private $filesystem;
-
-    /**
-     * @var Unzipper
-     */
-    private $unzipper;
-
-    /**
-     * @var array
-     */
-    private $gitConfig;
-
-    /**
-     * @var GitProcess|null
-     */
-    private $git;
+    private array $gitConfig;
+    private ?GitProcess $git = null;
 
     /**
      * @param Io $io
@@ -75,20 +38,14 @@ class VipGit
      * @param Unzipper $unzipper
      */
     public function __construct(
-        Io $io,
-        Config $config,
-        VipDirectories $directories,
-        InstalledPackages $packages,
-        Filesystem $filesystem,
-        Unzipper $unzipper
+        private Io $io,
+        private Config $config,
+        private VipDirectories $directories,
+        private InstalledPackages $packages,
+        private Filesystem $filesystem,
+        private Unzipper $unzipper
     ) {
 
-        $this->io = $io;
-        $this->config = $config;
-        $this->directories = $directories;
-        $this->filesystem = $filesystem;
-        $this->packages = $packages;
-        $this->unzipper = $unzipper;
         $this->gitConfig = $config->gitConfig();
     }
 
@@ -231,7 +188,7 @@ class VipGit
             ->directories()
             ->filter(
                 static function (\SplFileInfo $info): bool {
-                    return strpos($info->getBasename(), self::MIRROR_PREFIX) === 0;
+                    return str_starts_with($info->getBasename(), self::MIRROR_PREFIX);
                 }
             );
 
@@ -316,9 +273,9 @@ class VipGit
         [$success, , $outputs] = $git->exec(...$commands);
         $output = implode("\n", $outputs);
 
-        $nothingToDo = strpos($output, 'up-to-date') !== false
-            || strpos($output, 'working tree clean') !== false
-            || strpos($output, 'nothing to commit') !== false;
+        $nothingToDo = str_contains($output, 'up-to-date')
+            || str_contains($output, 'working tree clean')
+            || str_contains($output, 'nothing to commit');
 
         if (!$success) {
             $nothingToDo
@@ -365,7 +322,7 @@ class VipGit
             !$url
             || !filter_var($url, FILTER_VALIDATE_URL)
             || strtolower((string)parse_url($url, PHP_URL_SCHEME)) !== 'https'
-            || strpos((string)parse_url($url, PHP_URL_HOST), 'github.com') === false
+            || !str_contains((string)parse_url($url, PHP_URL_HOST), 'github.com')
         ) {
             $this->io->errorLine("Git repo URL '{$url}' looks wrong.");
 
@@ -546,7 +503,7 @@ class VipGit
         $toCopy = $this->packages->noDevPackages();
 
         foreach ($toCopy as $package) {
-            if (strpos($package->getType(), 'wordpress-') === 0) {
+            if (str_starts_with($package->getType(), 'wordpress-')) {
                 continue;
             }
             $source = "{$vendorSource}/" . $package->getName();
