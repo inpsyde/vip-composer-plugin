@@ -461,10 +461,12 @@ composer vip
 - `--git` - Build Git mirror folder, but do not push. To be used in combination with `--local.` Ignored if `--deploy` is used.
 - `--push` - Build Git mirror and push it. To be used in combination with `--local.` Ignored if `--deploy` is used.
 - `--sync-dev-paths` - Synchronize local dev paths. To be used as the only option.
+- `--prod-autoload` - Generate production autoload. To be used in combination with `--local.` It is assumed if `--git` or `vip-dev-env` is used.
 - `--update-wp` - Force the update of WordPress core. To be used as the only option or in combination with `--local.` Ignored if `--deploy` is used.
 - `--skip-wp` - Skip the update of WordPress core. To be used in combination with `--local.` Ignored if `--deploy` is used.
 - `--update-vip-mu-plugins`  - Force the update of Vip Go MU plugins. To be used as the only option or in combination with `--local.` Ignored if `--deploy` is used.
 - `--skip-vip-mu-plugins` - Skip the update of Vip Go MU plugins. To be used in combination with `--local.` Ignored if `--deploy` is used.
+- `--vip-dev-env` - Prepare the environment for [`vip dev-env`](https://docs.wpvip.com/how-tos/local-development/use-the-vip-local-development-environment/) usage. To be used as the only option.
 
 
 
@@ -554,7 +556,7 @@ By using separate folders, like this plugins does, the folders in root contain o
 
 This way the `/vip` folder can be completely Git-ignored and it also becomes completely disposable, which is a good things for folders that are automatically generated.
 
-However this approach has also **two issues**.
+However, this approach has also **two issues**.
 
 **The first issue is that "dev paths" in root folder are "copied" into `/vip` folder, which means that at any change the copy has to be done again**.
 
@@ -622,7 +624,7 @@ composer vip --update-wp
 
 #### Update or skip VIP Go MU plugins download
 
-The most time consuming task the first time command is ran is to download VIP Go MU plugins. Those plugins accounts for over 300 Mb in total, pulled from a repo with _several_ recursive sub-modules.
+The most time-consuming task the first time command is ran is to download VIP Go MU plugins. Those plugins accounts for over 300 Mb in total, pulled from a repo with _several_ recursive sub-modules.
 
 This is why the `composer vip` command by default only download the MU plugins if they are not there. So presumably the first time ever the command is ran, or if the folder is deleted by hand.
 
@@ -658,6 +660,22 @@ Example:
 
 ```shell
 composer vip --local --update-vip-mu-plugins
+```
+
+#### VIP dev-env
+
+VIP dev-env simulates the VIP environment using [Docker](https://www.docker.com/) and [Lando](https://lando.dev/).
+
+For this reason, while it is a local development environment has many characteristics of the production environment.
+The `--vip-dev-env` flag for the command, executes all the steps that are necessary to prepare the
+`vip/` folder, including the production autoload, skipping operations like the download of WordPress core
+or VIP MU plugins because those are handled by the [`vip dev-env create`](https://docs.wpvip.com/vip/dev-env/create/) command.
+
+Example:
+
+```shell
+composer vip --vip-dev-env
+vip dev-env create --app-code="./vip"
 ```
 
 

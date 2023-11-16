@@ -22,28 +22,33 @@ use Symfony\Component\Console\Output\OutputInterface;
 class Command extends BaseCommand
 {
     private const OPT_DEPLOY = 'deploy';
-    private const OPT_LOCAL = 'local';
+    private const OPT_FORCE_CORE_UPDATE = 'update-wp';
+    private const OPT_FORCE_VIP_MU = 'update-vip-mu-plugins';
+    private const OPT_GIT_BRANCH = 'branch';
     private const OPT_GIT_NO_PUSH = 'git';
     private const OPT_GIT_PUSH = 'push';
     private const OPT_GIT_URL = 'git-url';
-    private const OPT_GIT_BRANCH = 'branch';
-    private const OPT_FORCE_VIP_MU = 'update-vip-mu-plugins';
-    private const OPT_SKIP_VIP_MU = 'skip-vip-mu-plugins';
-    private const OPT_FORCE_CORE_UPDATE = 'update-wp';
+    private const OPT_LOCAL = 'local';
+    private const OPT_PROD_AUTOLOAD = 'prod-autoload';
     private const OPT_SKIP_CORE_UPDATE = 'skip-wp';
+    private const OPT_SKIP_VIP_MU = 'skip-vip-mu-plugins';
     private const OPT_SYNC_DEV_PATHS = 'sync-dev-paths';
+    private const OPT_VIP_DEV_ENV = 'vip-dev-env';
+
     private const OPTIONS = [
         self::OPT_DEPLOY => [TaskConfig::DEPLOY, false],
-        self::OPT_LOCAL => [TaskConfig::LOCAL, true],
+        self::OPT_FORCE_CORE_UPDATE => [TaskConfig::FORCE_CORE_UPDATE, false],
+        self::OPT_FORCE_VIP_MU => [TaskConfig::FORCE_VIP_MU, false],
+        self::OPT_GIT_BRANCH => [TaskConfig::GIT_BRANCH, null],
         self::OPT_GIT_NO_PUSH => [TaskConfig::GIT_NO_PUSH, false],
         self::OPT_GIT_PUSH => [TaskConfig::GIT_PUSH, false],
         self::OPT_GIT_URL => [TaskConfig::GIT_URL, null],
-        self::OPT_GIT_BRANCH => [TaskConfig::GIT_BRANCH, null],
-        self::OPT_FORCE_VIP_MU => [TaskConfig::FORCE_VIP_MU, false],
-        self::OPT_SKIP_VIP_MU => [TaskConfig::SKIP_VIP_MU, false],
-        self::OPT_FORCE_CORE_UPDATE => [TaskConfig::FORCE_CORE_UPDATE, false],
+        self::OPT_LOCAL => [TaskConfig::LOCAL, true],
+        self::OPT_PROD_AUTOLOAD => [TaskConfig::PROD_AUTOLOAD, false],
         self::OPT_SKIP_CORE_UPDATE => [TaskConfig::SKIP_CORE_UPDATE, false],
+        self::OPT_SKIP_VIP_MU => [TaskConfig::SKIP_VIP_MU, false],
         self::OPT_SYNC_DEV_PATHS => [TaskConfig::SYNC_DEV_PATHS, false],
+        self::OPT_VIP_DEV_ENV => [TaskConfig::VIP_DEV_ENV, false],
     ];
 
     /**
@@ -60,16 +65,33 @@ class Command extends BaseCommand
             ->setDefinition(
                 [
                     new InputOption(
-                        self::OPT_LOCAL,
-                        null,
-                        InputOption::VALUE_NONE,
-                        'Run script for local installation.'
-                    ),
-                    new InputOption(
                         self::OPT_DEPLOY,
                         null,
                         InputOption::VALUE_NONE,
                         'Run script to deploy website.'
+                    ),
+                    new InputOption(
+                        self::OPT_FORCE_CORE_UPDATE,
+                        null,
+                        InputOption::VALUE_NONE,
+                        'Force the update of WordPress core. '
+                        . 'To be used alone or in combination with --local.'
+                        . 'Ignored if --deploy is used.'
+                    ),
+                    new InputOption(
+                        self::OPT_FORCE_VIP_MU,
+                        null,
+                        InputOption::VALUE_NONE,
+                        'Force the update of VIP Go MU plugins. Will take a while.'
+                        . 'To be used in combination with --local. Ignored if --deploy is used.'
+                    ),
+                    new InputOption(
+                        self::OPT_GIT_BRANCH,
+                        null,
+                        InputOption::VALUE_REQUIRED,
+                        'A different Git branch for VIP repo. '
+                        . 'When --local is used, this is relevant only if --git or --push '
+                        . 'are used as well.'
                     ),
                     new InputOption(
                         self::OPT_GIT_NO_PUSH,
@@ -86,12 +108,24 @@ class Command extends BaseCommand
                         . 'Ignored if --deploy is used.'
                     ),
                     new InputOption(
-                        self::OPT_FORCE_CORE_UPDATE,
+                        self::OPT_GIT_URL,
+                        null,
+                        InputOption::VALUE_REQUIRED,
+                        'A different Git remote URL for VIP repo. '
+                        . 'When --local is used, this is relevant only if --git or --push '
+                        . 'are used as well.'
+                    ),
+                    new InputOption(
+                        self::OPT_LOCAL,
                         null,
                         InputOption::VALUE_NONE,
-                        'Force the update of WordPress core. '
-                        . 'To be used alone or in combination with --local.'
-                        . 'Ignored if --deploy is used.'
+                        'Run script for local installation.'
+                    ),
+                    new InputOption(
+                        self::OPT_PROD_AUTOLOAD,
+                        null,
+                        InputOption::VALUE_NONE,
+                        'Generate production autoload.'
                     ),
                     new InputOption(
                         self::OPT_SKIP_CORE_UPDATE,
@@ -99,13 +133,6 @@ class Command extends BaseCommand
                         InputOption::VALUE_NONE,
                         'Skip the update of WordPress core. To be used in combination with --local.'
                         . 'Ignored if --deploy is used.'
-                    ),
-                    new InputOption(
-                        self::OPT_FORCE_VIP_MU,
-                        null,
-                        InputOption::VALUE_NONE,
-                        'Force the update of VIP Go MU plugins. Will take a while.'
-                        . 'To be used in combination with --local. Ignored if --deploy is used.'
                     ),
                     new InputOption(
                         self::OPT_SKIP_VIP_MU,
@@ -122,20 +149,10 @@ class Command extends BaseCommand
                         'Synchronize local dev paths. To be used as only option.'
                     ),
                     new InputOption(
-                        self::OPT_GIT_URL,
+                        self::OPT_VIP_DEV_ENV,
                         null,
-                        InputOption::VALUE_REQUIRED,
-                        'A different Git remote URL for VIP repo. '
-                        . 'When --local is used, this is relevant only if --git or --push '
-                        . 'are used as well.'
-                    ),
-                    new InputOption(
-                        self::OPT_GIT_BRANCH,
-                        null,
-                        InputOption::VALUE_REQUIRED,
-                        'A different Git branch for VIP repo. '
-                        . 'When --local is used, this is relevant only if --git or --push '
-                        . 'are used as well.'
+                        InputOption::VALUE_NONE,
+                        'Prepare folder for VIP dev-env stack.'
                     ),
                 ]
             );
