@@ -52,7 +52,8 @@ final class GenerateProductionAutoload implements Task
     public function enabled(TaskConfig $taskConfig): bool
     {
         return $taskConfig->isGit()
-            || $taskConfig->generateProdAutoload();
+            || $taskConfig->generateProdAutoload()
+            || $taskConfig->isVipDevEnv();
     }
 
     /**

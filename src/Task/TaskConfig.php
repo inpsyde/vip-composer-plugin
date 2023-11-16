@@ -298,11 +298,18 @@ final class TaskConfig
                 || $this->generateProdAutoload()
             )
         ) {
-            throw new \LogicException('--vip-dev-env must be the *only* option when used.');
+            throw new \LogicException('VIP dev-env preparation must be the *only* operation.');
+        }
+
+        if ($this->generateProdAutoload() && !$this->isLocal()) {
+            throw new \LogicException(
+                'Explicit production autoload generation task can only be used '
+                . 'in combination with *local* task.'
+            );
         }
 
         if ($this->syncDevPaths() && ($this->isLocal() || $this->isDeploy())) {
-            throw new \LogicException('--sync-dev-paths must be the *only* option when used.');
+            throw new \LogicException('Sync dev paths must be the *only* operation.');
         }
 
         if ($this->isLocal() && $this->isDeploy()) {
