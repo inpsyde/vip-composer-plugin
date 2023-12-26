@@ -178,7 +178,13 @@ The whole set of settings available, with their defaults, looks like this:
                 "vip-config-dir": "vip-config",
                 "config-dir": "config",
                 "private-dir": "private"
-            }
+            },
+            "env-configs": [
+                "all",
+                "development",
+                "staging",
+                "production"
+            ]
         }
     }
 }
@@ -287,6 +293,13 @@ As shown above in the [Prepare the local installation](#prepare-the-local-instal
 Only the `config/vip-config.php` is mandatory all the other folders and their content is optional.
 
 `vip-composer.dev-paths` controls the name of those folders. By default names are the same names used by VIP Go repository, except for `mu-plugins/`  is renamed to `client-mu-plugins/`.
+
+
+#### `vip-composer.env-configs`
+
+VIP Go allows to have different configuration for each environment, and this can be achieved by using special configuration files that are loaded based on the environment. This package supports Composer packages of type `vip-composer-plugin-env-config` that can be used to provide such configuration files.
+
+By default, the list is `["all", "development", "staging", "production"]`, but it can be changed via `vip-composer.env-configs` configuration.
 
 
 

@@ -53,6 +53,8 @@ final class Config implements \ArrayAccess
     public const DEV_PATHS_YAML_CONFIG_DIR_KEY = 'config-dir';
     public const DEV_PATHS_PRIVATE_DIR_KEY = 'private-dir';
 
+    public const ENV_CONFIGS_KEY = 'env-configs';
+
     public const PACKAGE_TYPE_MULTI_MU_PLUGINS = 'wordpress-multiple-mu-plugins';
 
     public const DEFAULTS = [
@@ -83,6 +85,12 @@ final class Config implements \ArrayAccess
             self::DEV_PATHS_YAML_CONFIG_DIR_KEY => 'config',
             self::DEV_PATHS_PRIVATE_DIR_KEY => 'private',
         ],
+        self::ENV_CONFIGS_KEY => [
+            'all',
+            'development',
+            'staging',
+            'production',
+        ],
     ];
 
     private array $config;
@@ -97,13 +105,25 @@ final class Config implements \ArrayAccess
         $extra = (array)($composer->getPackage()->getExtra()[self::CONFIG_KEY] ?? []);
         $this->composerConfig = $composer->getConfig();
 
-        $this->config = [];
         $keys = array_keys(self::DEFAULTS);
-        foreach ($keys as $key) {
-            $this->config[$key] = array_key_exists($key, $extra) && is_array($extra[$key])
-                ? array_merge(self::DEFAULTS[$key], $extra[$key])
-                : self::DEFAULTS[$key];
-        }
+        $this->config = array_reduce(
+            $keys,
+            static function (array $config, string $key) use ($extra): array {
+                if (!array_key_exists($key, $extra)) {
+                    $config[$key] = self::DEFAULTS[$key];
+                    return $config;
+                }
+
+                if (is_array($extra[$key]) && !array_is_list($extra[$key])) {
+                    $config[$key] = array_merge(self::DEFAULTS[$key], $extra[$key]);
+                    return $config;
+                }
+
+                $config[$key] = $extra[$key];
+                return $config;
+            },
+            []
+        );
 
         $this->config[self::BASE_PATH_KEY] = $basePath;
         $this->config[self::PROD_AUTOLOAD_DIR_KEY] = 'vip-autoload';
@@ -184,6 +204,14 @@ final class Config implements \ArrayAccess
     public function devPathsConfig(): array
     {
         return (array)$this->offsetGet(self::DEV_PATHS_CONFIG_KEY);
+    }
+
+    /**
+     * @return array
+     */
+    public function envConfigs(): array
+    {
+        return (array)$this->offsetGet(self::ENV_CONFIGS_KEY);
     }
 
     /**
