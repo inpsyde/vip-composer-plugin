@@ -678,8 +678,6 @@ composer vip --vip-dev-env
 vip dev-env create --app-code="./vip"
 ```
 
+## Copyright
 
-
-## Copyright (c) 2018-2023 Inpsyde GmbH
-
-This software is released under [MIT license](https://opensource.org/licenses/MIT).
+This repository is a free software, and is released under the terms of the MIT license. See [LICENSE](./LICENSE) for complete license.
