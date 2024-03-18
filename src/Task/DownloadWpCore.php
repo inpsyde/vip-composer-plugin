@@ -450,8 +450,6 @@ final class DownloadWpCore implements Task
         /**
          * @param mixed $package
          * @return string
-         *
-         * @psalm-suppress MissingClosureParamType
          */
         $extractVer = static function (mixed $package): string {
             if (

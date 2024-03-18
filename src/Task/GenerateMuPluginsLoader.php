@@ -100,9 +100,8 @@ final class GenerateMuPluginsLoader implements Task
                 continue;
             }
 
-            /** @psalm-suppress RedundantCondition */
             if (
-                $type === 'wordpress-plugin'
+                ($type === 'wordpress-plugin')
                 && !$this->shouldInclude($package, $packagesList, $includeByDefault)
             ) {
                 $io->verboseLine(" - skipping <comment>{$packageName}</comment>");
