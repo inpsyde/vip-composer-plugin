@@ -25,8 +25,8 @@
     "require-dev": {
         "composer/composer": "^2.4",
         "inpsyde/php-coding-standards": "^2@dev",
-        "vimeo/psalm": "^5.15.0",
-        "phpunit/phpunit": "^9.6.11"
+        "vimeo/psalm": "^5.23.1",
+        "phpunit/phpunit": "^9.6.17"
     },
     "autoload": {
         "psr-4": {
