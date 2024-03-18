@@ -679,7 +679,9 @@ vip dev-env create --app-code="./vip"
 ```
 
 
+## License and Copyright
 
-## Copyright (c) 2018-2023 Inpsyde GmbH
+_VIP Composer Plugin_ is a free software, and is released under the terms of the MIT license.
+See [LICENSE](./LICENSE) for complete license.
 
-This software is released under [MIT license](https://opensource.org/licenses/MIT).
+The team at Syde is engineering the Web since 2006.
