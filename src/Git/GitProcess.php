@@ -44,8 +44,8 @@ class GitProcess
         ProcessExecutor $executor = null
     ) {
 
-        $cwd = $workingDir ?: getcwd();
-        if (!$cwd) {
+        $cwd = $workingDir ?? getcwd();
+        if ($cwd === false) {
             throw new \Exception('Could not determine current dir');
         }
 

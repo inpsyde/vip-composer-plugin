@@ -77,7 +77,7 @@ final class GenerateMuPluginsLoader implements Task
 
         $autoloadCode = $this->autoloadCode();
 
-        if (!file_put_contents($loaderPath, "<?php\n{$autoloadCode}")) {
+        if (file_put_contents($loaderPath, "<?php\n{$autoloadCode}") === false) {
             throw new \RuntimeException('Failed writing loader.');
         }
 
@@ -121,7 +121,8 @@ final class GenerateMuPluginsLoader implements Task
             return;
         }
 
-        if (file_put_contents($loaderPath, "<?php\n{$autoloadCode}\n{$packagesLoaderCode}")) {
+        $php = "<?php\n{$autoloadCode}\n{$packagesLoaderCode}";
+        if (file_put_contents($loaderPath, $php) !== false) {
             $io->infoLine("Loaders generation complete.");
             return;
         }

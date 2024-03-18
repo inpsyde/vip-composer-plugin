@@ -141,7 +141,7 @@ class MirrorCopier
 
         /** @var \SplFileInfo $file */
         foreach ($iterator as $file) {
-            $filepath = $this->filesystem->normalizePath((string)$file);
+            $filepath = $this->filesystem->normalizePath((string) $file);
             if (!self::accept($filepath)) {
                 continue;
             }
@@ -196,7 +196,7 @@ class MirrorCopier
     {
         $links = array_keys($linksPaths);
         foreach ($links as $link) {
-            if (str_starts_with($path, (string)$link)) {
+            if (str_starts_with($path, (string) $link)) {
                 return true;
             }
         }
@@ -215,7 +215,7 @@ class MirrorCopier
         $copied = 0;
         foreach ($linksPaths as $link => $target) {
             $real = realpath($link);
-            if (!$real) {
+            if ($real === false) {
                 continue;
             }
             $targetParent = dirname($target);

@@ -49,9 +49,9 @@ final class DownloadWpCore implements Task
             if ($piece === '') {
                 continue;
             }
-            $pieceInt = (int)$piece;
+            $pieceInt = (int) $piece;
             if ($parsed === []) {
-                $parsed[] = (string)$pieceInt;
+                $parsed[] = (string) $pieceInt;
                 continue;
             }
             $count = count($parsed);
@@ -61,7 +61,7 @@ final class DownloadWpCore implements Task
             if (($count === 1) && ($pieceInt > 9)) {
                 return '';
             }
-            $parsed[] = (string)$pieceInt;
+            $parsed[] = (string) $pieceInt;
         }
 
         if (!$parsed || ($parsed === ['0']) || ($parsed === ['0', '0'])) {
@@ -169,14 +169,14 @@ final class DownloadWpCore implements Task
      */
     private function discoverTargetVersion(Io $io): string
     {
-        /** @var string|null $version */
-        $version = $this->config->wpConfig()[Config::WP_VERSION_KEY];
+        /** @var string $version */
+        $version = $this->config->wpConfig()[Config::WP_VERSION_KEY] ?? '';
 
-        if ($version === 'latest' || $version === '*') {
+        if (($version === 'latest') || ($version === '*')) {
             return $this->queryLastVersion($io);
         }
 
-        if (!$version) {
+        if ($version === '') {
             $wpPackageVer = $this->discoverWpPackageVersion();
             if (!$wpPackageVer) {
                 return $this->queryLastVersion($io);
@@ -185,9 +185,9 @@ final class DownloadWpCore implements Task
             $version = $wpPackageVer;
         }
 
-        $fixedTargetVersion = preg_match('/^[3|4]\.([0-9])(\.[0-9])?+$/', $version) > 0;
+        $targetVersionIsFixed = preg_match('/^[0-9\.]+$/', $version) > 0;
 
-        return $fixedTargetVersion ? static::normalizeWpVersion($version) : trim($version);
+        return $targetVersionIsFixed ? static::normalizeWpVersion($version) : trim($version);
     }
 
     /**
@@ -399,7 +399,8 @@ final class DownloadWpCore implements Task
     {
         $io->commentLine('Creating wp-cli.yml...');
         $path = $this->filesystem->findShortestPath($this->config->basePath(), $coreDir);
-        if (file_put_contents($this->config->basePath() . '/wp-cli.yml', "path: {$path}\n")) {
+        $write = file_put_contents($this->config->basePath() . '/wp-cli.yml', "path: {$path}\n");
+        if ($write !== false) {
             $io->infoLine('wp-cli.yml written');
             return;
         }
@@ -461,7 +462,7 @@ final class DownloadWpCore implements Task
                 return '';
             }
 
-            return static::normalizeWpVersion((string)$package['version']);
+            return static::normalizeWpVersion((string) $package['version']);
         };
 
         try {
@@ -471,7 +472,7 @@ final class DownloadWpCore implements Task
             }
 
             /** @var array<string> $parsed */
-            $parsed = array_unique(array_filter(array_map($extractVer, (array)$data['offers'])));
+            $parsed = array_unique(array_filter(array_map($extractVer, (array) $data['offers'])));
             /** @var array<string> $versions */
             $versions = $parsed ? Semver::rsort($parsed) : [];
 

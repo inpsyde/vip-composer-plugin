@@ -116,8 +116,8 @@ class InstalledPackages
         $loader = new ArrayLoader(null, true);
 
         $cache = [];
-        $cache = $this->buildCache((array)($lock['packages'] ?? []), false, $cache, $loader);
-        $cache = $this->buildCache((array)($lock['packages-dev'] ?? []), true, $cache, $loader);
+        $cache = $this->buildCache((array) ($lock['packages'] ?? []), false, $cache, $loader);
+        $cache = $this->buildCache((array) ($lock['packages-dev'] ?? []), true, $cache, $loader);
 
         /** @var array<string, array|InstalledArrayRepository> $cache */
 

@@ -79,7 +79,7 @@ class TaskConfigTest extends UnitTestCase
 
         ($name === null)
             ? static::assertNull($config->gitBranch())
-            : static::assertSame((string)$name, $config->gitBranch());
+            : static::assertSame((string) $name, $config->gitBranch());
     }
 
     /**
@@ -122,7 +122,7 @@ class TaskConfigTest extends UnitTestCase
 
         ($url === null)
             ? static::assertNull($config->gitUrl())
-            : static::assertSame((string)$url, $config->gitUrl());
+            : static::assertSame((string) $url, $config->gitUrl());
     }
 
     /**

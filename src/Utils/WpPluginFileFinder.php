@@ -38,7 +38,7 @@ class WpPluginFileFinder
 
         $base = basename($path);
         $files = glob("{$path}/*.php");
-        if (!$files) {
+        if (($files === false) || ($files === [])) {
             return '';
         }
 
@@ -64,7 +64,7 @@ class WpPluginFileFinder
 
         $data = fread($handle, 8192);
         fclose($handle);
-        if (!$data) {
+        if ($data === false) {
             return false;
         }
 

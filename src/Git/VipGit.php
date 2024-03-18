@@ -70,13 +70,13 @@ class VipGit
     }
 
     /**
-     * @return string
+     * @return non-empty-string
      */
     public function mirrorDir(): string
     {
-        /** @var string|null $mirrorPath */
+        /** @var non-empty-string|null $mirrorPath */
         static $mirrorPath;
-        if ($mirrorPath) {
+        if (isset($mirrorPath)) {
             return $mirrorPath;
         }
 
@@ -111,7 +111,7 @@ class VipGit
         $this->git = new GitProcess($this->io, $mirrorDir);
 
         [$remoteUrl, $remoteBranch] = $this->init($url, $branch);
-        if (!$remoteUrl || !$remoteBranch) {
+        if (($remoteUrl === null) || ($remoteBranch === null)) {
             return false;
         }
 
@@ -143,7 +143,7 @@ class VipGit
     /**
      * @param string|null $customUrl
      * @param string|null $customBranch
-     * @return array{string,string}|array{null,null}
+     * @return array{non-empty-string,non-empty-string}|array{null,null}
      */
     private function init(string $customUrl = null, string $customBranch = null): array
     {
@@ -152,14 +152,13 @@ class VipGit
          * @vase string|null $sshUrl
          */
         [$httpsUrl, $sshUrl] = $this->gitUrls($customUrl);
-        if (!$httpsUrl && !$sshUrl) {
+        if (($httpsUrl === null) && ($sshUrl === null)) {
             return [null, null];
         }
 
-        $url = $sshUrl ?: $httpsUrl;
-        /** @var string|null $branch */
+        $url = $sshUrl ?? $httpsUrl;
         $branch = $this->gitBranch($customBranch);
-        if (!$branch) {
+        if ($branch === null) {
             return [null, null];
         }
 
@@ -193,7 +192,7 @@ class VipGit
             );
 
         foreach ($finder as $dir) {
-            $this->filesystem->removeDirectory((string)$dir);
+            $this->filesystem->removeDirectory((string) $dir);
         }
     }
 
@@ -210,7 +209,7 @@ class VipGit
             ->in($mirrorDir);
 
         foreach ($finder as $path) {
-            $this->filesystem->remove((string)$path);
+            $this->filesystem->remove((string) $path);
         }
     }
 
@@ -262,7 +261,7 @@ class VipGit
         $branches = explode("\n", $output);
         $currentBranch = '';
         foreach ($branches as $branch) {
-            strpos(trim($branch), '* ') and $currentBranch = ltrim($branch, '* ');
+            str_starts_with(trim($branch), '* ') and $currentBranch = ltrim($branch, '* ');
         }
 
         $commands = [];
@@ -311,7 +310,7 @@ class VipGit
 
     /**
      * @param string|null $customUrl
-     * @return array{string,string}|array{null,null}
+     * @return array{non-empty-string,non-empty-string}|array{null,null}
      */
     private function gitUrls(string $customUrl = null): array
     {
@@ -319,10 +318,10 @@ class VipGit
         $url = $customUrl ?? $this->gitConfig[Config::GIT_URL_KEY];
 
         if (
-            !$url
+            ($url === '')
             || !filter_var($url, FILTER_VALIDATE_URL)
-            || strtolower((string)parse_url($url, PHP_URL_SCHEME)) !== 'https'
-            || !str_contains((string)parse_url($url, PHP_URL_HOST), 'github.com')
+            || strtolower((string) parse_url($url, PHP_URL_SCHEME)) !== 'https'
+            || !str_contains((string) parse_url($url, PHP_URL_HOST), 'github.com')
         ) {
             $this->io->errorLine("Git repo URL '{$url}' looks wrong.");
 
@@ -330,7 +329,7 @@ class VipGit
         }
 
         $path = parse_url($url, PHP_URL_PATH);
-        if (!$path || $path === '/') {
+        if (!is_string($path) || ($path === '') || ($path === '/')) {
             $this->io->errorLine("Git repo URL '{$url}' looks wrong.");
 
             return [null, null];
@@ -351,7 +350,7 @@ class VipGit
 
     /**
      * @param string|null $customBranch
-     * @return string|null
+     * @return non-empty-string|null
      *
      * @see https://git-scm.com/docs/git-check-ref-format
      */
@@ -478,7 +477,7 @@ class VipGit
 
         /** @var \SplFileInfo $info */
         foreach ($finder as $info) {
-            $source = $this->filesystem->normalizePath((string)$info);
+            $source = $this->filesystem->normalizePath((string) $info);
             if ($source === $vendorSource) {
                 continue;
             }

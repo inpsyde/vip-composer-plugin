@@ -35,6 +35,15 @@ final class CopyDevPaths implements Task
         Config::DEV_PATHS_PRIVATE_DIR_KEY,
     ];
 
+    private const RESERVED_MU_PLUGINS = [
+        '__loader.php',
+    ];
+
+    private const RESERVED_PRIVATE = [
+        'deploy-id',
+        'deploy-ver',
+    ];
+
     /**
      * @param Config $config
      * @param VipDirectories $directories
@@ -140,7 +149,7 @@ final class CopyDevPaths implements Task
         // phpcs:enable Generic.Metrics.CyclomaticComplexity
 
         /** @psalm-suppress MixedArrayAccess */
-        $sourceDir = (string)$this->config[Config::DEV_PATHS_CONFIG_KEY][$key];
+        $sourceDir = (string) $this->config[Config::DEV_PATHS_CONFIG_KEY][$key];
         $source = $this->filesystem->normalizePath($this->config->basePath() . "/{$sourceDir}");
 
         $finder = null;
@@ -188,7 +197,7 @@ final class CopyDevPaths implements Task
                 $target = $this->directories->yamlConfigDir();
                 $finder and $finder->files()->ignoreDotFiles(false)->filter(
                     static function (SplFileInfo $info): bool {
-                        return (bool)preg_match('~\.[^\.]+\.yml$~i', $info->getFilename());
+                        return (bool) preg_match('~\.[^\.]+\.yml$~i', $info->getFilename());
                     }
                 );
                 break;
@@ -271,9 +280,10 @@ final class CopyDevPaths implements Task
 
             $basename = $item->isFile() ? $item->getBasename() : null;
             if (
-                $basename
-                && (!$isMu || ($basename !== '__loader.php'))
-                && (!$isPrivate || !in_array($basename, ['deploy-id', 'deploy-ver'], true))
+                ($basename !== null)
+                && ($basename !== '')
+                && (!$isMu || !in_array($basename, self::RESERVED_MU_PLUGINS, true))
+                && (!$isPrivate || !in_array($basename, self::RESERVED_PRIVATE, true))
             ) {
                 $this->filesystem->unlink($item->getPathname());
             }

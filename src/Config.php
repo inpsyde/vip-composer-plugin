@@ -102,7 +102,7 @@ final class Config implements \ArrayAccess
      */
     public function __construct(Composer $composer, string $basePath)
     {
-        $extra = (array)($composer->getPackage()->getExtra()[self::CONFIG_KEY] ?? []);
+        $extra = (array) ($composer->getPackage()->getExtra()[self::CONFIG_KEY] ?? []);
         $this->composerConfig = $composer->getConfig();
 
         $this->config = [];
@@ -122,7 +122,7 @@ final class Config implements \ArrayAccess
      */
     public function basePath(): string
     {
-        return (string)$this->offsetGet(self::BASE_PATH_KEY);
+        return (string) $this->offsetGet(self::BASE_PATH_KEY);
     }
 
     /**
@@ -130,7 +130,7 @@ final class Config implements \ArrayAccess
      */
     public function prodAutoloadDir(): string
     {
-        return (string)$this->offsetGet(self::PROD_AUTOLOAD_DIR_KEY);
+        return (string) $this->offsetGet(self::PROD_AUTOLOAD_DIR_KEY);
     }
 
     /**
@@ -139,7 +139,7 @@ final class Config implements \ArrayAccess
      */
     public function composerConfigValue(string $key): string
     {
-        return (string)$this->composerConfig->get($key);
+        return (string) $this->composerConfig->get($key);
     }
 
     /**
@@ -151,7 +151,7 @@ final class Config implements \ArrayAccess
         $configSource = $this->composerConfig->getConfigSource();
         $composerJsonSource = $configSource->getName();
 
-        return (string)preg_replace('~\.json$~', '.lock', $composerJsonSource, 1);
+        return (string) preg_replace('~\.json$~', '.lock', $composerJsonSource, 1);
     }
 
     /**
@@ -159,7 +159,7 @@ final class Config implements \ArrayAccess
      */
     public function vipConfig(): array
     {
-        return (array)$this->offsetGet(self::VIP_CONFIG_KEY);
+        return (array) $this->offsetGet(self::VIP_CONFIG_KEY);
     }
 
     /**
@@ -167,7 +167,7 @@ final class Config implements \ArrayAccess
      */
     public function gitConfig(): array
     {
-        return (array)$this->offsetGet(self::GIT_CONFIG_KEY);
+        return (array) $this->offsetGet(self::GIT_CONFIG_KEY);
     }
 
     /**
@@ -175,7 +175,7 @@ final class Config implements \ArrayAccess
      */
     public function wpConfig(): array
     {
-        return (array)$this->offsetGet(self::WP_CONFIG_KEY);
+        return (array) $this->offsetGet(self::WP_CONFIG_KEY);
     }
 
     /**
@@ -183,7 +183,7 @@ final class Config implements \ArrayAccess
      */
     public function pluginsAutoloadConfig(): array
     {
-        return (array)$this->offsetGet(self::PLUGINS_AUTOLOAD_KEY);
+        return (array) $this->offsetGet(self::PLUGINS_AUTOLOAD_KEY);
     }
 
     /**
@@ -191,7 +191,7 @@ final class Config implements \ArrayAccess
      */
     public function devPathsConfig(): array
     {
-        return (array)$this->offsetGet(self::DEV_PATHS_CONFIG_KEY);
+        return (array) $this->offsetGet(self::DEV_PATHS_CONFIG_KEY);
     }
 
     /**
