@@ -179,11 +179,7 @@ The whole set of settings available, with their defaults, looks like this:
                 "config-dir": "config",
                 "private-dir": "private"
             },
-            "env-configs": [
-                "all",
-                "development",
-                "staging",
-                "production"
+            "custom-env-names": [
             ]
         }
     }
@@ -295,11 +291,12 @@ Only the `config/vip-config.php` is mandatory all the other folders and their co
 `vip-composer.dev-paths` controls the name of those folders. By default names are the same names used by VIP Go repository, except for `mu-plugins/`  is renamed to `client-mu-plugins/`.
 
 
-#### `vip-composer.env-configs`
+#### `vip-composer.custom-env-names`
 
-VIP Go allows to have different configuration for each environment, and this can be achieved by using special configuration files that are loaded based on the environment. This package supports Composer packages of type `vip-composer-plugin-env-config` that can be used to provide such configuration files.
-
-By default, the list is `["all", "development", "staging", "production"]`, but it can be changed via `vip-composer.env-configs` configuration.
+VIP expects WordPress configuration normally placed in `wp-config.php` (e.g. constants with secrets) to be placed in a `vip-config.php` file. To help having environment-specific setting, this package support multiple files where to set such configuration, where each file is environment-specific and named after the environment.
+The configuration files can be placed directly in the `./vip-config/` folder in a "website repository" root folder, or can be placed in separate Composer packages having the `vip-composer-plugin-env-config` type, whose support is handled by this package.
+In the latter case, the supported files that are copied over from packages into website config folder are, by default, those named after the environments supported by WordPress core, and they are: `local.php`, `development.php`, `staging.php`, and `production.php`, plus a file named `all.php`aimed at target all environments.
+Considering VIP GO allows us to have more environments or anyway name them differently, it is possible to expand the list of supported files names via the `vip-composer.custom-env-names` configuration.
 
 
 

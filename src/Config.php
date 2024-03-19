@@ -53,7 +53,7 @@ final class Config implements \ArrayAccess
     public const DEV_PATHS_YAML_CONFIG_DIR_KEY = 'config-dir';
     public const DEV_PATHS_PRIVATE_DIR_KEY = 'private-dir';
 
-    public const ENV_CONFIGS_KEY = 'env-configs';
+    public const CUSTOM_ENV_NAMES_KEY = 'custom-env-names';
 
     public const PACKAGE_TYPE_MULTI_MU_PLUGINS = 'wordpress-multiple-mu-plugins';
 
@@ -85,12 +85,7 @@ final class Config implements \ArrayAccess
             self::DEV_PATHS_YAML_CONFIG_DIR_KEY => 'config',
             self::DEV_PATHS_PRIVATE_DIR_KEY => 'private',
         ],
-        self::ENV_CONFIGS_KEY => [
-            'all',
-            'development',
-            'staging',
-            'production',
-        ],
+        self::CUSTOM_ENV_NAMES_KEY => [],
     ];
 
     private array $config;
@@ -195,11 +190,29 @@ final class Config implements \ArrayAccess
     }
 
     /**
-     * @return array
+     * @return list<non-empty-string>
      */
     public function envConfigs(): array
     {
-        return array_values(array_unique((array) $this->offsetGet(self::ENV_CONFIGS_KEY)));
+        $customEnvs = (array) $this->offsetGet(self::CUSTOM_ENV_NAMES_KEY);
+        if ($customEnvs === []) {
+            return ['local', 'development', 'staging', 'production', 'all'];
+        }
+        $envNames = [];
+        foreach ($customEnvs as $envName) {
+            if (!is_string($envName)) {
+                continue;
+            }
+            $envName = trim(strtolower($envName));
+            if (
+                preg_match('~^[a-z][a-z0-9_\.\-]+$~', $envName)
+                && !in_array($envName, $envNames, true)
+            ) {
+                $envNames[] = $envName;
+            }
+        }
+        /** @var list<non-empty-string> $envNames */
+        return $envNames;
     }
 
     /**

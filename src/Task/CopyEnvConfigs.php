@@ -139,20 +139,7 @@ final class CopyEnvConfigs implements Task
             }
         }
 
-        $envsRaw = $this->config->envConfigs();
-        $envs = [];
-        foreach ($envsRaw as $env) {
-            if (
-                is_string($env)
-                && ($env !== '')
-                && !str_starts_with($env, '.')
-                && !str_contains($env, '/')
-                && !str_contains($env, '\\')
-            ) {
-                $envs[] = $env;
-            }
-        }
-
+        $envs = $this->config->envConfigs();
         $sourceFiles = [];
         foreach ($sourcesDirs as $sourceDir) {
             foreach ($envs as $env) {
