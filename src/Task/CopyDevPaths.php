@@ -369,7 +369,7 @@ final class CopyDevPaths implements Task
 
             if (file_exists($targetPath)) {
                 $io->verboseInfoLine("File '{$targetPath}' exists, replacing...");
-                $this->filesystem->unlink($targetPath);
+                $this->filesystem->remove($targetPath);
             }
 
             if ($this->filesystem->copy($sourcePath, $targetPath)) {
