@@ -120,9 +120,11 @@ final class CopyDevPaths implements Task
     {
         [$what, $source, $target, $sourcePaths] = $this->pathInfoForKey($pathConfigKey);
 
+        $isVipConfig = $pathConfigKey === Config::DEV_PATHS_PHP_CONFIG_DIR_KEY;
+
         if (is_dir($target)) {
             $this->cleanupTarget($pathConfigKey, $target);
-            $sourcePaths and $this->cleanupSource($target, $source);
+            $sourcePaths and $this->cleanupSource($target, $source, $isVipConfig);
         }
 
         if (!$sourcePaths) {
@@ -131,7 +133,7 @@ final class CopyDevPaths implements Task
 
         $io->verboseCommentLine("Copying {$what} in dev path to VIP target folder...");
 
-        return $this->copySources($sourcePaths, $target, $io);
+        return $this->copySources($sourcePaths, $target, $io, $isVipConfig);
     }
 
     /**
@@ -190,7 +192,16 @@ final class CopyDevPaths implements Task
             case Config::DEV_PATHS_PHP_CONFIG_DIR_KEY:
                 $what = 'PHP config files';
                 $target = $this->directories->phpConfigDir();
-                $finder and $finder->ignoreDotFiles(true);
+                if ($finder) {
+                    $finder = $finder->ignoreDotFiles(true)->exclude('env');
+                    $envs = Finder::create()
+                        ->in("{$source}/env")
+                        ->depth('== 0')
+                        ->ignoreUnreadableDirs()
+                        ->ignoreVCS(true)
+                        ->ignoreDotFiles(true);
+                    $finder = $finder->append($envs);
+                }
                 break;
             case Config::DEV_PATHS_YAML_CONFIG_DIR_KEY:
                 $what = 'Yaml config files';
@@ -268,6 +279,11 @@ final class CopyDevPaths implements Task
 
         /** @var SplFileInfo $item */
         foreach ($targets as $item) {
+            if ($isVipConfig) {
+                $this->cleanupPhpConfigPath($item);
+                continue;
+            }
+
             /*
              * We need to preserve `/vip/private/deploy-id` and `/vip/private/deploy-ver` files,
              * but anything else in /vip/private` can be deleted before copying, as no Composer nor
@@ -284,11 +300,32 @@ final class CopyDevPaths implements Task
             }
 
             $isReserved = ($isMu && $this->isReservedMuPlugin($basename))
-                || ($isPrivate && $this->isReservedPrivate($basename))
-                || ($isVipConfig && $this->isReservedVipConfig($basename));
+                || ($isPrivate && $this->isReservedPrivate($basename));
 
             if (!$isReserved) {
                 $this->filesystem->unlink($item->getPathname());
+            }
+        }
+    }
+
+    /**
+     * @param \SplFileInfo $item
+     * @return void
+     */
+    private function cleanupPhpConfigPath(\SplFileInfo $item): void
+    {
+        $pathName = $item->getPathname();
+        if (!$item->isDir() || ($item->getBasename() !== 'env')) {
+            $this->filesystem->remove($pathName);
+
+            return;
+        }
+
+        $envs = Finder::create()->in($pathName)->ignoreUnreadableDirs()->depth('== 0');
+        /** @var SplFileInfo $env */
+        foreach ($envs as $env) {
+            if (!$this->isReservedVipConfig($env->getBasename())) {
+                $this->filesystem->unlink($env->getPathname());
             }
         }
     }
@@ -328,9 +365,10 @@ final class CopyDevPaths implements Task
     /**
      * @param string $target
      * @param string $source
+     * @param bool $isVipConfig
      * @return void
      */
-    private function cleanupSource(string $target, string $source): void
+    private function cleanupSource(string $target, string $source, bool $isVipConfig): void
     {
         /*
          * If dev path has sub-folder (e.g. `/themes/my-theme`), and that sub-folder exists under
@@ -342,6 +380,9 @@ final class CopyDevPaths implements Task
             ->directories()
             ->depth('== 0')
             ->ignoreUnreadableDirs();
+        if ($isVipConfig) {
+            $sourceDirs = $sourceDirs->exclude('env');
+        }
 
         /** @var SplFileInfo $sourceDir */
         foreach ($sourceDirs as $sourceDir) {
@@ -356,16 +397,26 @@ final class CopyDevPaths implements Task
      * @param Finder $sourcePaths
      * @param string $target
      * @param Io $io
+     * @param bool $isVipConfig
      * @return int
      */
-    private function copySources(Finder $sourcePaths, string $target, Io $io): int
-    {
+    private function copySources(
+        Finder $sourcePaths,
+        string $target,
+        Io $io,
+        bool $isVipConfig = false
+    ): int {
+
         $errors = 0;
 
         /** @var SplFileInfo $sourcePathInfo */
         foreach ($sourcePaths as $sourcePathInfo) {
-            $sourcePath = $sourcePathInfo->getPathname();
-            $targetPath = "{$target}/" . $sourcePathInfo->getBasename();
+            $sourcePath = $this->filesystem->normalizePath($sourcePathInfo->getPathname());
+            $basename = $sourcePathInfo->getBasename();
+            if ($isVipConfig && str_ends_with($sourcePath, "/env/{$basename}")) {
+                $basename = "env/{$basename}";
+            }
+            $targetPath = "{$target}/{$basename}";
 
             if (file_exists($targetPath)) {
                 $io->verboseInfoLine("File '{$targetPath}' exists, replacing...");
