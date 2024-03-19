@@ -142,7 +142,7 @@ class Unzipper
             return [self::$hasSystemUnzip, self::$hasZipArchive];
         }
 
-        self::$hasSystemUnzip = (bool)(new ExecutableFinder())->find('unzip');
+        self::$hasSystemUnzip = (bool) (new ExecutableFinder())->find('unzip');
         self::$hasZipArchive = class_exists('ZipArchive');
 
         if (!self::$hasSystemUnzip && !self::$hasZipArchive) {

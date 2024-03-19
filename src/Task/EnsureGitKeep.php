@@ -60,12 +60,12 @@ final class EnsureGitKeep implements Task
     private function ensureGitKeepFor(string $dir): void
     {
         $dir = is_dir($dir) ? $this->filesystem->normalizePath($dir) : null;
-        if (!$dir) {
+        if (($dir === null) || ($dir === '')) {
             return;
         }
 
         $hasFiles = $this->haveFiles(0, $dir);
-        $hasGitKeep = file_exists((realpath($dir) ?: '') . '/.gitkeep');
+        $hasGitKeep = file_exists(((string) realpath($dir)) . '/.gitkeep');
 
         if (!$hasFiles && !$hasGitKeep) {
             file_put_contents("{$dir}/.gitkeep", "\n");

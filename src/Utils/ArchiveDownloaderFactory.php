@@ -56,7 +56,7 @@ class ArchiveDownloaderFactory
      */
     public function create(string $type): ArchiveDownloader
     {
-        if (!empty($this->downloaders[$type])) {
+        if (isset($this->downloaders[$type])) {
             return $this->downloaders[$type];
         }
 

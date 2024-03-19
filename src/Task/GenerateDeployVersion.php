@@ -72,7 +72,7 @@ final class GenerateDeployVersion implements Task
             random_int(0, 0xffff)
         );
 
-        if (!file_put_contents("{$targetDir}/deploy-id", $deployId)) {
+        if (file_put_contents("{$targetDir}/deploy-id", $deployId) === false) {
             $io->errorLine("Failed writing deploy ID: '{$deployId}' to file.");
             return;
         }
@@ -106,7 +106,7 @@ final class GenerateDeployVersion implements Task
             return;
         }
 
-        if (!file_put_contents("{$targetDir}/deploy-ver", $tag)) {
+        if (file_put_contents("{$targetDir}/deploy-ver", $tag) === false) {
             $io->errorLine("Failed writing deploy Git tag: '{$tag}' to file.");
 
             return;

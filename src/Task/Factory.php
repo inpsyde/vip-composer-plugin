@@ -74,6 +74,7 @@ class Factory
             CopyEnvConfigs::class,
             function (): CopyEnvConfigs {
                 return new CopyEnvConfigs(
+                    $this->factory->config(),
                     $this->factory->vipDirectories(),
                     $this->factory->packageFinder(),
                     $this->factory->composer()->getInstallationManager(),

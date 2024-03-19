@@ -25,8 +25,8 @@
     "require-dev": {
         "composer/composer": "^2.4",
         "inpsyde/php-coding-standards": "^2@dev",
-        "vimeo/psalm": "^5.15.0",
-        "phpunit/phpunit": "^9.6.11"
+        "vimeo/psalm": "^5.23.1",
+        "phpunit/phpunit": "^9.6.17"
     },
     "autoload": {
         "psr-4": {
@@ -47,7 +47,7 @@
     },
     "scripts": {
         "phpcs": "@php ./vendor/squizlabs/php_codesniffer/bin/phpcs",
-        "psalm": "@php ./vendor/vimeo/psalm/psalm --no-cache --show-info=false --no-progress",
+        "psalm": "@php ./vendor/vimeo/psalm/psalm --no-suggestions --report-show-info=false --find-unused-psalm-suppress --no-diff --no-cache --no-file-cache --output-format=compact",
         "tests": "@php ./vendor/phpunit/phpunit/phpunit --no-coverage",
         "tests:coverage": "@php ./vendor/phpunit/phpunit/phpunit --coverage-clover",
         "qa": [

@@ -44,6 +44,8 @@ final class Config implements \ArrayAccess
     public const DEV_PATHS_YAML_CONFIG_DIR_KEY = 'config-dir';
     public const DEV_PATHS_PRIVATE_DIR_KEY = 'private-dir';
 
+    public const CUSTOM_ENV_NAMES_KEY = 'custom-env-names';
+
     public const PACKAGE_TYPE_MULTI_MU_PLUGINS = 'wordpress-multiple-mu-plugins';
 
     public const DEFAULTS = [
@@ -74,6 +76,7 @@ final class Config implements \ArrayAccess
             self::DEV_PATHS_YAML_CONFIG_DIR_KEY => 'config',
             self::DEV_PATHS_PRIVATE_DIR_KEY => 'private',
         ],
+        self::CUSTOM_ENV_NAMES_KEY => [],
     ];
 
     private array $config;
@@ -85,7 +88,7 @@ final class Config implements \ArrayAccess
      */
     public function __construct(Composer $composer, string $basePath)
     {
-        $extra = (array)($composer->getPackage()->getExtra()[self::CONFIG_KEY] ?? []);
+        $extra = (array) ($composer->getPackage()->getExtra()[self::CONFIG_KEY] ?? []);
         $this->composerConfig = $composer->getConfig();
 
         $this->config = [];
@@ -105,7 +108,7 @@ final class Config implements \ArrayAccess
      */
     public function basePath(): string
     {
-        return (string)$this->offsetGet(self::BASE_PATH_KEY);
+        return (string) $this->offsetGet(self::BASE_PATH_KEY);
     }
 
     /**
@@ -113,7 +116,7 @@ final class Config implements \ArrayAccess
      */
     public function prodAutoloadDir(): string
     {
-        return (string)$this->offsetGet(self::PROD_AUTOLOAD_DIR_KEY);
+        return (string) $this->offsetGet(self::PROD_AUTOLOAD_DIR_KEY);
     }
 
     /**
@@ -122,7 +125,7 @@ final class Config implements \ArrayAccess
      */
     public function composerConfigValue(string $key): string
     {
-        return (string)$this->composerConfig->get($key);
+        return (string) $this->composerConfig->get($key);
     }
 
     /**
@@ -134,7 +137,7 @@ final class Config implements \ArrayAccess
         $configSource = $this->composerConfig->getConfigSource();
         $composerJsonSource = $configSource->getName();
 
-        return (string)preg_replace('~\.json$~', '.lock', $composerJsonSource, 1);
+        return (string) preg_replace('~\.json$~', '.lock', $composerJsonSource, 1);
     }
 
     /**
@@ -142,7 +145,7 @@ final class Config implements \ArrayAccess
      */
     public function vipConfig(): array
     {
-        return (array)$this->offsetGet(self::VIP_CONFIG_KEY);
+        return (array) $this->offsetGet(self::VIP_CONFIG_KEY);
     }
 
     /**
@@ -150,7 +153,7 @@ final class Config implements \ArrayAccess
      */
     public function gitConfig(): array
     {
-        return (array)$this->offsetGet(self::GIT_CONFIG_KEY);
+        return (array) $this->offsetGet(self::GIT_CONFIG_KEY);
     }
 
     /**
@@ -158,7 +161,7 @@ final class Config implements \ArrayAccess
      */
     public function wpConfig(): array
     {
-        return (array)$this->offsetGet(self::WP_CONFIG_KEY);
+        return (array) $this->offsetGet(self::WP_CONFIG_KEY);
     }
 
     /**
@@ -166,7 +169,7 @@ final class Config implements \ArrayAccess
      */
     public function pluginsAutoloadConfig(): array
     {
-        return (array)$this->offsetGet(self::PLUGINS_AUTOLOAD_KEY);
+        return (array) $this->offsetGet(self::PLUGINS_AUTOLOAD_KEY);
     }
 
     /**
@@ -174,7 +177,33 @@ final class Config implements \ArrayAccess
      */
     public function devPathsConfig(): array
     {
-        return (array)$this->offsetGet(self::DEV_PATHS_CONFIG_KEY);
+        return (array) $this->offsetGet(self::DEV_PATHS_CONFIG_KEY);
+    }
+
+    /**
+     * @return list<non-empty-string>
+     */
+    public function envConfigs(): array
+    {
+        $customEnvs = (array) $this->offsetGet(self::CUSTOM_ENV_NAMES_KEY);
+        if ($customEnvs === []) {
+            return ['local', 'development', 'staging', 'production', 'all'];
+        }
+        $envNames = [];
+        foreach ($customEnvs as $envName) {
+            if (!is_string($envName)) {
+                continue;
+            }
+            $envName = trim(strtolower($envName));
+            if (
+                preg_match('~^[a-z][a-z0-9_\.\-]+$~', $envName)
+                && !in_array($envName, $envNames, true)
+            ) {
+                $envNames[] = $envName;
+            }
+        }
+        /** @var list<non-empty-string> $envNames */
+        return $envNames;
     }
 
     /**

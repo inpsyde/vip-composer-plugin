@@ -55,7 +55,7 @@ final class UpdateLocalWpConfigFile implements Task
 
         $io->commentLine("Updating 'wp-config.php'...");
 
-        $currentContent = file_get_contents($wpConfigPath) ?: '';
+        $currentContent = (string) file_get_contents($wpConfigPath);
 
         $wpCommentRegex = "~/\* That's all, stop editing!(?:[^\*]+)\*/~";
         preg_match($wpCommentRegex, $currentContent, $matches);
@@ -67,15 +67,15 @@ final class UpdateLocalWpConfigFile implements Task
         $start = strpos($currentContent, $commentStart);
         $end = strpos($currentContent, $commentEnd);
 
-        $contentPartsStart = $start
+        $contentPartsStart = ($start !== false)
             ? explode($commentStart, $currentContent, 2)
             : (preg_split($wpCommentRegex, $currentContent, 2) ?: []);
 
-        $contentPartsEnd = $end
+        $contentPartsEnd = ($end !== false)
             ? explode($commentEnd, $currentContent, 2)
             : (preg_split($wpCommentRegex, $currentContent, 2) ?: []);
 
-        if (empty($contentPartsStart[0]) || empty($contentPartsEnd[1])) {
+        if (!isset($contentPartsStart[0]) || !isset($contentPartsEnd[1])) {
             $io->errorLine("Can't update 'wp-config.php', it seems custom.");
 
             return;
@@ -118,7 +118,7 @@ PHP;
      */
     private function saveFile(string $wpConfigPath, string $fileContent, Io $io): void
     {
-        if (!file_put_contents($wpConfigPath, $fileContent)) {
+        if (file_put_contents($wpConfigPath, $fileContent) === false) {
             $io->errorLine("Failed writing 'wp-config.php'");
 
             return;
