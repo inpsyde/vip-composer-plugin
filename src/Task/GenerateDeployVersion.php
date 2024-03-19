@@ -10,6 +10,9 @@ use Inpsyde\VipComposer\VipDirectories;
 
 final class GenerateDeployVersion implements Task
 {
+    public const DEPLOY_ID_FILE = 'deploy-id';
+    public const DEPLOY_VER_FILE = 'deploy-ver';
+
     /**
      * @param VipDirectories $directories
      */
@@ -72,7 +75,7 @@ final class GenerateDeployVersion implements Task
             random_int(0, 0xffff)
         );
 
-        if (file_put_contents("{$targetDir}/deploy-id", $deployId) === false) {
+        if (file_put_contents("{$targetDir}/" . self::DEPLOY_ID_FILE, $deployId) === false) {
             $io->errorLine("Failed writing deploy ID: '{$deployId}' to file.");
             return;
         }
@@ -106,7 +109,7 @@ final class GenerateDeployVersion implements Task
             return;
         }
 
-        if (file_put_contents("{$targetDir}/deploy-ver", $tag) === false) {
+        if (file_put_contents("{$targetDir}/" . self::DEPLOY_VER_FILE, $tag) === false) {
             $io->errorLine("Failed writing deploy Git tag: '{$tag}' to file.");
 
             return;

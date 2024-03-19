@@ -1,0 +1,152 @@
+<?php
+
+/**
+ * This handles early redirects and multiple domain mapping to same site. It is used:
+ *
+ * - For multi-language site, wanting to redirect a "root" domain such as `example.com` to the
+ *   domain for one language, for example `example.com/en`.
+ * - To do redirect from "www" to "non-www" variant of same domain, or the other way around.
+ * - To redirect a retired domain to the new one.
+ * - To map multiple domains to the same site, while keeping the domain in the address bar
+ *   (no redirect)
+ *
+ * It expects a configuration file in the `vip-config/` folder.
+ * It can be either a JSON file named `sunrise-config.json` containing data such as:
+ *
+ * ```json
+ *  {
+ *      "example.com": "example.com/es",
+ *      "example.dev": "www.example.dev",
+ *      "www.acme.com": "acme.com",
+ *      "alternative-domain.com": {"target": "main-domain.com", "redirect": false},
+ *      "www.alternative-domain.com": "alternative-domain.com",
+ *  }
+ * ```
+ *
+ * or a PHP file named `sunrise-config.pgp` returning similar data:
+ *
+ * ```php
+ *  return [
+ *      // Normal redirect
+ *      'example.com' => 'example.com/es',
+ *
+ *      // "non-www" to "www" redirect
+ *      'example.dev' => 'www.example.dev',
+ *
+ *      // "www" to "non-www" redirect
+ *      'www.acme.com' => 'acme.com',
+ *
+ *      // Alternative domain: no redirect will happen, both domains points same site
+ *      // plus "www" to "non-www" redirect
+ *      'alternative-domain.com' => ['target' => "main-domain.com", 'redirect' => false],
+ *      'www.alternative-domain.com' => 'alternative-domain.com',
+ *  ];
+ * ```
+ *
+ * When redirect is `true` (default), the current path and query are, by-default, forwarded.
+ * That is, if the current URL visited is `https://example.dev/foo?x=y`, with the config above, the
+ * user is redirected to: `https://www.example.dev/foo?x=y`. To prevent the forwarding of path or
+ * query, it is possible to use the `preservePath`/`preserveQuery` option, for example:
+ *
+ * ```php
+ *  return [
+ *      'example.dev' => [
+ *          'target' => 'www.example.dev',
+ *          'redirect' => true,
+ *          'preservePath' => false,
+ *          'preserveQuery' => false
+ *      ],
+ *  ];
+ * ```
+ *
+ * Of course, the same works also for JSON configuration.
+ *
+ * The configuration can be keyed by environment, for example (using JSON, but PHP is the same):
+ *
+ * ```json
+ *   {
+ *      "production": {
+ *          "example.com": "example.com/es",
+ *          "example.dev": "www.example.dev",
+ *          "www.acme.com": "acme.com",
+ *          "alternative-domain.com": {"target": "main-domain.com", "redirect": false},
+ *          "www.alternative-domain.com": "alternative-domain.com",
+ *       }
+ *   }
+ *  ```
+ *
+ * If no environment key is found, the configuration will be applied to all environments.
+ */
+
+declare(strict_types=1);
+
+namespace Inpsyde\Vip;
+
+if (!function_exists(__NAMESPACE__ . '\\isWebRequest')) {
+    return;
+}
+
+add_action(
+    'parse_site_query',
+    static function (\WP_Site_Query $query): void {
+        static $done;
+        if ($done || did_action('ms_loaded') || !isWebRequest()) {
+            return;
+        }
+
+        $done = true;
+        $queryDomain = $query->query_vars['domain'] ?? null;
+        $queryDomains = $query->query_vars['domain__in'] ?? null;
+
+        if (
+            (($queryDomain === '') || !is_string($queryDomain))
+            && (($queryDomains === []) || !is_array($queryDomains))
+        ) {
+            return;
+        }
+
+        $domains = is_array($queryDomains) ? $queryDomains : [$queryDomain];
+        foreach ($domains as $domain) {
+            $config = loadSunriseConfigForDomain($domain);
+            if ($config['target'] === '') {
+                continue;
+            }
+
+            if ($config['redirect']) {
+                $targetUrl = buildFullRedirectUrlFor(
+                    $config['target'],
+                    $config['preservePath'],
+                    $config['preserveQuery']
+                );
+
+                earlyRedirect($targetUrl);
+                break;
+            }
+
+            $url = $config['target'];
+            if (preg_match('~^(?:https?:)?//~i', $url) !== 1) {
+                $url = "//{$url}";
+            }
+            $parsed = parse_url($url);
+            if (!isset($parsed['host']) || ($parsed['host'] === $domain)) {
+                continue;
+            }
+
+            $targetPath = '/' . trim($parsed['path'] ?? '', '/');
+            $queriedPath = $query->query_vars['path'] ?? null;
+            $queriedPaths = (array) ($query->query_vars['path__in'] ?? []);
+            is_string($queriedPath) and $queriedPaths[] = $queriedPath;
+            if (($queriedPaths !== []) && !in_array($targetPath, $queriedPaths, true)) {
+                continue;
+            }
+
+            unset($query->query_vars['domain__in']);
+            $query->query_vars['domain'] = $parsed['host'];
+            break;
+        }
+    }
+);
+
+if (file_exists(__DIR__ . '\\inpsyde-vip-sunrise.php')) {
+    require_once __DIR__ . '\\inpsyde-vip-sunrise.php';
+}

@@ -27,12 +27,12 @@ final class CopyDevPaths implements Task
     ];
 
     private const RESERVED_MU_PLUGINS = [
-        '__loader.php',
+        GenerateMuPluginsLoader::LOADER_FILE,
     ];
 
     private const RESERVED_PRIVATE = [
-        'deploy-id',
-        'deploy-ver',
+        GenerateDeployVersion::DEPLOY_ID_FILE,
+        GenerateDeployVersion::DEPLOY_VER_FILE,
     ];
 
     /**
@@ -41,13 +41,15 @@ final class CopyDevPaths implements Task
      * @param PackageFinder $packageFinder
      * @param InstallationManager $installationManager
      * @param Filesystem $filesystem
+     * @param CopyAppFiles $copyAppFiles
      */
     public function __construct(
         private Config $config,
         private VipDirectories $directories,
         private PackageFinder $packageFinder,
         private InstallationManager $installationManager,
-        private Filesystem $filesystem
+        private Filesystem $filesystem,
+        private CopyAppFiles $copyAppFiles
     ) {
     }
 
@@ -306,8 +308,18 @@ final class CopyDevPaths implements Task
     private function cleanupPhpConfigPath(\SplFileInfo $item): void
     {
         $pathName = $item->getPathname();
-        if (!$item->isDir() || ($item->getBasename() !== 'env')) {
-            $this->filesystem->remove($pathName);
+        $basename = $item->getBasename();
+
+        if (!$item->isDir()) {
+            if (!in_array($basename, $this->copyAppFiles->vipConfigNames(), true)) {
+                $this->filesystem->unlink($pathName);
+            }
+
+            return;
+        }
+
+        if ($basename !== 'env') {
+            $this->filesystem->removeDirectory($pathName);
 
             return;
         }
@@ -315,8 +327,8 @@ final class CopyDevPaths implements Task
         $envs = Finder::create()->in($pathName)->ignoreUnreadableDirs()->depth('== 0');
         /** @var SplFileInfo $env */
         foreach ($envs as $env) {
-            if (!$this->isReservedVipConfig($env->getBasename())) {
-                $this->filesystem->unlink($env->getPathname());
+            if (!$env->isFile() || !$this->isReservedVipConfig($env->getBasename())) {
+                $this->filesystem->remove($env->getPathname());
             }
         }
     }
@@ -341,6 +353,7 @@ final class CopyDevPaths implements Task
                 return true;
             }
         }
+
         return false;
     }
 
@@ -350,7 +363,8 @@ final class CopyDevPaths implements Task
      */
     private function isReservedMuPlugin(string $basename): bool
     {
-        return in_array($basename, self::RESERVED_MU_PLUGINS, true);
+        return in_array($basename, self::RESERVED_MU_PLUGINS, true)
+            || in_array($basename, $this->copyAppFiles->muPluginNames(), true);
     }
 
     /**

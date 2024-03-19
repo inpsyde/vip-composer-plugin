@@ -207,6 +207,14 @@ final class Config implements \ArrayAccess
     }
 
     /**
+     * @return string
+     */
+    public function pluginPath(): string
+    {
+        return dirname(__DIR__);
+    }
+
+    /**
      * @inheritdoc
      */
     public function offsetExists($offset): bool
