@@ -255,7 +255,6 @@ final class CopyDevPaths implements Task
         /* These directories are only filled from root, we can safely empty them before copying. */
         switch ($key) {
             case Config::DEV_PATHS_IMAGES_DIR_KEY:
-            case Config::DEV_PATHS_PHP_CONFIG_DIR_KEY:
             case Config::DEV_PATHS_YAML_CONFIG_DIR_KEY:
                 $this->filesystem->emptyDirectory($target);
                 return;
@@ -263,6 +262,7 @@ final class CopyDevPaths implements Task
 
         $isMu = $key === Config::DEV_PATHS_MUPLUGINS_DIR_KEY;
         $isPrivate = $key === Config::DEV_PATHS_PRIVATE_DIR_KEY;
+        $isVipConfig = $key === Config::DEV_PATHS_PHP_CONFIG_DIR_KEY;
 
         $targets = Finder::create()->in($target)->ignoreUnreadableDirs()->depth('== 0');
 
@@ -279,15 +279,50 @@ final class CopyDevPaths implements Task
             }
 
             $basename = $item->isFile() ? $item->getBasename() : null;
-            if (
-                ($basename !== null)
-                && ($basename !== '')
-                && (!$isMu || !in_array($basename, self::RESERVED_MU_PLUGINS, true))
-                && (!$isPrivate || !in_array($basename, self::RESERVED_PRIVATE, true))
-            ) {
+            if (($basename === null) || ($basename === '')) {
+                continue;
+            }
+
+            $isReserved = ($isMu && $this->isReservedMuPlugin($basename))
+                || ($isPrivate && $this->isReservedPrivate($basename))
+                || ($isVipConfig && $this->isReservedVipConfig($basename));
+
+            if (!$isReserved) {
                 $this->filesystem->unlink($item->getPathname());
             }
         }
+    }
+
+    /**
+     * @param string $basename
+     * @return bool
+     */
+    private function isReservedPrivate(string $basename): bool
+    {
+        return in_array($basename, self::RESERVED_PRIVATE, true);
+    }
+
+    /**
+     * @param string $basename
+     * @return bool
+     */
+    private function isReservedVipConfig(string $basename): bool
+    {
+        foreach ($this->config->envConfigs() as $env) {
+            if ($basename === "{$env}.php") {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * @param string $basename
+     * @return bool
+     */
+    private function isReservedMuPlugin(string $basename): bool
+    {
+        return in_array($basename, self::RESERVED_MU_PLUGINS, true);
     }
 
     /**
@@ -331,6 +366,11 @@ final class CopyDevPaths implements Task
         foreach ($sourcePaths as $sourcePathInfo) {
             $sourcePath = $sourcePathInfo->getPathname();
             $targetPath = "{$target}/" . $sourcePathInfo->getBasename();
+
+            if (file_exists($targetPath)) {
+                $io->verboseInfoLine("File '{$targetPath}' exists, replacing...");
+                $this->filesystem->unlink($targetPath);
+            }
 
             if ($this->filesystem->copy($sourcePath, $targetPath)) {
                 $from = "<comment>'{$sourcePath}'</comment>";
