@@ -18,8 +18,7 @@
  *      "example.com": "example.com/es",
  *      "example.dev": "www.example.dev",
  *      "www.acme.com": "acme.com",
- *      "alternative-domain.com": {"target": "main-domain.com", "redirect": false},
- *      "www.alternative-domain.com": "alternative-domain.com",
+ *      "alternative-domain.com": {"target": "main-domain.com", "redirect": false}
  *  }
  * ```
  *
@@ -27,19 +26,15 @@
  *
  * ```php
  *  return [
- *      // Normal redirect
+ *      // Multi-language redirect
  *      'example.com' => 'example.com/es',
  *
- *      // "non-www" to "www" redirect
+ *      // "non-www" to "www" redirect, and the other way around
  *      'example.dev' => 'www.example.dev',
- *
- *      // "www" to "non-www" redirect
  *      'www.acme.com' => 'acme.com',
  *
  *      // Alternative domain: no redirect will happen, both domains points same site
- *      // plus "www" to "non-www" redirect
  *      'alternative-domain.com' => ['target' => "main-domain.com", 'redirect' => false],
- *      'www.alternative-domain.com' => 'alternative-domain.com',
  *  ];
  * ```
  *
@@ -54,7 +49,7 @@
  *          'target' => 'www.example.dev',
  *          'redirect' => true,
  *          'preservePath' => false,
- *          'preserveQuery' => false
+ *          'preserveQuery' => false,
  *      ],
  *  ];
  * ```
@@ -82,71 +77,89 @@ declare(strict_types=1);
 
 namespace Inpsyde\Vip;
 
-if (!function_exists(__NAMESPACE__ . '\\isWebRequest')) {
+if (
+    !function_exists(__NAMESPACE__ . '\\isWebRequest')
+    || !function_exists(__NAMESPACE__ . '\\loadSunriseConfigForDomain')
+    || !function_exists(__NAMESPACE__ . '\\buildFullRedirectUrlFor')
+    || !function_exists(__NAMESPACE__ . '\\earlyRedirect')
+) {
     return;
 }
 
-add_action(
-    'parse_site_query',
-    static function (\WP_Site_Query $query): void {
-        static $done;
-        if ($done || did_action('ms_loaded') || !isWebRequest()) {
-            return;
+/**
+ * @param \WP_Site_Query $query
+ * @return void
+ *
+ * phpcs:disable Generic.Metrics.CyclomaticComplexity
+ * phpcs:disable Inpsyde.CodeQuality.FunctionLength
+ */
+function parseSiteQueryOnMultisiteLoad(\WP_Site_Query $query): void
+{
+    if (!doing_action('parse_site_query')) {
+        return;
+    }
+
+    remove_action('parse_site_query', __FUNCTION__);
+
+    static $done;
+    if ($done || did_action('ms_loaded') || !isWebRequest()) {
+        return;
+    }
+
+    $done = true;
+    $queryDomain = $query->query_vars['domain'] ?? null;
+    $queryDomains = $query->query_vars['domain__in'] ?? null;
+
+    if (
+        (($queryDomain === '') || !is_string($queryDomain))
+        && (($queryDomains === []) || !is_array($queryDomains))
+    ) {
+        return;
+    }
+
+    $domains = is_array($queryDomains) ? $queryDomains : [$queryDomain];
+    foreach ($domains as $domain) {
+        $config = loadSunriseConfigForDomain($domain);
+        if ($config['target'] === '') {
+            continue;
         }
 
-        $done = true;
-        $queryDomain = $query->query_vars['domain'] ?? null;
-        $queryDomains = $query->query_vars['domain__in'] ?? null;
+        if ($config['redirect']) {
+            $targetUrl = buildFullRedirectUrlFor(
+                $config['target'],
+                $config['preservePath'],
+                $config['preserveQuery']
+            );
 
-        if (
-            (($queryDomain === '') || !is_string($queryDomain))
-            && (($queryDomains === []) || !is_array($queryDomains))
-        ) {
-            return;
-        }
-
-        $domains = is_array($queryDomains) ? $queryDomains : [$queryDomain];
-        foreach ($domains as $domain) {
-            $config = loadSunriseConfigForDomain($domain);
-            if ($config['target'] === '') {
-                continue;
-            }
-
-            if ($config['redirect']) {
-                $targetUrl = buildFullRedirectUrlFor(
-                    $config['target'],
-                    $config['preservePath'],
-                    $config['preserveQuery']
-                );
-
-                earlyRedirect($targetUrl);
-                break;
-            }
-
-            $url = $config['target'];
-            if (preg_match('~^(?:https?:)?//~i', $url) !== 1) {
-                $url = "//{$url}";
-            }
-            $parsed = parse_url($url);
-            if (!isset($parsed['host']) || ($parsed['host'] === $domain)) {
-                continue;
-            }
-
-            $targetPath = '/' . trim($parsed['path'] ?? '', '/');
-            $queriedPath = $query->query_vars['path'] ?? null;
-            $queriedPaths = (array) ($query->query_vars['path__in'] ?? []);
-            is_string($queriedPath) and $queriedPaths[] = $queriedPath;
-            if (($queriedPaths !== []) && !in_array($targetPath, $queriedPaths, true)) {
-                continue;
-            }
-
-            unset($query->query_vars['domain__in']);
-            $query->query_vars['domain'] = $parsed['host'];
+            earlyRedirect($targetUrl);
             break;
         }
-    }
-);
 
-if (file_exists(__DIR__ . '\\inpsyde-vip-sunrise.php')) {
-    require_once __DIR__ . '\\inpsyde-vip-sunrise.php';
+        $url = $config['target'];
+        if (preg_match('~^(?:https?:)?//~i', $url) !== 1) {
+            $url = "//{$url}";
+        }
+        $parsed = parse_url($url);
+        if (!isset($parsed['host']) || ($parsed['host'] === $domain)) {
+            continue;
+        }
+
+        $targetPath = '/' . trim($parsed['path'] ?? '', '/');
+        $queriedPath = $query->query_vars['path'] ?? null;
+        $queriedPaths = (array) ($query->query_vars['path__in'] ?? []);
+        is_string($queriedPath) and $queriedPaths[] = $queriedPath;
+        if (($queriedPaths !== []) && !in_array($targetPath, $queriedPaths, true)) {
+            continue;
+        }
+
+        unset($query->query_vars['domain__in']);
+        $query->query_vars['domain'] = $parsed['host'];
+        break;
+    }
+}
+
+add_action('parse_site_query', __NAMESPACE__ . '\\parseSiteQueryOnMultisiteLoad');
+
+if (file_exists(__DIR__ . '\\client-sunrise.override.php')) {
+    require_once __DIR__ . '\\client-sunrise.override.php';
 }
