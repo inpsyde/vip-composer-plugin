@@ -187,7 +187,12 @@ final class Config implements \ArrayAccess
     {
         $customEnvs = (array) $this->offsetGet(self::CUSTOM_ENV_NAMES_KEY);
         if ($customEnvs === []) {
-            return ['local', 'development', 'staging', 'preprod', 'production', 'all'];
+            /*
+             * WordPress supports by default: `local`, `development`, `staging`, and `production`.
+             * VIP supports by default: `develop`, `preprod`, and `production`.
+             * This list targets both for larger by-default compatibility.
+             */
+            return ['local', 'develop', 'development', 'staging', 'preprod', 'production', 'all'];
         }
         $envNames = [];
         foreach ($customEnvs as $envName) {
