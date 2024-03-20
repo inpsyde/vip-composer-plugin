@@ -105,6 +105,7 @@ class Factory
             DownloadVipGoMuPlugins::class,
             function (): DownloadVipGoMuPlugins {
                 return new DownloadVipGoMuPlugins(
+                    $this->factory->config(),
                     $this->factory->vipDirectories(),
                     $this->factory->filesystem()
                 );
