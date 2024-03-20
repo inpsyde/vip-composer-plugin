@@ -187,7 +187,7 @@ final class Config implements \ArrayAccess
     {
         $customEnvs = (array) $this->offsetGet(self::CUSTOM_ENV_NAMES_KEY);
         if ($customEnvs === []) {
-            return ['local', 'development', 'staging', 'production', 'all'];
+            return ['local', 'development', 'staging', 'preprod', 'production', 'all'];
         }
         $envNames = [];
         foreach ($customEnvs as $envName) {
