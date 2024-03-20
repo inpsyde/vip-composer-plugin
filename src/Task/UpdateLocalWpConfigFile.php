@@ -48,13 +48,63 @@ final class UpdateLocalWpConfigFile implements Task
     public function run(Io $io, TaskConfig $taskConfig): void
     {
         $wpDir = $this->config->wpConfig()[Config::WP_LOCAL_DIR_KEY];
-        $wpConfigPath = dirname($this->config->basePath() . "/{$wpDir}") . '/wp-config.php';
+        $abspath = dirname($this->config->basePath() . "/{$wpDir}");
+        $wpConfigPath = "{$abspath}/wp-config.php";
         if (!file_exists($wpConfigPath)) {
             return;
         }
 
         $io->commentLine("Updating 'wp-config.php'...");
 
+        [$contentStart, $contentEnd] = $this->parseCurrentContent($wpConfigPath, $io);
+        if ($contentStart === null) {
+            $io->errorLine("Can't update 'wp-config.php', it seems custom.");
+
+            return;
+        }
+
+        $content = $contentStart;
+
+        $muPath = $this->directories->vipMuPluginsDir();
+        $content .= <<<PHP
+        if (!defined('WP_INSTALLING') || !WP_INSTALLING && is_dir('{$muPath}')) {
+            define('WPMU_PLUGIN_DIR', '{$muPath}');
+        }
+        if (!defined('SUNRISE')) {
+            define('SUNRISE', true);
+        }
+        PHP;
+
+        $requiresPath = $this->directories->vipMuPluginsDir() . '/000-pre-vip-config/requires.php';
+        if (file_exists($requiresPath)) {
+            $requiresRelPath = $this->filesystem->findShortestPath(
+                $this->config->basePath(),
+                $requiresPath
+            );
+            $content .= "\nrequire_once __DIR__ . '/{$requiresRelPath}';";
+        }
+
+        $vipConfigMainFile = $this->directories->phpConfigDir() . '/vip-config.php';
+        if (file_exists($vipConfigMainFile)) {
+            $vipConfigMainFileRelPath = $this->filesystem->findShortestPath(
+                $this->config->basePath(),
+                $vipConfigMainFile
+            );
+            $content .= "\nrequire_once __DIR__ . '/{$vipConfigMainFileRelPath}';";
+        }
+
+        $content .= $contentEnd;
+
+        $this->saveFile($wpConfigPath, $this->ensureDebug($content), $io);
+    }
+
+    /**
+     * @param string $wpConfigPath
+     * @param Io $io
+     * @return list{non-falsy-string|null, string}
+     */
+    private function parseCurrentContent(string $wpConfigPath, Io $io): array
+    {
         $currentContent = (string) file_get_contents($wpConfigPath);
 
         $wpCommentRegex = "~/\* That's all, stop editing!(?:[^\*]+)\*/~";
@@ -78,37 +128,20 @@ final class UpdateLocalWpConfigFile implements Task
         if (!isset($contentPartsStart[0]) || !isset($contentPartsEnd[1])) {
             $io->errorLine("Can't update 'wp-config.php', it seems custom.");
 
-            return;
+            return [null, ''];
         }
 
         $contentPartsStart[0] = str_replace($wpCommentText, '', $contentPartsStart[0]);
         $contentPartsEnd[1] = str_replace($wpCommentText, '', $contentPartsEnd[1]);
 
-        $fileContent = rtrim($contentPartsStart[0]);
-        $fileContent .= "\n\n/* VIP Config START */\n";
+        $start = rtrim($contentPartsStart[0]);
+        $start .= "\n\n/* VIP Config START */\n";
 
-        $muPath = $this->directories->vipMuPluginsDir();
+        $end = "\n/* VIP Config END */\n\n";
+        $end .= "\n{$wpCommentText}\n\n";
+        $end .= ltrim($contentPartsEnd[1]);
 
-        $fileContent .= <<<PHP
-if (!defined('WP_INSTALLING') || !WP_INSTALLING && is_dir('{$muPath}')) {
-    define('WPMU_PLUGIN_DIR', '{$muPath}');
-}
-PHP;
-        $vipConfigMainFile = $this->directories->phpConfigDir() . '/vip-config.php';
-
-        if (file_exists($vipConfigMainFile)) {
-            $vipConfigMainFileRelPath = $this->filesystem->findShortestPath(
-                $this->config->basePath(),
-                $vipConfigMainFile
-            );
-            $fileContent .= "\nrequire_once __DIR__ . '/{$vipConfigMainFileRelPath}';";
-        }
-
-        $fileContent .= "\n/* VIP Config END */\n\n";
-        $fileContent .= "\n{$wpCommentText}\n\n";
-        $fileContent .= ltrim($contentPartsEnd[1]);
-
-        $this->saveFile($wpConfigPath, $this->ensureDebug($fileContent), $io);
+        return [$start, $end];
     }
 
     /**

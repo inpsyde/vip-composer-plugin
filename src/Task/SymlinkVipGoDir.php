@@ -56,7 +56,6 @@ final class SymlinkVipGoDir implements Task
         $io->commentLine("Symlinking content to {$contentDirPath}...");
 
         $this->filesystem->ensureDirectoryExists($contentDirPath);
-        $this->filesystem->emptyDirectory($contentDirPath);
 
         $map = [
             $uploadsPath => "{$contentDirPath}/{$uploadsDir}",
@@ -69,7 +68,7 @@ final class SymlinkVipGoDir implements Task
         $isWindows = Platform::isWindows();
 
         foreach ($map as $target => $link) {
-            $this->filesystem->removeDirectory($link);
+            $this->filesystem->remove($link);
             $this->filesystem->ensureDirectoryExists($target);
             $link = $this->filesystem->normalizePath($link);
 
