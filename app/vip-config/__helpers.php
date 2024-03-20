@@ -237,6 +237,21 @@ function earlyRedirect(string $location, int $status = 301): void
 }
 
 /**
+ * Similar to `is_ssl` but can be called before WP is loaded.
+ *
+ * @return bool
+ */
+function isSsl(): bool
+{
+    if (function_exists('is_ssl')) {
+        return (bool) \is_ssl();
+    }
+
+    return filter_var($_SERVER['HTTPS'] ?? false, FILTER_VALIDATE_BOOLEAN)
+        || ((int) ($_SERVER['SERVER_PORT'] ?? 0) === 443);
+}
+
+/**
  * @param string $base
  * @param bool $preservePath
  * @param bool $preserveQuery
@@ -256,7 +271,7 @@ function buildFullRedirectUrlFor(
     $url = $base;
 
     if (!str_starts_with($url, 'http:') && !str_starts_with($url, 'https:')) {
-        $scheme = 'https';
+        $scheme = isSsl() ? 'https:' : 'http:';
         str_starts_with($url, '//') or $scheme .= '//';
         $url = $scheme . $url;
     }
@@ -335,7 +350,7 @@ function deployId(): ?string
     $deployIdFile = deployIdFile();
     ($deployIdFile) and $deployId = trim((string) @file_get_contents($deployIdFile));
 
-    if (($deployId === null) || ($deployId === '') || ($deployId === '0')) {
+    if (!((bool) $deployId)) {
         $deployId = isProdEnv() ? null : bin2hex(random_bytes(8));
     }
 
