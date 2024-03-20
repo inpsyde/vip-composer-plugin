@@ -11,9 +11,33 @@ class AutotestChecker
     private const COOKIE_KEY = 'syde_autotest_key';
 
     /**
+     * Set the `WP_RUN_CORE_TESTS` constant when on "automated tests" request, to bypass 2FA.
+     * Do nothing if the constant is already set, or in production.
+     *
+     * @return void
+     */
+    public function skip2FaForAutotestRequest(): void
+    {
+        if (
+            defined('WP_RUN_CORE_TESTS')
+            || (defined('WP_ENVIRONMENT_TYPE') && (WP_ENVIRONMENT_TYPE === 'production'))
+        ) {
+            return;
+        }
+
+        $this->isAutotestRequest() and define('WP_RUN_CORE_TESTS', true);
+    }
+
+    /**
+     * Returns true when this is and "auto test" request.
+     *
+     * If we have a secret configured, then we check if the secret is in cookies, headers or global
+     * request. In the latter two cases, the secret is stored in
+     * cookies for subsequent requests.
+     *
      * @return bool
      */
-    public function isAutotestRequest(): bool
+    private function isAutotestRequest(): bool
     {
         $secret = $this->autotestSecret();
         if ($secret === null) {
@@ -26,25 +50,35 @@ class AutotestChecker
     }
 
     /**
+     * Returns the secret stored in a constant or env var, only if it is a non-falsy string.
+     *
      * @return non-falsy-string|null
      */
     private function autotestSecret(): ?string
     {
+        $secret = defined('INPSYDE_AUTOTEST_KEY')
+            ? \INPSYDE_AUTOTEST_KEY
+            : getenv('INPSYDE_AUTOTEST_KEY');
+
+        /** @psalm-suppress UndefinedClass */
         if (
-            !defined('INPSYDE_AUTOTEST_KEY')
-            || !is_string(\INPSYDE_AUTOTEST_KEY)
-            || (\INPSYDE_AUTOTEST_KEY === '')
-            || (\INPSYDE_AUTOTEST_KEY === '0')
-            || defined('WP_RUN_CORE_TESTS')
-            || (defined('WP_ENVIRONMENT_TYPE') && (WP_ENVIRONMENT_TYPE === 'production'))
+            ($secret === false)
+            && method_exists(\Automattic\VIP\Environment::class, 'get_var')
         ) {
+            $secret = \Automattic\VIP\Environment::get_var('INPSYDE_AUTOTEST_KEY');
+        }
+
+        if (($secret === '') || (((bool) $secret) === false) || !is_string($secret)) {
             return null;
         }
-        /** @var non-falsy-string */
-        return \INPSYDE_AUTOTEST_KEY;
+        /** @var non-falsy-string $secret */
+        return $secret;
     }
 
     /**
+     * Returns true if the cookie is there and it contains the hashed secret.
+     * If cookie is there but don't pass validation, the cookie is deleted.
+     *
      * @param non-empty-string $secret
      * @return bool
      */
@@ -65,6 +99,8 @@ class AutotestChecker
     }
 
     /**
+     * Returns true if the secret is present in the request globals, and save the cookie if so.
+     *
      * @param non-empty-string $secret
      * @return bool
      */
@@ -84,6 +120,8 @@ class AutotestChecker
     }
 
     /**
+     * Returns true if the secret is present in the HTTP headers, and save the cookie if so.
+     *
      * @param non-empty-string $secret
      * @return bool
      */
@@ -105,6 +143,9 @@ class AutotestChecker
     }
 
     /**
+     * Return "main" domain for given domain prefixed with a dot (which means "all subdomains").
+     * E.g. `example.com` -> `.example.com` and `some.deep.subdomain.example.com` -> `.example.com`
+     *
      * @param mixed $host
      * @return string
      */
@@ -118,7 +159,9 @@ class AutotestChecker
     }
 
     /**
-     * @param string|null $secret
+     * Save (or delete) the cookie. The cookie value on save the hashed secret.
+     *
+     * @param string|null $secret Will delete the cookie when null
      * @return bool
      */
     private function saveCookie(?string $secret): bool

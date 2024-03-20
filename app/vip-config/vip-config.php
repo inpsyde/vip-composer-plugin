@@ -12,7 +12,9 @@ use Inpsyde\Vip as Helpers;
 require_once __DIR__ . '/__helpers.php';
 
 /*
- * Custom environment-specific constants that must be loaded as soon as possible.
+ * Custom environment-specific files that must be loaded as soon as possible.
+ * These files allow to early define any constant defined in this file, and thus override the
+ * default behavior.
  */
 $wpEnv = Helpers\determineWpEnv();
 $vipEnv =  Helpers\determineVipEnv();
@@ -25,14 +27,12 @@ if (($vipEnv !== $wpEnv) && file_exists(__DIR__ . "/vip-config-{$wpEnv}.php")) {
 if (file_exists(__DIR__ . "/vip-config-all.php")) {
     require_once __DIR__ . "/vip-config-all.php";
 }
-
-defined('WP_ENVIRONMENT_TYPE') or define('WP_ENVIRONMENT_TYPE', $wpEnv);
-unset($wpEnv, $vipEnv);
+unset($vipEnv);
 
 /*
- * Default environment-specific constants that must be loaded as soon as possible.
+ * Default environment-specific constants.
  */
-switch (WP_ENVIRONMENT_TYPE) {
+switch ($wpEnv) {
     case 'local':
         defined('WP_LOCAL_DEV') or define('WP_LOCAL_DEV', true);
         defined('WPCOM_VIP_JETPACK_LOCAL') or define('WPCOM_VIP_JETPACK_LOCAL', true);
@@ -63,6 +63,7 @@ switch (WP_ENVIRONMENT_TYPE) {
         defined('WP_DEBUG_DISPLAY') or define('WP_DEBUG_DISPLAY', false);
         break;
 }
+unset($wpEnv);
 
 /*
  * Some other generic WP constants that might be too late to define in MU plugin.
@@ -86,6 +87,6 @@ if (defined('WP_ALLOW_MULTISITE') && WP_ALLOW_MULTISITE) {
 }
 
 /*
- * Bypass 2FA for automated E2E tests requests
+ * Bypass 2FA for automated E2E tests requests.
  */
-Helpers\isAutotestRequest() and define('WP_RUN_CORE_TESTS', true);
+Helpers\skip2FaForAutotestRequest();

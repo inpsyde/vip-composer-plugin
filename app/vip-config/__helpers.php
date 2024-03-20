@@ -42,7 +42,16 @@ const ENV_NORMALIZATION_MAP = [
 ];
 
 /**
+ * Returns true when a request is a "regular user request" from the web.
+ *
+ * It excludes CLI, REST, AJAX, XML-RPC, health check and other system requests, and requests in
+ * maintenance mode.
+ * These latter checks are dove via VIP Context class, and if that is nto available then we assume
+ * is not a web request either.
+ *
  * @return bool
+ *
+ * @see https://github.com/Automattic/vip-go-mu-plugins-built/blob/master/lib/utils/class-context.php
  */
 function isWebRequest(): bool
 {
@@ -50,26 +59,30 @@ function isWebRequest(): bool
     if (is_bool($isWeb)) {
         return $isWeb;
     }
-    if (defined('WP_CLI') && (\WP_CLI !== false)) {
-        $isWeb = false;
-
+    $isWeb = false;
+    /** @psalm-suppress UndefinedConstant */
+    if (defined('WP_CLI') && \WP_CLI) {
         return false;
     }
 
     if (!class_exists(\Automattic\VIP\Utils\Context::class)) {
-        $isWeb = false;
-
         return false;
     }
 
     $isWeb = \Automattic\VIP\Utils\Context::is_web_request()
         && !\Automattic\VIP\Utils\Context::is_healthcheck()
-        && !\Automattic\VIP\Utils\Context::is_maintenance_mode();
+        && !\Automattic\VIP\Utils\Context::is_maintenance_mode()
+        && !\Automattic\VIP\Utils\Context::is_prom_endpoint_request();
 
     return $isWeb;
 }
 
 /**
+ * Determine the environment name of the VIP application.
+ *
+ * This is normally based on the VIP repository branch, with the only exclusions of "production"
+ * environment be based on the "master" branch.
+ *
  * @return non-empty-string
  */
 function determineVipEnv(): string
@@ -82,10 +95,13 @@ function determineVipEnv(): string
 
     $env = null;
     if (defined('VIP_GO_APP_ENVIRONMENT')) {
+        // This is defined also in VIP local development environment based on Lando, when is "local"
         $env = \VIP_GO_APP_ENVIRONMENT;
     } elseif (defined('VIP_GO_ENV')) {
+        // This is only defined in "online" VIP environments
         $env = \VIP_GO_ENV;
     }
+    // Fallback to local, because that means is not "online"
     if (!is_string($env) || ($env === '')) {
         $env = 'local';
     }
@@ -94,7 +110,15 @@ function determineVipEnv(): string
 }
 
 /**
+ * Similar to `wp_get_environment_type()`, it returns one of the four values supported by that
+ * function, but this can be called earlier, and it is based on VIP environment.
+ *
+ * The first time this is called it also defines the `WP_ENVIRONMENT_TYPE` constant, ensuring that
+ * `wp_get_environment_type()` will return the same value.
+ *
  * @return "local"|"development"|"staging"|"production"
+ *
+ * @see https://developer.wordpress.org/reference/functions/wp_get_environment_type/
  */
 function determineWpEnv(): string
 {
@@ -104,10 +128,26 @@ function determineWpEnv(): string
         return $env;
     }
 
-    $configEnv = determineVipEnv();
+    /*
+     * If the constant is already defined when we call the function for the first time, then we
+     * can't do anything more, because the ultimate goal is to use this function to auto-determine
+     * the WP environment. The fallback is "production" because that is what WordPress is going to
+     * use anyway if the value of the constant is not one of four supported ones.
+    */
+    if (defined('WP_ENVIRONMENT_TYPE')) {
+        /** @var "local"|"development"|"staging"|"production" $type */
+        $type = in_array(\WP_ENVIRONMENT_TYPE, ['local', 'development', 'staging'], true)
+            ? \WP_ENVIRONMENT_TYPE
+            : 'production';
 
-    if (isset(ENV_NORMALIZATION_MAP[$configEnv])) {
-        $env = ENV_NORMALIZATION_MAP[$configEnv];
+        return $type;
+    }
+
+    $vipEnv = determineVipEnv();
+
+    if (isset(ENV_NORMALIZATION_MAP[$vipEnv])) {
+        $env = ENV_NORMALIZATION_MAP[$vipEnv];
+        define('WP_ENVIRONMENT_TYPE', $env);
 
         return $env;
     }
@@ -120,13 +160,16 @@ function determineWpEnv(): string
         'public' => 'production',
     ];
 
+    // When auto-determining the environment we fall back to "staging" because it is "safer" and
+    // chances are that a non-standard VIP environment name is not used for production.
     $env = 'staging';
     foreach ($initials as $initial => $target) {
-        if (str_starts_with($configEnv, $initial)) {
+        if (str_starts_with($vipEnv, $initial)) {
             $env = $target;
             break;
         }
     }
+    define('WP_ENVIRONMENT_TYPE', $env);
 
     return $env;
 }
@@ -148,26 +191,33 @@ function isProdEnv(): bool
 }
 
 /**
+ * The path of the `/private` directory, with fallback for local environments.
+ *
  * @return string
  */
 function privateDirPath(): string
 {
     $fallback = dirname(__DIR__) . '/private';
 
-    if (!isLocalEnv()) {
-        return defined('WPCOM_VIP_PRIVATE_DIR') ? (string) \WPCOM_VIP_PRIVATE_DIR : $fallback;
-    }
-
-    return $fallback;
+    return defined('WPCOM_VIP_PRIVATE_DIR') ? (string) \WPCOM_VIP_PRIVATE_DIR : $fallback;
 }
 
 /**
+ * Similar to `wp_redirect` but can be called before WP is loaded, ands sets `X-Redirect-By` header.
+ *
  * @param string $location
  * @param int $status
  */
 function earlyRedirect(string $location, int $status = 301): void
 {
     if (headers_sent()) {
+        return;
+    }
+
+    $location = filter_var($location, FILTER_VALIDATE_URL)
+        ? filter_var($location, FILTER_SANITIZE_URL)
+        : '';
+    if ($location === '') {
         return;
     }
 
@@ -233,15 +283,12 @@ function buildFullRedirectUrlFor(
         $url .= "?{$query}";
     }
 
-    $urlSafe = filter_var($url, FILTER_SANITIZE_URL);
-    if ($urlSafe !== '') {
-        return $urlSafe;
-    }
-
-    return null;
+    return $url;
 }
 
 /**
+ * The path of the "deploy-id" file generated by `composer vip` command. Null if not found.
+ *
  * @return non-falsy-string|null
  */
 function deployIdFile(): ?string
@@ -267,6 +314,11 @@ function deployIdFile(): ?string
 }
 
 /**
+ * The content of "deploy-id" file generated by `composer vip` command.
+ *
+ * Excluding production, a random string returned if the file is not found. Reason is this is used
+ * to invalidate cache and so it make sense to have a changing value when not in production.
+ *
  * @return non-falsy-string|null
  */
 function deployId(): ?string
@@ -284,7 +336,7 @@ function deployId(): ?string
     ($deployIdFile) and $deployId = trim((string) @file_get_contents($deployIdFile));
 
     if (($deployId === null) || ($deployId === '') || ($deployId === '0')) {
-        $deployId = isLocalEnv() ? bin2hex(random_bytes(8)) : null;
+        $deployId = isProdEnv() ? null : bin2hex(random_bytes(8));
     }
 
     /** @var non-falsy-string|null $deployId */
@@ -292,6 +344,8 @@ function deployId(): ?string
 }
 
 /**
+ * The content of "deploy-ver" file generated by `composer vip` command. Null if file not found.
+ *
  * @return non-empty-string|null
  */
 function deployVersion(): ?string
@@ -315,6 +369,9 @@ function deployVersion(): ?string
 }
 
 /**
+ * Load the entire configuration for redirections and domain mapping that is placed in a
+ * `sunrise-config.php` or `sunrise-config.json` file.
+ *
  * @return array
  */
 function loadSunriseConfig(): array
@@ -337,7 +394,9 @@ function loadSunriseConfig(): array
     if (is_array($sunriseConfig)) {
         $vipEnv = determineVipEnv();
         $wpEnv = determineWpEnv();
-        $sunriseConfig = $sunriseConfig[$vipEnv] ?? $sunriseConfig[$wpEnv] ?? $sunriseConfig;
+        $sunriseConfig = $sunriseConfig["env:{$vipEnv}"]
+            ?? $sunriseConfig["env:{$wpEnv}"]
+            ?? $sunriseConfig;
         is_array($sunriseConfig) and $domains = $sunriseConfig;
     }
 
@@ -345,6 +404,8 @@ function loadSunriseConfig(): array
 }
 
 /**
+ * Load the configuration for redirections and domain mapping for a specific domain.
+ *
  * @param string $domain
  * @return array{'target': string, 'redirect': bool, 'preservePath': bool, 'preserveQuery': bool}
  */
@@ -386,6 +447,8 @@ function loadSunriseConfigForDomain(string $domain): array
 }
 
 /**
+ * Loads env-specific configuration files for the `vip-config/env` folder.
+ *
  * @return void
  */
 function loadConfigFiles(): void
@@ -416,16 +479,21 @@ function loadConfigFiles(): void
 }
 
 /**
- * @return bool
+ * Use the `AutotestChecker` class to set the `WP_RUN_CORE_TESTS` constants which prevents 2FA to
+ * be loaded, and thus facilitate automated tests.
+ *
+ * A request is recognized as an "automated tests" request thanks to a secret being present in
+ * globals, HTTP headers or cookies.
+ *
+ * @return void
  */
-function isAutotestRequest(): bool
+function skip2FaForAutotestRequest(): void
 {
-    static $is;
-    if (!isset($is)) {
+    static $done;
+    if (!isset($done)) {
+        $done = true;
         require_once __DIR__ . ' /__autotest-checker.php';
         $checker = new AutotestChecker();
-        $is = $checker->isAutotestRequest();
+        $checker->skip2FaForAutotestRequest();
     }
-    /** @var bool $is */
-    return $is;
 }

@@ -23,7 +23,7 @@
  *  }
  * ```
  *
- * or a PHP file named `sunrise-config.pgp` returning similar data:
+ * or a PHP file named `sunrise-config.php` returning similar data:
  *
  * ```php
  *  return [
@@ -65,7 +65,7 @@
  *
  * ```json
  *   {
- *      "production": {
+ *      "env:production": {
  *          "example.com": "example.com/es",
  *          "example.dev": "www.example.dev",
  *          "www.acme.com": "acme.com",
