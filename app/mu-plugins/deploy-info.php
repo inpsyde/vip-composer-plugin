@@ -12,6 +12,8 @@ if (
     !function_exists(__NAMESPACE__ . '\\deployVersion')
     || !function_exists(__NAMESPACE__ . '\\deployId')
     || !function_exists(__NAMESPACE__ . '\\deployIdFile')
+    || !function_exists(__NAMESPACE__ . '\\determineWpEnv')
+    || !function_exists(__NAMESPACE__ . '\\determineVipEnv')
 ) {
     return;
 }
@@ -39,6 +41,8 @@ add_filter(
             <em>Version:</em>&nbsp;<strong><?= esc_html($version ?? 'n/a') ?></strong>
             | <em>ID:</em>&nbsp;<strong><?= esc_html($id ?? 'n/a') ?></strong>
             | <em>Date/Time</em>&nbsp;<strong><?= esc_html($datetime ?? 'n/a') ?></strong>
+            | <em>WP Env</em>&nbsp;<strong><?= esc_html(determineWpEnv()) ?></strong>
+            | <em>VIP Env</em>&nbsp;<strong><?= esc_html(determineVipEnv()) ?></strong>
         </span>
         <span>
         <?php
