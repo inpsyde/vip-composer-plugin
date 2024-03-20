@@ -2,8 +2,6 @@
 
 declare(strict_types=1);
 
-use Inpsyde\Vip as Helpers;
-
 // phpcs:disable
 
 /*
@@ -12,20 +10,20 @@ use Inpsyde\Vip as Helpers;
 require_once __DIR__ . '/__helpers.php';
 
 /*
- * Custom environment-specific files that must be loaded as soon as possible.
- * These files allow to early define any constant defined in this file, and thus override the
+ * Custom configuration files that must be loaded as soon as possible.
+ * These files allow us to early define any constant defined in this file, and thus override the
  * default behavior.
  */
-$wpEnv = Helpers\determineWpEnv();
-$vipEnv =  Helpers\determineVipEnv();
-if (file_exists(__DIR__ . "/vip-config-{$vipEnv}.php")) {
-    require_once __DIR__ . "/vip-config-{$vipEnv}.php";
+if (file_exists(__DIR__ . '/vip-config.override.php')) {
+    require_once __DIR__ . '/vip-config.override.php';
 }
-if (($vipEnv !== $wpEnv) && file_exists(__DIR__ . "/vip-config-{$wpEnv}.php")) {
-    require_once __DIR__ . "/vip-config-{$wpEnv}.php";
+$wpEnv = Inpsyde\Vip\determineWpEnv();
+$vipEnv =  Inpsyde\Vip\determineVipEnv();
+if (file_exists(__DIR__ . "/vip-config.{$vipEnv}.php")) {
+    require_once __DIR__ . "/vip-config.{$vipEnv}.php";
 }
-if (file_exists(__DIR__ . "/vip-config-all.php")) {
-    require_once __DIR__ . "/vip-config-all.php";
+if (($vipEnv !== $wpEnv) && file_exists(__DIR__ . "/vip-config.{$wpEnv}.php")) {
+    require_once __DIR__ . "/vip-config.{$wpEnv}.php";
 }
 unset($vipEnv);
 
@@ -65,14 +63,9 @@ switch ($wpEnv) {
 }
 unset($wpEnv);
 
-/*
- * Some other generic WP constants that might be too late to define in MU plugin.
- */
-defined('DISALLOW_FILE_EDIT') or define('DISALLOW_FILE_EDIT', true);
-defined('DISALLOW_FILE_MODS') or define('DISALLOW_FILE_MODS', true);
-defined('AUTOMATIC_UPDATER_DISABLED') or define('AUTOMATIC_UPDATER_DISABLED', true);
-defined('VIP_JETPACK_IS_PRIVATE') or define('VIP_JETPACK_IS_PRIVATE', true);
-
+if (file_exists(__DIR__ . '/multisite-config.php')) {
+    require_once __DIR__ . '/multisite-config.php';
+}
 if (defined('WP_ALLOW_MULTISITE') && WP_ALLOW_MULTISITE) {
     defined('MULTISITE') or define('MULTISITE', true);
     defined('SUBDOMAIN_INSTALL') or define('SUBDOMAIN_INSTALL', false);
@@ -87,6 +80,14 @@ if (defined('WP_ALLOW_MULTISITE') && WP_ALLOW_MULTISITE) {
 }
 
 /*
+ * Some other generic WP constants that might be too late to define in MU plugin.
+ */
+defined('DISALLOW_FILE_EDIT') or define('DISALLOW_FILE_EDIT', true);
+defined('DISALLOW_FILE_MODS') or define('DISALLOW_FILE_MODS', true);
+defined('AUTOMATIC_UPDATER_DISABLED') or define('AUTOMATIC_UPDATER_DISABLED', true);
+defined('VIP_JETPACK_IS_PRIVATE') or define('VIP_JETPACK_IS_PRIVATE', true);
+
+/*
  * Bypass 2FA for automated E2E tests requests.
  */
-Helpers\skip2FaForAutotestRequest();
+Inpsyde\Vip\skip2FaForAutotestRequest();
