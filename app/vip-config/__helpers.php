@@ -19,8 +19,8 @@ const REDIRECT_STATUS_CODES = [
 const ENV_NORMALIZATION_MAP = [
     'local' => 'local',
     'development' => 'development',
-    'dev' => 'development',
     'develop' => 'development',
+    'dev' => 'development',
     'staging' => 'staging',
     'stage' => 'staging',
     'pre' => 'staging',
@@ -93,15 +93,13 @@ function determineVipEnv(): string
         return $env;
     }
 
-    $env = null;
-    if (defined('VIP_GO_APP_ENVIRONMENT')) {
+    $env = match (true) {
         // This is defined also in VIP local development environment based on Lando, when is "local"
-        $env = \VIP_GO_APP_ENVIRONMENT;
-    } elseif (defined('VIP_GO_ENV')) {
+        defined('VIP_GO_APP_ENVIRONMENT') => \VIP_GO_APP_ENVIRONMENT,
         // This is only defined in "online" VIP environments
-        $env = \VIP_GO_ENV;
-    }
-    // Fallback to local, because that means is not "online"
+        defined('VIP_GO_ENV') => \VIP_GO_ENV,
+        default => null,
+    };
     if (!is_string($env) || ($env === '')) {
         $env = 'local';
     }
@@ -425,14 +423,24 @@ function loadConfigFiles(): void
     $loaded = true;
     $wpEnv = determineWpEnv();
     $vipEnv = determineVipEnv();
-    $configPath = __DIR__ . '/env';
-    $paths = ["{$configPath}/{$vipEnv}.php"];
-    ($wpEnv !== $vipEnv) and $paths[] = "{$configPath}/{$wpEnv}.php";
-    isLocalEnv() and $paths[] = "{$configPath}/development.php";
+    $configPath = vipConfigPath() . '/env';
+    $names = [$vipEnv];
 
-    foreach ($paths as $path) {
-        if (file_exists($path)) {
-            require_once $path;
+    $doFallback = ($wpEnv !== $vipEnv)
+        && (!defined(__NAMESPACE__ . '\\CONFIG_FILES_ENV_FALLBACK') || CONFIG_FILES_ENV_FALLBACK);
+    if ($doFallback) {
+        $names[] = $wpEnv;
+    }
+
+    $doLocalFallback = !defined(__NAMESPACE__ . '\\CONFIG_FILES_LOCAL_FALLBACK')
+        || CONFIG_FILES_LOCAL_FALLBACK;
+    if ($doLocalFallback && isLocalEnv()) {
+        $names = array_merge($names, array_keys(ENV_NORMALIZATION_MAP, 'development', true));
+    }
+
+    foreach ($names as $name) {
+        if (file_exists("{$configPath}/{$name}.php")) {
+            require_once "{$configPath}/{$name}.php";
             break;
         }
     }
