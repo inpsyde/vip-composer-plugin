@@ -38,7 +38,7 @@ jobs:
                     php-version: ${{ matrix.php-ver }}
                     ini-values: zend.assertions=1, error_reporting=-1, display_errors=On
                     coverage: none
-                    tools: "composer:${{ matrix.composer }}"
+                    tools: composer:v${{ matrix.composer-ver }}
 
             -   name: Adjust dependencies in 'composer.json'
                 run: |
@@ -50,7 +50,6 @@ jobs:
                 uses: ramsey/composer-install@v3
                 with:
                     dependency-versions: ${{ matrix.dependency-versions }}
-                    tools: composer:v${{ matrix.composer-ver }}
 
             -   name: Run unit tests
                 run: ./vendor/bin/phpunit --no-coverage
