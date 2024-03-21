@@ -185,16 +185,7 @@ final class CopyDevPaths implements Task
             case Config::DEV_PATHS_PHP_CONFIG_DIR_KEY:
                 $what = 'PHP config files';
                 $target = $this->directories->phpConfigDir();
-                if ($finder) {
-                    $finder = $finder->ignoreDotFiles(true)->exclude('env');
-                    $envs = Finder::create()
-                        ->in("{$source}/env")
-                        ->depth('== 0')
-                        ->ignoreUnreadableDirs()
-                        ->ignoreVCS(true)
-                        ->ignoreDotFiles(true);
-                    $finder = $finder->append($envs);
-                }
+                $finder and $finder = $this->pathInfoForPhpConfigDir($finder, $source);
                 break;
             case Config::DEV_PATHS_YAML_CONFIG_DIR_KEY:
                 $what = 'Yaml config files';
@@ -217,6 +208,28 @@ final class CopyDevPaths implements Task
         }
 
         return [$what, $source, $target, $finder];
+    }
+
+    /**
+     * @param Finder $finder
+     * @param string $source
+     * @return Finder
+     */
+    private function pathInfoForPhpConfigDir(Finder $finder, string $source): Finder
+    {
+        $finder = $finder->ignoreDotFiles(true)->exclude('env');
+        if (!is_dir("{$source}/env")) {
+            return $finder;
+        }
+
+        $envs = Finder::create()
+            ->in("{$source}/env")
+            ->depth('== 0')
+            ->ignoreUnreadableDirs()
+            ->ignoreVCS(true)
+            ->ignoreDotFiles(true);
+
+        return $finder->append($envs);
     }
 
     /**
@@ -270,7 +283,6 @@ final class CopyDevPaths implements Task
 
         $targets = Finder::create()->in($target)->ignoreUnreadableDirs()->depth('== 0');
 
-        /** @var SplFileInfo $item */
         foreach ($targets as $item) {
             if ($isVipConfig) {
                 $this->cleanupPhpConfigPath($item);
@@ -325,7 +337,6 @@ final class CopyDevPaths implements Task
         }
 
         $envs = Finder::create()->in($pathName)->ignoreUnreadableDirs()->depth('== 0');
-        /** @var SplFileInfo $env */
         foreach ($envs as $env) {
             if (!$env->isFile() || !$this->isReservedVipConfig($env->getBasename())) {
                 $this->filesystem->remove($env->getPathname());
