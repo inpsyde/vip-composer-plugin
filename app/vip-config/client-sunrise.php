@@ -121,6 +121,15 @@ function parseSiteQueryOnMultisiteLoad(\WP_Site_Query $query): void
         return;
     }
 
+    $host = (string) strtok($_SERVER['HTTP_HOST'], ':');
+    if (is_array($queryDomains) && in_array($host, $queryDomains, true)) {
+        $first = $queryDomains[0] ?? '';
+        $second = $queryDomains[1] ?? '';
+        if (($first === "www.{$second}") || ("www.{$first}" === $second)) {
+            $queryDomains = [$host];
+        }
+    }
+
     $domains = is_array($queryDomains) ? $queryDomains : [$queryDomain];
     foreach ($domains as $domain) {
         $config = loadSunriseConfigForDomain($domain);
