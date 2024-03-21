@@ -64,16 +64,18 @@ switch ($wpEnv) {
 unset($wpEnv);
 
 if ((defined('WP_ALLOW_MULTISITE') && WP_ALLOW_MULTISITE) || (defined('MULTISITE') && MULTISITE)) {
+    $domain = (string) strtok($_SERVER['HTTP_HOST'] ?? '', ':');
     defined('MULTISITE') or define('MULTISITE', true);
     defined('SUBDOMAIN_INSTALL') or define('SUBDOMAIN_INSTALL', false);
-    define( 'DOMAIN_CURRENT_SITE', (string) strtok($_SERVER['HTTP_HOST'] ?? '', ':'));
+    defined('DOMAIN_CURRENT_SITE') or define('DOMAIN_CURRENT_SITE', $domain);
     defined('PATH_CURRENT_SITE') or define('PATH_CURRENT_SITE', '/');
     defined('SITE_ID_CURRENT_SITE') or define('SITE_ID_CURRENT_SITE', 1);
     defined('BLOG_ID_CURRENT_SITE') or define('BLOG_ID_CURRENT_SITE', 1);
-    defined('COOKIE_DOMAIN') or define('COOKIE_DOMAIN', '.' . DOMAIN_CURRENT_SITE);
+    defined('COOKIE_DOMAIN') or define('COOKIE_DOMAIN', ".{$domain}");
     defined('ADMIN_COOKIE_PATH') or define('ADMIN_COOKIE_PATH', '/');
     defined('COOKIEPATH') or define('COOKIEPATH', '/');
     defined('SITECOOKIEPATH') or define('SITECOOKIEPATH', '/');
+    unset($domain);
 }
 
 /*
