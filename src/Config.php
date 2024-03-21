@@ -153,7 +153,6 @@ final class Config implements \ArrayAccess
      */
     public function composerLockPath(): string
     {
-        /** @var ComposerConfig\ConfigSourceInterface $configSource */
         $configSource = $this->composerConfig->getConfigSource();
         $composerJsonSource = $configSource->getName();
 

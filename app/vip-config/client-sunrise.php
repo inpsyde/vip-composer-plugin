@@ -66,7 +66,7 @@
  *          "www.acme.com": "acme.com",
  *          "alternative-domain.com": {"target": "main-domain.com", "redirect": false},
  *          "www.alternative-domain.com": "alternative-domain.com",
- *       }
+ *      }
  *   }
  *  ```
  *
@@ -140,7 +140,12 @@ function parseSiteQueryOnMultisiteLoad(\WP_Site_Query $query): void
             $url = "//{$url}";
         }
         $parsed = parse_url($url);
-        if (!isset($parsed['host']) || ($parsed['host'] === $domain)) {
+        if (
+            !isset($parsed['host'])
+            || ($parsed['host'] === $domain)
+            || ($parsed['host'] === "www.{$domain}")
+            || ("www.{$parsed['host']}" === $domain)
+        ) {
             continue;
         }
 

@@ -26,7 +26,8 @@
         "composer/composer": "^2.4",
         "inpsyde/php-coding-standards": "^2@dev",
         "vimeo/psalm": "^5.23.1",
-        "phpunit/phpunit": "^9.6.17"
+        "phpunit/phpunit": "^9.6.17",
+        "brain/monkey": "^2.6.1"
     },
     "autoload": {
         "psr-4": {

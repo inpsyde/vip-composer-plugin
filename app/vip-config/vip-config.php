@@ -63,17 +63,14 @@ switch ($wpEnv) {
 }
 unset($wpEnv);
 
-if (file_exists(__DIR__ . '/multisite-config.php')) {
-    require_once __DIR__ . '/multisite-config.php';
-}
-if (defined('WP_ALLOW_MULTISITE') && WP_ALLOW_MULTISITE) {
+if ((defined('WP_ALLOW_MULTISITE') && WP_ALLOW_MULTISITE) || (defined('MULTISITE') && MULTISITE)) {
     defined('MULTISITE') or define('MULTISITE', true);
     defined('SUBDOMAIN_INSTALL') or define('SUBDOMAIN_INSTALL', false);
     define( 'DOMAIN_CURRENT_SITE', (string) strtok($_SERVER['HTTP_HOST'] ?? '', ':'));
     defined('PATH_CURRENT_SITE') or define('PATH_CURRENT_SITE', '/');
     defined('SITE_ID_CURRENT_SITE') or define('SITE_ID_CURRENT_SITE', 1);
     defined('BLOG_ID_CURRENT_SITE') or define('BLOG_ID_CURRENT_SITE', 1);
-    defined('COOKIE_DOMAIN') or define('COOKIE_DOMAIN', '');
+    defined('COOKIE_DOMAIN') or define('COOKIE_DOMAIN', '.' . DOMAIN_CURRENT_SITE);
     defined('ADMIN_COOKIE_PATH') or define('ADMIN_COOKIE_PATH', '/');
     defined('COOKIEPATH') or define('COOKIEPATH', '/');
     defined('SITECOOKIEPATH') or define('SITECOOKIEPATH', '/');
@@ -90,4 +87,4 @@ defined('VIP_JETPACK_IS_PRIVATE') or define('VIP_JETPACK_IS_PRIVATE', true);
 /*
  * Bypass 2FA for automated E2E tests requests.
  */
-Inpsyde\Vip\skip2FaForAutotestRequest();
+Inpsyde\Vip\skip2faForAutotestRequest();
