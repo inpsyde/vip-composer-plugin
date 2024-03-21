@@ -71,6 +71,10 @@
  *  ```
  *
  * If no environment key is found, the configuration will be applied to all environments.
+ *
+ * Env-specific configuration and "generic" configuration can co-exist in the same file.
+ * if the same domain is used as key in both env-specific and "generic" configuration the latter
+ * takes precedence and the former is discarded when in that environment.
  */
 
 declare(strict_types=1);

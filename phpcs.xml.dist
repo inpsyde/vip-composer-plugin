@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
 <ruleset>
+    <file>./app</file>
     <file>./src</file>
     <file>./tests/src</file>
     <file>./tests/unit</file>
@@ -28,6 +29,13 @@
         <properties>
             <property name="additionalAllowedNames" type="array" value="cd"/>
         </properties>
+    </rule>
+
+    <rule ref="PSR1.Files.SideEffects">
+        <exclude-pattern>./app/vip-config/*</exclude-pattern>
+    </rule>
+    <rule ref="Inpsyde.CodeQuality.Psr4">
+        <exclude-pattern>./app/vip-config/*</exclude-pattern>
     </rule>
 
 </ruleset>

@@ -48,5 +48,5 @@ add_filter(
         <?php
         return (string) ob_get_clean();
     },
-    PHP_INT_MAX
+    PHP_INT_MAX - 1
 );

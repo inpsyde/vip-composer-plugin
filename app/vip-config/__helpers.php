@@ -60,7 +60,6 @@ function isWebRequest(): bool
         return $isWeb;
     }
     $isWeb = false;
-    /** @psalm-suppress UndefinedConstant */
     if (defined('WP_CLI') && \WP_CLI) {
         return false;
     }
@@ -402,9 +401,9 @@ function loadSunriseConfigForDomain(string $domain): array
     static $loader;
     if (!isset($loader)) {
         require_once __DIR__ . '/__sunrise-config-loader.php';
-        $loader = new SunriseConfigLoader(vipConfigPath());
+        $loader = new SunriseConfigLoader(vipConfigPath(), determineVipEnv(), determineWpEnv());
     }
-
+    /** @var SunriseConfigLoader $loader */
     return $loader->loadForDomain($domain);
 }
 
@@ -464,7 +463,7 @@ function skip2faForAutotestRequest(): void
     static $done;
     if (!isset($done)) {
         $done = true;
-        require_once __DIR__ . ' /__automated-test-checker.php';
+        require_once __DIR__ . '/__automated-test-checker.php';
         (new AutomatedTestChecker())->maybeSkip2fa();
     }
 }

@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Inpsyde\Vip;
 
-// phpcs:disable Inpsyde.CodeQuality.Psr4
-
 class AutomatedTestChecker
 {
     public const COOKIE_KEY = 'inpsyde_autotest_key';
@@ -158,7 +156,7 @@ class AutomatedTestChecker
         $parts = [];
         $token = strtok($host, '.');
         while ($token !== false) {
-            ($token !== '') and $parts[] = $token;
+            $parts[] = $token;
             $token = strtok('.');
         }
 

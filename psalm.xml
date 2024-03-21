@@ -16,13 +16,21 @@
 >
     <projectFiles>
         <directory name="src"/>
+        <file name="app/vip-config/__automated-test-checker.php"/>
+        <file name="app/vip-config/__sunrise-config-loader.php"/>
+        <file name="app/vip-config/__helpers.php"/>
         <ignoreFiles>
             <directory name="vendor" />
         </ignoreFiles>
     </projectFiles>
 
+    <stubs>
+        <file name="vendor/inpsyde/wp-stubs-versions/latest.php" />
+    </stubs>
+
     <issueHandlers>
         <MixedAssignment errorLevel="suppress" />
         <UnresolvableInclude errorLevel="suppress" />
+        <RedundantCastGivenDocblockType errorLevel="suppress" />
     </issueHandlers>
 </psalm>

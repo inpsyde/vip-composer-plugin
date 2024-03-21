@@ -10,11 +10,15 @@
             "email": "hello@inpsyde.com",
             "homepage": "https://inpsyde.com",
             "role": "Company"
-        },
+        }
+    ],
+    "repositories": [
         {
-            "name": "Giuseppe Mazzapica",
-            "email": "g.mazzapica@inpsyde.com",
-            "role": "Developer"
+            "type": "composer",
+            "url": "https://raw.githubusercontent.com/inpsyde/wp-stubs/main",
+            "only": [
+                "inpsyde/wp-stubs-versions"
+            ]
         }
     ],
     "require": {
@@ -23,11 +27,12 @@
         "composer-plugin-api": "^2.4"
     },
     "require-dev": {
+        "brain/monkey": "^2.6.1",
         "composer/composer": "^2.4",
         "inpsyde/php-coding-standards": "^2@dev",
-        "vimeo/psalm": "^5.23.1",
+        "inpsyde/wp-stubs-versions": "dev-latest",
         "phpunit/phpunit": "^9.6.17",
-        "brain/monkey": "^2.6.1"
+        "vimeo/psalm": "^5.23.1"
     },
     "autoload": {
         "psr-4": {

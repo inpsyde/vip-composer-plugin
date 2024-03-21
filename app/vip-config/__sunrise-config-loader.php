@@ -2,8 +2,6 @@
 
 declare(strict_types=1);
 
-// phpcs:disable Inpsyde.CodeQuality.Psr4
-
 namespace Inpsyde\Vip;
 
 /**
@@ -17,15 +15,25 @@ namespace Inpsyde\Vip;
 class SunriseConfigLoader
 {
     /**
-     * @var null|array<non-empty-string, config-item>
+     * @var null|array<non-empty-string, array{
+     *        'target': string,
+     *        'redirect': bool,
+     *        'preservePath': bool,
+     *        'preserveQuery': bool
+     *    }>
      */
     private array|null $config = null;
 
     /**
      * @param string $dir
+     * @param string $vipEnv
+     * @param string $wpEnv
      */
-    public function __construct(private string $dir)
-    {
+    public function __construct(
+        private string $dir,
+        private string $vipEnv,
+        private string $wpEnv,
+    ) {
     }
 
     /**
@@ -59,20 +67,21 @@ class SunriseConfigLoader
         $this->config = [];
 
         $data = $this->loadFile();
-        $vipEnv = determineVipEnv();
-        $wpEnv = determineWpEnv();
-        $envConfig = $data["env:{$vipEnv}"] ?? $data["env:{$wpEnv}"] ?? [];
+        $envConfig = $data["env:{$this->vipEnv}"] ?? $data["env:{$this->wpEnv}"] ?? [];
 
         foreach ($envConfig as $key => $value) {
+            /** @var array-key $key */
             $value = $this->isValidKey($key) ? $this->normalizeValue($value) : null;
             if ($value !== null) {
                 unset($data[$key]);
+                /** @var non-empty-string $key */
                 $this->config[$key] = $value;
             }
         }
         foreach ($data as $key => $value) {
             $value = $this->isValidKey($key) ? $this->normalizeValue($value) : null;
             if ($value !== null) {
+                /** @var non-empty-string $key */
                 $this->config[$key] = $value;
             }
         }
@@ -81,7 +90,7 @@ class SunriseConfigLoader
     }
 
     /**
-     * @param int|string $key
+     * @param array-key $key
      * @return bool
      *
      * @psalm-assert-if-true non-empty-string $key
@@ -115,7 +124,6 @@ class SunriseConfigLoader
             return null;
         }
 
-        is_string($target) or $target = '';
         $redirect = (bool) ($value['redirect'] ?? true);
         $preservePath = ((bool) ($value['preservePath'] ?? true)) && $redirect;
         $preserveQuery = ((bool) ($value['preserveQuery'] ?? true)) && $redirect;
