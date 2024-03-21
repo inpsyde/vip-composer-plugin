@@ -203,6 +203,16 @@ function privateDirPath(): string
 }
 
 /**
+ * The path of the `/vip-config` directory.
+ *
+ * @return string
+ */
+function vipConfigPath(): string
+{
+    return __DIR__;
+}
+
+/**
  * Similar to `wp_redirect` but can be called before WP is loaded, ands sets `X-Redirect-By` header.
  *
  * @param string $location
@@ -384,81 +394,20 @@ function deployVersion(): ?string
 }
 
 /**
- * Load the entire configuration for redirections and domain mapping that is placed in a
- * `sunrise-config.php` or `sunrise-config.json` file.
- *
- * @return array
- */
-function loadSunriseConfig(): array
-{
-    static $domains;
-    if (is_array($domains)) {
-        return $domains;
-    }
-
-    $domains = [];
-
-    $sunriseConfig = null;
-    if (file_exists(__DIR__ . '/sunrise-config.php')) {
-        $sunriseConfig = include __DIR__ . '/sunrise-config.php';
-    } elseif (file_exists(__DIR__ . '/sunrise-config.json')) {
-        $data = (string) file_get_contents(__DIR__ . '/sunrise-config.json');
-        $sunriseConfig = json_decode($data, true);
-    }
-
-    if (is_array($sunriseConfig)) {
-        $vipEnv = determineVipEnv();
-        $wpEnv = determineWpEnv();
-        $sunriseConfig = $sunriseConfig["env:{$vipEnv}"]
-            ?? $sunriseConfig["env:{$wpEnv}"]
-            ?? $sunriseConfig;
-        is_array($sunriseConfig) and $domains = $sunriseConfig;
-    }
-
-    return $domains;
-}
-
-/**
  * Load the configuration for redirections and domain mapping for a specific domain.
  *
  * @param string $domain
- * @return array{'target': string, 'redirect': bool, 'preservePath': bool, 'preserveQuery': bool}
+ * @return array{'target':string, 'redirect':bool, 'preservePath':bool, 'preserveQuery':bool}
  */
 function loadSunriseConfigForDomain(string $domain): array
 {
-    $targetData = loadSunriseConfig()[$domain] ?? null;
-    if (is_string($targetData)) {
-        $targetData = [
-            'target' => $targetData,
-            'redirect' => true,
-            'preservePath' => true,
-            'preserveQuery' => true,
-        ];
-    }
-    if (!is_array($targetData)) {
-        return [
-            'target' => '',
-            'redirect' => false,
-            'preservePath' => false,
-            'preserveQuery' => false,
-        ];
+    static $loader;
+    if (!isset($loader)) {
+        require_once __DIR__ . '/__sunrise-config-loader.php';
+        $loader = new SunriseConfigLoader(vipConfigPath());
     }
 
-    $target = $targetData['target'] ?? null;
-    if (($target === '') || !is_string($target)) {
-        return [
-            'target' => '',
-            'redirect' => false,
-            'preservePath' => false,
-            'preserveQuery' => false,
-        ];
-    }
-
-    $redirect = (bool) ($targetData['redirect'] ?? false);
-    $preservePath = (bool) ($targetData['preservePath'] ?? false);
-    $preserveQuery = (bool) ($targetData['preserveQuery'] ?? false);
-
-    return compact('target', 'redirect', 'preservePath', 'preserveQuery');
+    return $loader->loadForDomain($domain);
 }
 
 /**
