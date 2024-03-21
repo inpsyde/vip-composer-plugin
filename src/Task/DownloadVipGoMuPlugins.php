@@ -6,6 +6,7 @@ namespace Inpsyde\VipComposer\Task;
 
 use Composer\Util\Filesystem;
 use Composer\Util\ProcessExecutor;
+use Inpsyde\VipComposer\Config;
 use Inpsyde\VipComposer\Git\GitProcess;
 use Inpsyde\VipComposer\Io;
 use Inpsyde\VipComposer\VipDirectories;
@@ -15,10 +16,12 @@ final class DownloadVipGoMuPlugins implements Task
     public const GIT_URL = 'https://github.com/Automattic/vip-go-mu-plugins-built.git';
 
     /**
+     * @param Config $config
      * @param VipDirectories $vipDirectories
      * @param Filesystem $filesystem
      */
     public function __construct(
+        private Config $config,
         private VipDirectories $vipDirectories,
         private Filesystem $filesystem
     ) {
@@ -51,6 +54,7 @@ final class DownloadVipGoMuPlugins implements Task
         $targetDir = $this->vipDirectories->vipMuPluginsDir();
         if (!$taskConfig->forceVipMuPlugins() && $this->alreadyInstalled()) {
             $io->infoLine('VIP Go MU plugins already there, skipping.');
+            $this->copySunrise($io);
 
             return;
         }
@@ -70,6 +74,8 @@ final class DownloadVipGoMuPlugins implements Task
             $io->errorLine('Failed cloning VIP GO MU plugins repository.');
             $io->lines(Io::ERROR, ...$outputs);
         }
+
+        $this->copySunrise($io);
     }
 
     /**
@@ -81,8 +87,37 @@ final class DownloadVipGoMuPlugins implements Task
 
         $installed = is_dir($targetDir)
             && file_exists("{$targetDir}/z-client-mu-plugins.php")
+            && file_exists("{$targetDir}/lib/sunrise/sunrise.php")
+            && file_exists("{$targetDir}/000-pre-vip-config/requires.php")
             && file_exists("{$targetDir}/wpcom-vip-two-factor/set-providers.php");
 
         return $installed;
+    }
+
+    /**
+     * @param Io $io
+     * @return void
+     */
+    private function copySunrise(Io $io): void
+    {
+        $sourceDir = $this->vipDirectories->vipMuPluginsDir();
+        $sourcePath = "{$sourceDir}/lib/sunrise/sunrise.php";
+
+        $wpDir = $this->config->wpConfig()[Config::WP_LOCAL_DIR_KEY];
+        $targetDir = $this->config->basePath() . "/{$wpDir}/wp-content/";
+
+        $this->filesystem->ensureDirectoryExists($targetDir);
+
+        $basename = basename($sourcePath);
+        $targetPath = "{$targetDir}/{$basename}";
+
+        $io->verboseInfoLine("Copying '{$basename}' from '{$sourceDir}' to '{$targetDir}'.");
+
+        if (file_exists($targetPath)) {
+            $io->verboseCommentLine("'{$targetPath}' exists, replacing...");
+            $this->filesystem->unlink($targetPath);
+        }
+
+        $this->filesystem->copy($sourcePath, $targetPath);
     }
 }
