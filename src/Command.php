@@ -1,14 +1,5 @@
 <?php
 
-/**
- * This file is part of the vip-composer-plugin package.
- *
- * (c) Inpsyde GmbH
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
-
 declare(strict_types=1);
 
 namespace Inpsyde\VipComposer;
@@ -162,12 +153,9 @@ class Command extends BaseCommand
      * @param InputInterface $input
      * @param OutputInterface $output
      * @return int
-     *
-     * phpcs:disable Inpsyde.CodeQuality.ReturnTypeDeclaration
      */
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        // phpcs:enable Inpsyde.CodeQuality.ReturnTypeDeclaration
         try {
             $this->resetComposer();
             $composer = $this->requireComposer();
@@ -186,8 +174,8 @@ class Command extends BaseCommand
                 ->addTask($taskFactory->downloadWpCore())
                 ->addTask($taskFactory->downloadVipGoMuPlugins())
                 ->addTask($taskFactory->symlinkVipGoDir())
-                ->addTask($taskFactory->copyDevPaths())
                 ->addTask($taskFactory->copyEnvConfig())
+                ->addTask($taskFactory->copyDevPaths())
                 ->addTask($taskFactory->generateMuPluginsLoader())
                 ->addTask($taskFactory->generateProductionAutoload())
                 ->addTask($taskFactory->updateLocalWpConfigFile())

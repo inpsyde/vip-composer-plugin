@@ -1,14 +1,5 @@
 <?php
 
-/**
- * This file is part of the vip-composer-plugin package.
- *
- * (c) Inpsyde GmbH
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
-
 declare(strict_types=1);
 
 namespace Inpsyde\VipComposer\Task;
@@ -69,12 +60,12 @@ final class EnsureGitKeep implements Task
     private function ensureGitKeepFor(string $dir): void
     {
         $dir = is_dir($dir) ? $this->filesystem->normalizePath($dir) : null;
-        if (!$dir) {
+        if (($dir === null) || ($dir === '')) {
             return;
         }
 
         $hasFiles = $this->haveFiles(0, $dir);
-        $hasGitKeep = file_exists((realpath($dir) ?: '') . '/.gitkeep');
+        $hasGitKeep = file_exists(((string) realpath($dir)) . '/.gitkeep');
 
         if (!$hasFiles && !$hasGitKeep) {
             file_put_contents("{$dir}/.gitkeep", "\n");

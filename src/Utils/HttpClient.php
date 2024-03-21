@@ -1,14 +1,5 @@
 <?php
 
-/**
- * This file is part of the vip-composer-plugin package.
- *
- * (c) Inpsyde GmbH
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
-
 declare(strict_types=1);
 
 namespace Inpsyde\VipComposer\Utils;
@@ -42,7 +33,7 @@ class HttpClient
     public function get(string $url, array $options = [], ?string $authorization = null): string
     {
         try {
-            if ($authorization) {
+            if (($authorization !== null) && ($authorization !== '')) {
                 isset($options['http']) or $options['http'] = [];
                 /** @psalm-suppress MixedArrayAssignment */
                 isset($options['http']['header']) or $options['http']['header'] = [];
@@ -53,11 +44,11 @@ class HttpClient
             $result = null;
             $response = $this->client->get($url, $options);
             $statusCode = $response->getStatusCode();
-            if ($statusCode > 199 && $statusCode < 300) {
+            if (($statusCode > 199) && ($statusCode < 300)) {
                 $result = $response->getBody();
             }
 
-            if (!$result) {
+            if (($result === null) || ($result === '')) {
                 throw new \Exception("Could not obtain a response from '{$url}'.");
             }
 

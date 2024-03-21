@@ -1,14 +1,5 @@
 <?php
 
-/**
- * This file is part of the vip-composer-plugin package.
- *
- * (c) Inpsyde GmbH
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
-
 declare(strict_types=1);
 
 namespace Inpsyde\VipComposer\Tests\Task;
@@ -79,7 +70,7 @@ class TaskConfigTest extends UnitTestCase
 
         ($name === null)
             ? static::assertNull($config->gitBranch())
-            : static::assertSame((string)$name, $config->gitBranch());
+            : static::assertSame((string) $name, $config->gitBranch());
     }
 
     /**
@@ -122,7 +113,7 @@ class TaskConfigTest extends UnitTestCase
 
         ($url === null)
             ? static::assertNull($config->gitUrl())
-            : static::assertSame((string)$url, $config->gitUrl());
+            : static::assertSame((string) $url, $config->gitUrl());
     }
 
     /**

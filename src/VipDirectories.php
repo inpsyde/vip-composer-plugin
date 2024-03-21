@@ -1,14 +1,5 @@
 <?php
 
-/**
- * This file is part of the vip-composer-plugin package.
- *
- * (c) Inpsyde GmbH
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
-
 declare(strict_types=1);
 
 namespace Inpsyde\VipComposer;
@@ -52,10 +43,10 @@ class VipDirectories
     {
         $configData = $config->vipConfig();
 
-        $configTargetPath = (string)$configData[Config::VIP_LOCAL_DIR_KEY];
+        $configTargetPath = (string) $configData[Config::VIP_LOCAL_DIR_KEY];
         $targetPath = Platform::expandPath($configTargetPath);
 
-        $configVipMuPluginsPath = (string)$configData[Config::VIP_MUPLUGINS_LOCAL_DIR_KEY];
+        $configVipMuPluginsPath = (string) $configData[Config::VIP_MUPLUGINS_LOCAL_DIR_KEY];
         $vipMuPluginsPath = Platform::expandPath($configVipMuPluginsPath);
 
         $this->basePath = $config->basePath();

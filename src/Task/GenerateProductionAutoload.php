@@ -1,14 +1,5 @@
 <?php
 
-/**
- * This file is part of the vip-composer-plugin package.
- *
- * (c) Inpsyde GmbH
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
-
 declare(strict_types=1);
 
 namespace Inpsyde\VipComposer\Task;
@@ -74,7 +65,7 @@ final class GenerateProductionAutoload implements Task
         $config = clone $this->composer->getConfig();
         $config->merge(['config' => ['autoloader-suffix' => $suffix]]);
 
-        $composerAutoloadContents = @file_get_contents("{$vendorDir}/autoload.php");
+        $composerAutoloadContents = (string) @file_get_contents("{$vendorDir}/autoload.php");
 
         $autoloader->dump(
             $config,
@@ -96,10 +87,10 @@ final class GenerateProductionAutoload implements Task
         $autoloadEntrypoint = "<?php\n\nrequire_once __DIR__ . '/autoload_real.php';\n";
         $autoloadEntrypoint .= "return {$loaderClass}::getLoader();\n";
 
-        if (!file_put_contents("{$vipAutoloadPath}/autoload.php", $autoloadEntrypoint)) {
+        if (file_put_contents("{$vipAutoloadPath}/autoload.php", $autoloadEntrypoint) === false) {
             throw new \Error('Error generating production autoload: failed wring entrypoint file.');
         }
-        if ($composerAutoloadContents) {
+        if ($composerAutoloadContents !== '') {
             file_put_contents("{$vendorDir}/autoload.php", $composerAutoloadContents);
         }
 
@@ -172,15 +163,15 @@ final class GenerateProductionAutoload implements Task
                 continue;
             }
 
-            $content = file_get_contents("{$vipAutoloadPath}/{$file}") ?: '';
-            $content = preg_replace('~\$vendorDir\s*=\s*[^;]+;~', $vendorDir, $content, 1);
-            $content = preg_replace('~\$baseDir\s*=\s*[^;]+;~', $baseDir, $content ?: '', 1);
-            $content = preg_replace(
+            $content = (string) file_get_contents("{$vipAutoloadPath}/{$file}");
+            $content = (string) preg_replace('~\$vendorDir\s*=\s*[^;]+;~', $vendorDir, $content, 1);
+            $content = (string) preg_replace('~\$baseDir\s*=\s*[^;]+;~', $baseDir, $content, 1);
+            $content = (string) preg_replace(
                 '~\$baseDir\s*\.\s*\'/' . $vipDirBase . '/(client-mu-plugins|plugins|themes)/~',
                 'WP_CONTENT_DIR . \'/$1/',
-                $content ?: ''
+                $content
             );
-            file_put_contents("{$vipAutoloadPath}/{$file}", (string)$content);
+            file_put_contents("{$vipAutoloadPath}/{$file}", $content);
         }
     }
 
@@ -191,7 +182,7 @@ final class GenerateProductionAutoload implements Task
     private function replaceStaticLoader(string $vipAutoloadPath): void
     {
         $filepath = "{$vipAutoloadPath}/autoload_static.php";
-        $contents = file_get_contents($filepath) ?: '';
+        $contents = (string) file_get_contents($filepath);
 
         $vip = basename($this->directories->targetPath());
 
@@ -215,7 +206,7 @@ final class GenerateProductionAutoload implements Task
             $contents,
         );
 
-        if (!$contents) {
+        if (($contents === null) || ($contents === '')) {
             throw new \Error('Generation of production static autoloaded class failed.');
         }
 

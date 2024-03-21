@@ -25,12 +25,9 @@ jobs:
         strategy:
             fail-fast: false
             matrix:
-                php-ver: [ '8.0', '8.1', '8.2' ]
+                php-ver: [ '8.0', '8.1', '8.2', '8.3' ]
                 composer: [ '2.4', '2.5', '2.6', '2' ]
                 dependency-versions: [ 'lowest', 'highest' ]
-                exclude:
-                    -   composer: '2'
-                        dependency-versions: 'lowest'
         steps:
             -   name: Checkout
                 uses: actions/checkout@v4
@@ -50,9 +47,10 @@ jobs:
                     composer require "composer/composer:~${{ matrix.composer }}.0" --dev --no-update
 
             -   name: Install dependencies
-                uses: ramsey/composer-install@v2
+                uses: ramsey/composer-install@v3
                 with:
                     dependency-versions: ${{ matrix.dependency-versions }}
+                    tools: composer:v${{ matrix.composer-ver }}
 
             -   name: Run unit tests
                 run: ./vendor/bin/phpunit --no-coverage

@@ -1,14 +1,5 @@
 <?php
 
-/**
- * This file is part of the vip-composer-plugin package.
- *
- * (c) Inpsyde GmbH
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
-
 declare(strict_types=1);
 
 namespace Inpsyde\VipComposer\Utils;
@@ -38,7 +29,7 @@ class WpPluginFileFinder
 
         $base = basename($path);
         $files = glob("{$path}/*.php");
-        if (!$files) {
+        if (($files === false) || ($files === [])) {
             return '';
         }
 
@@ -64,7 +55,7 @@ class WpPluginFileFinder
 
         $data = fread($handle, 8192);
         fclose($handle);
-        if (!$data) {
+        if ($data === false) {
             return false;
         }
 

@@ -1,14 +1,5 @@
 <?php
 
-/**
- * This file is part of the vip-composer-plugin package.
- *
- * (c) Inpsyde GmbH
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
-
 declare(strict_types=1);
 
 namespace Inpsyde\VipComposer\Task;
@@ -16,6 +7,7 @@ namespace Inpsyde\VipComposer\Task;
 use Composer\Installer\InstallationManager;
 use Composer\Package\PackageInterface;
 use Composer\Util\Filesystem;
+use Inpsyde\VipComposer\Config;
 use Inpsyde\VipComposer\Io;
 use Inpsyde\VipComposer\Utils\PackageFinder;
 use Inpsyde\VipComposer\VipDirectories;
@@ -30,12 +22,14 @@ final class CopyEnvConfigs implements Task
     private ?array $packages = null;
 
     /**
+     * @param Config $config
      * @param VipDirectories $directories
      * @param PackageFinder $packageFinder
      * @param InstallationManager $installationManager
      * @param Filesystem $filesystem
      */
     public function __construct(
+        private Config $config,
         private VipDirectories $directories,
         private PackageFinder $packageFinder,
         private InstallationManager $installationManager,
@@ -118,7 +112,7 @@ final class CopyEnvConfigs implements Task
      * @param array<PackageInterface> $packages
      * @return array{
      *     non-empty-string,
-     *     array<'all'|'development'|'staging'|'production', string>
+     *     array<non-empty-string, string>
      * }
      */
     private function determinePaths(array $packages): array
@@ -136,10 +130,12 @@ final class CopyEnvConfigs implements Task
             }
         }
 
+        $envs = $this->config->envConfigs();
         $sourceFiles = [];
         foreach ($sourcesDirs as $sourceDir) {
-            foreach (['all', 'development', 'staging', 'production'] as $env) {
-                $sourceFiles[$env] = $this->filesystem->normalizePath("{$sourceDir}/{$env}.php");
+            foreach ($envs as $env) {
+                $path = $this->filesystem->normalizePath("{$sourceDir}/{$env}.php");
+                file_exists($path) and $sourceFiles[$env] = $path;
             }
         }
 

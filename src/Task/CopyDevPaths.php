@@ -1,14 +1,5 @@
 <?php
 
-/**
- * This file is part of the vip-composer-plugin package.
- *
- * (c) Inpsyde GmbH
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
-
 declare(strict_types=1);
 
 namespace Inpsyde\VipComposer\Task;
@@ -33,6 +24,15 @@ final class CopyDevPaths implements Task
         Config::DEV_PATHS_PHP_CONFIG_DIR_KEY,
         Config::DEV_PATHS_YAML_CONFIG_DIR_KEY,
         Config::DEV_PATHS_PRIVATE_DIR_KEY,
+    ];
+
+    private const RESERVED_MU_PLUGINS = [
+        '__loader.php',
+    ];
+
+    private const RESERVED_PRIVATE = [
+        'deploy-id',
+        'deploy-ver',
     ];
 
     /**
@@ -111,9 +111,11 @@ final class CopyDevPaths implements Task
     {
         [$what, $source, $target, $sourcePaths] = $this->pathInfoForKey($pathConfigKey);
 
+        $isVipConfig = $pathConfigKey === Config::DEV_PATHS_PHP_CONFIG_DIR_KEY;
+
         if (is_dir($target)) {
             $this->cleanupTarget($pathConfigKey, $target);
-            $sourcePaths and $this->cleanupSource($target, $source);
+            $sourcePaths and $this->cleanupSource($target, $source, $isVipConfig);
         }
 
         if (!$sourcePaths) {
@@ -122,7 +124,7 @@ final class CopyDevPaths implements Task
 
         $io->verboseCommentLine("Copying {$what} in dev path to VIP target folder...");
 
-        return $this->copySources($sourcePaths, $target, $io);
+        return $this->copySources($sourcePaths, $target, $io, $isVipConfig);
     }
 
     /**
@@ -140,7 +142,7 @@ final class CopyDevPaths implements Task
         // phpcs:enable Generic.Metrics.CyclomaticComplexity
 
         /** @psalm-suppress MixedArrayAccess */
-        $sourceDir = (string)$this->config[Config::DEV_PATHS_CONFIG_KEY][$key];
+        $sourceDir = (string) $this->config[Config::DEV_PATHS_CONFIG_KEY][$key];
         $source = $this->filesystem->normalizePath($this->config->basePath() . "/{$sourceDir}");
 
         $finder = null;
@@ -181,14 +183,23 @@ final class CopyDevPaths implements Task
             case Config::DEV_PATHS_PHP_CONFIG_DIR_KEY:
                 $what = 'PHP config files';
                 $target = $this->directories->phpConfigDir();
-                $finder and $finder->ignoreDotFiles(true);
+                if ($finder) {
+                    $finder = $finder->ignoreDotFiles(true)->exclude('env');
+                    $envs = Finder::create()
+                        ->in("{$source}/env")
+                        ->depth('== 0')
+                        ->ignoreUnreadableDirs()
+                        ->ignoreVCS(true)
+                        ->ignoreDotFiles(true);
+                    $finder = $finder->append($envs);
+                }
                 break;
             case Config::DEV_PATHS_YAML_CONFIG_DIR_KEY:
                 $what = 'Yaml config files';
                 $target = $this->directories->yamlConfigDir();
                 $finder and $finder->files()->ignoreDotFiles(false)->filter(
                     static function (SplFileInfo $info): bool {
-                        return (bool)preg_match('~\.[^\.]+\.yml$~i', $info->getFilename());
+                        return (bool) preg_match('~\.[^\.]+\.yml$~i', $info->getFilename());
                     }
                 );
                 break;
@@ -246,7 +257,6 @@ final class CopyDevPaths implements Task
         /* These directories are only filled from root, we can safely empty them before copying. */
         switch ($key) {
             case Config::DEV_PATHS_IMAGES_DIR_KEY:
-            case Config::DEV_PATHS_PHP_CONFIG_DIR_KEY:
             case Config::DEV_PATHS_YAML_CONFIG_DIR_KEY:
                 $this->filesystem->emptyDirectory($target);
                 return;
@@ -254,11 +264,17 @@ final class CopyDevPaths implements Task
 
         $isMu = $key === Config::DEV_PATHS_MUPLUGINS_DIR_KEY;
         $isPrivate = $key === Config::DEV_PATHS_PRIVATE_DIR_KEY;
+        $isVipConfig = $key === Config::DEV_PATHS_PHP_CONFIG_DIR_KEY;
 
         $targets = Finder::create()->in($target)->ignoreUnreadableDirs()->depth('== 0');
 
         /** @var SplFileInfo $item */
         foreach ($targets as $item) {
+            if ($isVipConfig) {
+                $this->cleanupPhpConfigPath($item);
+                continue;
+            }
+
             /*
              * We need to preserve `/vip/private/deploy-id` and `/vip/private/deploy-ver` files,
              * but anything else in /vip/private` can be deleted before copying, as no Composer nor
@@ -270,22 +286,80 @@ final class CopyDevPaths implements Task
             }
 
             $basename = $item->isFile() ? $item->getBasename() : null;
-            if (
-                $basename
-                && (!$isMu || ($basename !== '__loader.php'))
-                && (!$isPrivate || !in_array($basename, ['deploy-id', 'deploy-ver'], true))
-            ) {
+            if (($basename === null) || ($basename === '')) {
+                continue;
+            }
+
+            $isReserved = ($isMu && $this->isReservedMuPlugin($basename))
+                || ($isPrivate && $this->isReservedPrivate($basename));
+
+            if (!$isReserved) {
                 $this->filesystem->unlink($item->getPathname());
             }
         }
     }
 
     /**
-     * @param string $target
-     * @param string $source
+     * @param \SplFileInfo $item
      * @return void
      */
-    private function cleanupSource(string $target, string $source): void
+    private function cleanupPhpConfigPath(\SplFileInfo $item): void
+    {
+        $pathName = $item->getPathname();
+        if (!$item->isDir() || ($item->getBasename() !== 'env')) {
+            $this->filesystem->remove($pathName);
+
+            return;
+        }
+
+        $envs = Finder::create()->in($pathName)->ignoreUnreadableDirs()->depth('== 0');
+        /** @var SplFileInfo $env */
+        foreach ($envs as $env) {
+            if (!$this->isReservedVipConfig($env->getBasename())) {
+                $this->filesystem->unlink($env->getPathname());
+            }
+        }
+    }
+
+    /**
+     * @param string $basename
+     * @return bool
+     */
+    private function isReservedPrivate(string $basename): bool
+    {
+        return in_array($basename, self::RESERVED_PRIVATE, true);
+    }
+
+    /**
+     * @param string $basename
+     * @return bool
+     */
+    private function isReservedVipConfig(string $basename): bool
+    {
+        foreach ($this->config->envConfigs() as $env) {
+            if ($basename === "{$env}.php") {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * @param string $basename
+     * @return bool
+     */
+    private function isReservedMuPlugin(string $basename): bool
+    {
+        return in_array($basename, self::RESERVED_MU_PLUGINS, true);
+    }
+
+    /**
+     * @param string $target
+     * @param string $source
+     * @param bool $isVipConfig
+     * @return void
+     */
+    private function cleanupSource(string $target, string $source, bool $isVipConfig): void
     {
         /*
          * If dev path has sub-folder (e.g. `/themes/my-theme`), and that sub-folder exists under
@@ -297,6 +371,9 @@ final class CopyDevPaths implements Task
             ->directories()
             ->depth('== 0')
             ->ignoreUnreadableDirs();
+        if ($isVipConfig) {
+            $sourceDirs = $sourceDirs->exclude('env');
+        }
 
         /** @var SplFileInfo $sourceDir */
         foreach ($sourceDirs as $sourceDir) {
@@ -311,16 +388,31 @@ final class CopyDevPaths implements Task
      * @param Finder $sourcePaths
      * @param string $target
      * @param Io $io
+     * @param bool $isVipConfig
      * @return int
      */
-    private function copySources(Finder $sourcePaths, string $target, Io $io): int
-    {
+    private function copySources(
+        Finder $sourcePaths,
+        string $target,
+        Io $io,
+        bool $isVipConfig = false
+    ): int {
+
         $errors = 0;
 
         /** @var SplFileInfo $sourcePathInfo */
         foreach ($sourcePaths as $sourcePathInfo) {
-            $sourcePath = $sourcePathInfo->getPathname();
-            $targetPath = "{$target}/" . $sourcePathInfo->getBasename();
+            $sourcePath = $this->filesystem->normalizePath($sourcePathInfo->getPathname());
+            $basename = $sourcePathInfo->getBasename();
+            if ($isVipConfig && str_ends_with($sourcePath, "/env/{$basename}")) {
+                $basename = "env/{$basename}";
+            }
+            $targetPath = "{$target}/{$basename}";
+
+            if (file_exists($targetPath)) {
+                $io->verboseInfoLine("File '{$targetPath}' exists, replacing...");
+                $this->filesystem->remove($targetPath);
+            }
 
             if ($this->filesystem->copy($sourcePath, $targetPath)) {
                 $from = "<comment>'{$sourcePath}'</comment>";

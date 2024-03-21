@@ -1,14 +1,5 @@
 <?php
 
-/**
- * This file is part of the vip-composer-plugin package.
- *
- * (c) Inpsyde GmbH
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
-
 declare(strict_types=1);
 
 namespace Inpsyde\VipComposer\Git;
@@ -44,8 +35,8 @@ class GitProcess
         ProcessExecutor $executor = null
     ) {
 
-        $cwd = $workingDir ?: getcwd();
-        if (!$cwd) {
+        $cwd = $workingDir ?? getcwd();
+        if ($cwd === false) {
             throw new \Exception('Could not determine current dir');
         }
 

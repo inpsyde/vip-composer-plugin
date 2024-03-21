@@ -1,14 +1,5 @@
 <?php
 
-/**
- * This file is part of the vip-composer-plugin package.
- *
- * (c) Inpsyde GmbH
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
-
 declare(strict_types=1);
 
 namespace Inpsyde\VipComposer\Task;
@@ -46,6 +37,7 @@ final class TaskConfig
     public const SYNC_DEV_PATHS = 'sync-dev-paths';
     public const VIP_DEV_ENV = 'vip-dev-env';
 
+    /** @var config-data */
     private const DEFAULTS = [
         self::DEPLOY => false,
         self::FORCE_CORE_UPDATE => false,
@@ -123,23 +115,28 @@ final class TaskConfig
      */
     public function __construct(array $data)
     {
+        /** @var config-data|[]|false|null $customData */
         $customData = filter_var_array(
             array_replace(self::DEFAULTS, array_intersect_key($data, self::DEFAULTS), $data),
             self::FILTERS,
             false
         );
 
-        /** @psalm-suppress  MixedPropertyTypeCoercion data */
-        $this->data = $customData ?: self::DEFAULTS;
+        /** @psalm-suppress InvalidPropertyAssignmentValue */
+        $this->data = match ($customData) {
+            [], null, false => self::DEFAULTS,
+            default => $customData,
+        };
 
         // FILTER_UNSAFE_RAW will convert null into empty string
         foreach (self::FILTERS as $key => $filters) {
+            /** @psalm-suppress DocblockTypeContradiction */
             if (
                 (($filters['filter'] ?? 0) === FILTER_UNSAFE_RAW)
                 && (($data[$key] ?? null) === null)
                 && (($this->data[$key] ?? null) === '')
             ) {
-                /** @psalm-suppress MixedPropertyTypeCoercion */
+                /** @psalm-suppress InvalidPropertyAssignmentValue */
                 $this->data[$key] = null;
             }
         }

@@ -1,14 +1,5 @@
 <?php
 
-/**
- * This file is part of the vip-composer-plugin package.
- *
- * (c) Inpsyde GmbH
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
-
 declare(strict_types=1);
 
 namespace Inpsyde\VipComposer\Task;
@@ -77,7 +68,7 @@ final class GenerateMuPluginsLoader implements Task
 
         $autoloadCode = $this->autoloadCode();
 
-        if (!file_put_contents($loaderPath, "<?php\n{$autoloadCode}")) {
+        if (file_put_contents($loaderPath, "<?php\n{$autoloadCode}") === false) {
             throw new \RuntimeException('Failed writing loader.');
         }
 
@@ -100,9 +91,8 @@ final class GenerateMuPluginsLoader implements Task
                 continue;
             }
 
-            /** @psalm-suppress RedundantCondition */
             if (
-                $type === 'wordpress-plugin'
+                ($type === 'wordpress-plugin')
                 && !$this->shouldInclude($package, $packagesList, $includeByDefault)
             ) {
                 $io->verboseLine(" - skipping <comment>{$packageName}</comment>");
@@ -121,7 +111,8 @@ final class GenerateMuPluginsLoader implements Task
             return;
         }
 
-        if (file_put_contents($loaderPath, "<?php\n{$autoloadCode}\n{$packagesLoaderCode}")) {
+        $php = "<?php\n{$autoloadCode}\n{$packagesLoaderCode}";
+        if (file_put_contents($loaderPath, $php) !== false) {
             $io->infoLine("Loaders generation complete.");
             return;
         }

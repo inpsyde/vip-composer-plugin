@@ -1,14 +1,5 @@
 <?php
 
-/**
- * This file is part of the vip-composer-plugin package.
- *
- * (c) Inpsyde GmbH
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
-
 declare(strict_types=1);
 
 namespace Inpsyde\VipComposer\Utils;
@@ -65,7 +56,7 @@ class ArchiveDownloaderFactory
      */
     public function create(string $type): ArchiveDownloader
     {
-        if (!empty($this->downloaders[$type])) {
+        if (isset($this->downloaders[$type])) {
             return $this->downloaders[$type];
         }
 

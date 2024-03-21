@@ -1,14 +1,5 @@
 <?php
 
-/**
- * This file is part of the vip-composer-plugin package.
- *
- * (c) Inpsyde GmbH
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
-
 declare(strict_types=1);
 
 namespace Inpsyde\VipComposer\Utils;
@@ -151,7 +142,7 @@ class Unzipper
             return [self::$hasSystemUnzip, self::$hasZipArchive];
         }
 
-        self::$hasSystemUnzip = (bool)(new ExecutableFinder())->find('unzip');
+        self::$hasSystemUnzip = (bool) (new ExecutableFinder())->find('unzip');
         self::$hasZipArchive = class_exists('ZipArchive');
 
         if (!self::$hasSystemUnzip && !self::$hasZipArchive) {
