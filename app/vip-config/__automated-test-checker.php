@@ -6,9 +6,9 @@ namespace Inpsyde\Vip;
 
 // phpcs:disable Inpsyde.CodeQuality.Psr4
 
-class AutotestChecker
+class AutomatedTestChecker
 {
-    private const COOKIE_KEY = 'syde_autotest_key';
+    public const COOKIE_KEY = 'inpsyde_autotest_key';
 
     /**
      * Set the `WP_RUN_CORE_TESTS` constant when on "automated tests" request, to bypass 2FA.
@@ -16,16 +16,18 @@ class AutotestChecker
      *
      * @return void
      */
-    public function skip2FaForAutotestRequest(): void
+    public function maybeSkip2fa(): void
     {
         if (
             defined('WP_RUN_CORE_TESTS')
-            || (defined('WP_ENVIRONMENT_TYPE') && (WP_ENVIRONMENT_TYPE === 'production'))
+            || (defined('WP_ENVIRONMENT_TYPE') && (\WP_ENVIRONMENT_TYPE === 'production'))
+            || (defined('VIP_GO_APP_ENVIRONMENT') && (\VIP_GO_APP_ENVIRONMENT === 'production'))
+            || (defined('VIP_GO_ENV') && (\VIP_GO_ENV === 'production'))
         ) {
             return;
         }
 
-        $this->isAutotestRequest() and define('WP_RUN_CORE_TESTS', true);
+        $this->isTargetRequest() and define('WP_RUN_CORE_TESTS', true);
     }
 
     /**
@@ -37,16 +39,16 @@ class AutotestChecker
      *
      * @return bool
      */
-    private function isAutotestRequest(): bool
+    private function isTargetRequest(): bool
     {
-        $secret = $this->autotestSecret();
+        $secret = $this->secret();
         if ($secret === null) {
             return false;
         }
 
-        return $this->isAutotestRequestByCookie($secret)
-            || $this->isAutotestRequestByGlobals($secret)
-            || $this->isAutotestRequestByHeader($secret);
+        return $this->isTargetRequestByCookie($secret)
+            || $this->isTargetRequestByGlobals($secret)
+            || $this->isTargetRequestByHeader($secret);
     }
 
     /**
@@ -54,7 +56,7 @@ class AutotestChecker
      *
      * @return non-falsy-string|null
      */
-    private function autotestSecret(): ?string
+    private function secret(): ?string
     {
         $secret = defined('INPSYDE_AUTOTEST_KEY')
             ? \INPSYDE_AUTOTEST_KEY
@@ -68,7 +70,7 @@ class AutotestChecker
             $secret = \Automattic\VIP\Environment::get_var('INPSYDE_AUTOTEST_KEY');
         }
 
-        if (($secret === '') || (((bool) $secret) === false) || !is_string($secret)) {
+        if ((((bool) $secret) === false) || !is_string($secret)) {
             return null;
         }
         /** @var non-falsy-string $secret */
@@ -76,13 +78,13 @@ class AutotestChecker
     }
 
     /**
-     * Returns true if the cookie is there and it contains the hashed secret.
+     * Returns true if the cookie is there, and it contains the hashed secret.
      * If cookie is there but don't pass validation, the cookie is deleted.
      *
      * @param non-empty-string $secret
      * @return bool
      */
-    private function isAutotestRequestByCookie(string $secret): bool
+    private function isTargetRequestByCookie(string $secret): bool
     {
         $cookieVal = $_COOKIE[self::COOKIE_KEY] ?? null;
         if (($cookieVal === null) || ($cookieVal === '')) {
@@ -93,9 +95,7 @@ class AutotestChecker
             return true;
         }
 
-        $this->saveCookie(null);
-
-        return false;
+        return $this->saveCookie(null);
     }
 
     /**
@@ -104,7 +104,7 @@ class AutotestChecker
      * @param non-empty-string $secret
      * @return bool
      */
-    private function isAutotestRequestByGlobals(string $secret): bool
+    private function isTargetRequestByGlobals(string $secret): bool
     {
         $keyUp = strtoupper(self::COOKIE_KEY);
         $value = $_REQUEST[self::COOKIE_KEY] ?? $_REQUEST[$keyUp] ?? null;
@@ -125,7 +125,7 @@ class AutotestChecker
      * @param non-empty-string $secret
      * @return bool
      */
-    private function isAutotestRequestByHeader(string $secret): bool
+    private function isTargetRequestByHeader(string $secret): bool
     {
         $headers = function_exists('getallheaders') ? getallheaders() : null;
         $keyUp = strtoupper(self::COOKIE_KEY);
@@ -149,13 +149,46 @@ class AutotestChecker
      * @param mixed $host
      * @return string
      */
-    private function cookieDomain(mixed $host): string
+    private function formatDomain(mixed $host): string
     {
-        if (!$host || !is_string($host)) {
+        if (!is_string($host) || (((bool) $host) === false)) {
             return '';
         }
 
-        return '.' . implode('.', array_slice(explode('.', $host), -2));
+        $parts = [];
+        $token = strtok($host, '.');
+        while ($token !== false) {
+            ($token !== '') and $parts[] = $token;
+            $token = strtok('.');
+        }
+
+        if ($parts === []) {
+            return '';
+        }
+
+        return '.' . implode('.', array_slice($parts, -2));
+    }
+
+    /**
+     * @return list<non-empty-string>
+     */
+    private function allCookieDomains(): array
+    {
+        $byServer = $this->formatDomain($_SERVER['SERVER_NAME'] ?? '');
+        $byHttp = $this->formatDomain($_SERVER['HTTP_HOST'] ?? '');
+        $byConst = $this->formatDomain(defined('COOKIE_DOMAIN') ? COOKIE_DOMAIN : '');
+
+        $domains = ($byServer !== '') ? [$byServer] : [];
+
+        if (($byHttp !== '') && ($byHttp !== $byServer)) {
+            $domains[] = $byHttp;
+        }
+
+        if (($byConst !== '') && ($byConst !== $byServer) && ($byConst !== $byHttp)) {
+            $domains[] = $byConst;
+        }
+
+        return $domains;
     }
 
     /**
@@ -166,26 +199,21 @@ class AutotestChecker
      */
     private function saveCookie(?string $secret): bool
     {
-        $serverName = $this->cookieDomain($_SERVER['SERVER_NAME'] ?? '');
-        $host = $this->cookieDomain($_SERVER['HTTP_HOST'] ?? '');
-        $cookieDomainConfig = $this->cookieDomain(defined('COOKIE_DOMAIN') ? COOKIE_DOMAIN : '');
-        $domains = array_unique(array_filter([$serverName, $host, $cookieDomainConfig]));
-        if (!$domains) {
+        $domains = $this->allCookieDomains();
+
+        if ($domains === []) {
             return false;
         }
 
         $secure = filter_var($_SERVER['HTTPS'] ?? false, FILTER_VALIDATE_BOOLEAN)
             || ((int) ($_SERVER['SERVER_PORT'] ?? 0) === 443);
 
-        $value = ($secret === null) ? '' : base64_encode(password_hash($secret, \PASSWORD_DEFAULT));
-        $expires = ($secret === null) ? (time() - 86400) : 0;
-
         foreach ($domains as $domain) {
             setcookie(
                 self::COOKIE_KEY,
-                $value,
+                ($secret === null) ? '' : base64_encode(password_hash($secret, \PASSWORD_DEFAULT)),
                 [
-                    'expires' => $expires,
+                    'expires' => ($secret === null) ? (time() - 86400) : 0,
                     'path' => '/',
                     'domain' => $domain,
                     'secure' => $secure,

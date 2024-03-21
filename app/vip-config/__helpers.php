@@ -502,13 +502,12 @@ function loadConfigFiles(): void
  *
  * @return void
  */
-function skip2FaForAutotestRequest(): void
+function skip2faForAutotestRequest(): void
 {
     static $done;
     if (!isset($done)) {
         $done = true;
-        require_once __DIR__ . ' /__autotest-checker.php';
-        $checker = new AutotestChecker();
-        $checker->skip2FaForAutotestRequest();
+        require_once __DIR__ . ' /__automated-test-checker.php';
+        (new AutomatedTestChecker())->maybeSkip2fa();
     }
 }
