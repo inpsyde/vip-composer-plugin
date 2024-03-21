@@ -259,6 +259,21 @@ function isSsl(): bool
 }
 
 /**
+ * Return current URL path, something that `add_query_arg([])` does, but before that si available.
+ *
+ * @return bool
+ */
+function currentUrlPath(): string
+{
+    $uri = parse_url(stripslashes($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH);
+    if (($uri === '') || !is_string($uri)) {
+        return '/';
+    }
+
+    return '/' . trim($uri, '/');
+}
+
+/**
  * @param string $base
  * @param bool $preservePath
  * @param bool $preserveQuery
