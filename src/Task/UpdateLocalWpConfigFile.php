@@ -59,6 +59,7 @@ final class UpdateLocalWpConfigFile implements Task
 
         [$contentStart, $contentEnd] = $this->parseCurrentContent($wpConfigPath, $io);
         if ($contentStart === null) {
+            $io->errorLine("Can't update 'wp-config.php', it seems custom.");
             return;
         }
 
