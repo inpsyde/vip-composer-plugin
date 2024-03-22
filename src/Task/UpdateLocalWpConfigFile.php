@@ -188,7 +188,7 @@ final class UpdateLocalWpConfigFile implements Task
      */
     private function copyClientSunrise(string $abspath, Io $io): void
     {
-        $io->infoLine('Copying client-sunrise.php to ABSPATH');
+        $io->commentLine('Copying client-sunrise.php to ABSPATH...');
         $sourcePath = $this->config->pluginPath() . '/app/vip-config/client-sunrise.php';
         $targetDir = "{$abspath}/vip-config";
         $targetPath = "{$targetDir}/client-sunrise.php";
@@ -201,5 +201,6 @@ final class UpdateLocalWpConfigFile implements Task
         }
 
         $this->filesystem->copy($sourcePath, $targetPath);
+        $io->infoLine('client-sunrise.php copied.');
     }
 }

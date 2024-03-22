@@ -261,7 +261,7 @@ function isSsl(): bool
 /**
  * Return current URL path, something that `add_query_arg([])` does, but before that si available.
  *
- * @return bool
+ * @return string
  */
 function currentUrlPath(): string
 {

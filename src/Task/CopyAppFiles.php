@@ -120,7 +120,6 @@ final class CopyAppFiles implements Task
     {
         $errors = 0;
 
-        /** @var SplFileInfo $sourcePathInfo */
         foreach ($sourcePaths as $sourcePathInfo) {
             $sourcePath = $sourcePathInfo->getPathname();
             $targetPath = "{$target}/" . $sourcePathInfo->getBasename();

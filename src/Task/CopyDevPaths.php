@@ -400,7 +400,6 @@ final class CopyDevPaths implements Task
             $sourceDirs = $sourceDirs->exclude('env');
         }
 
-        /** @var SplFileInfo $sourceDir */
         foreach ($sourceDirs as $sourceDir) {
             $sourceBasename = $sourceDir->getBasename();
             if (is_dir("{$target}/{$sourceBasename}")) {
@@ -425,7 +424,6 @@ final class CopyDevPaths implements Task
 
         $errors = 0;
 
-        /** @var SplFileInfo $sourcePathInfo */
         foreach ($sourcePaths as $sourcePathInfo) {
             $sourcePath = $this->filesystem->normalizePath($sourcePathInfo->getPathname());
             $basename = $sourcePathInfo->getBasename();

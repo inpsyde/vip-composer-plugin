@@ -91,6 +91,21 @@ if (
 }
 
 /**
+ * @param mixed $url
+ * @param string $search
+ * @param string $replace
+ * @return mixed
+ */
+function replaceAltUrl(mixed $url, string $search, string $replace): mixed
+{
+    if (is_string($url)) {
+        $url = preg_replace("~^(https?://){$search}([/?]?.*)?$~", '$1' . $replace . '$2', $url);
+    }
+
+    return $url;
+}
+
+/**
  * @param \WP_Site_Query $query
  * @return void
  *
@@ -170,18 +185,10 @@ function parseSiteQueryOnMultisiteLoad(\WP_Site_Query $query): void
             continue;
         }
 
-        $filter = static function (mixed $url) use ($domain, $parsed): mixed {
-            if (is_string($url)) {
-                $url = preg_replace(
-                    "~^(https?://){$parsed['host']}([/?]?.*)?$~",
-                    '$1' . $domain . '$2',
-                    $url
-                );
-            }
-            return $url;
-        };
-
-        add_filter('set_url_scheme', $filter);
+        add_filter(
+            'set_url_scheme',
+            static fn (mixed $url): mixed => replaceAltUrl($url, $parsed['host'], $domain)
+        );
 
         $query->query_vars['domain__in'] = '';
         $query->query_vars['domain'] = $parsed['host'];
