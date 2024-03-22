@@ -294,6 +294,6 @@ class SunriseRedirects
 
 add_action('parse_site_query', [SunriseRedirects::class, 'handleQuery']);
 
-if (file_exists(__DIR__ . '\\client-sunrise.override.php')) {
-    require_once __DIR__ . '\\client-sunrise.override.php';
+if (file_exists(__DIR__ . '/client-sunrise.override.php')) {
+    require_once __DIR__ . '/client-sunrise.override.php';
 }
