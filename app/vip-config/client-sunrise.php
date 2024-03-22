@@ -219,8 +219,8 @@ class SunriseRedirects
         $query->query_vars['domain'] = $targetHost;
 
         if (
-            !defined(__NAMESPACE__ . '\\SUNRISE_FILTER_ALT_DOMAIN_URLS')
-            || SUNRISE_FILTER_ALT_DOMAIN_URLS
+            defined(__NAMESPACE__ . '\\SUNRISE_FILTER_ALT_DOMAIN_URLS')
+            && SUNRISE_FILTER_ALT_DOMAIN_URLS
         ) {
             add_filter('set_url_scheme', [static::class, 'maybeReplaceUrl']);
         }
