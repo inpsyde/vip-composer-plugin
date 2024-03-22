@@ -9,7 +9,6 @@ use Inpsyde\VipComposer\Config;
 use Inpsyde\VipComposer\Io;
 use Inpsyde\VipComposer\VipDirectories;
 use Symfony\Component\Finder\Finder;
-use Symfony\Component\Finder\SplFileInfo;
 
 final class CopyAppFiles implements Task
 {

@@ -236,6 +236,8 @@ class SunriseRedirects
      *
      *
      * @param config-item $config
+     * @param string $sourceDomain
+     * @param \WP_Site_Query $query
      * @return non-empty-string|null
      */
     private static function determineTargetHost(
