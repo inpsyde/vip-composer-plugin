@@ -170,7 +170,20 @@ function parseSiteQueryOnMultisiteLoad(\WP_Site_Query $query): void
             continue;
         }
 
-        unset($query->query_vars['domain__in']);
+        $filter = static function (mixed $url) use ($domain, $parsed): mixed {
+            if (is_string($url)) {
+                $url = preg_replace(
+                    "~^(https?://){$parsed['host']}([/?]?.*)?$~",
+                    '$1' . $domain . '$2',
+                    $url
+                );
+            }
+            return $url;
+        };
+
+        add_filter('set_url_scheme', $filter);
+
+        $query->query_vars['domain__in'] = '';
         $query->query_vars['domain'] = $parsed['host'];
         break;
     }
