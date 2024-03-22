@@ -18,9 +18,9 @@ if (
     return;
 }
 
-add_filter(
-    'admin_footer_text',
-    static function (mixed $text): mixed {
+add_action(
+    'in_admin_footer',
+    static function (): void {
         $version = deployVersion();
         $id = deployId();
         $deployIdFile = deployIdFile();
@@ -28,25 +28,18 @@ add_filter(
         $datetime = is_int($timestamp) ? date('Y-m-d H:i \U\T\C', $timestamp) : null;
 
         if (($version === null) && ($id === null) && ($datetime === null)) {
-            return $text;
+            return;
         }
-
-        ob_start();
-        is_string($text) and print "{$text}";
         ?>
-        </span>
-        <br><br>
-        <span id="deployment-info">
+        <p id="deployment-info">
             <strong style="font-variant:small-caps">Deployment Info</strong>
             <em>Version:</em>&nbsp;<strong><?= esc_html($version ?? 'n/a') ?></strong>
             | <em>ID:</em>&nbsp;<strong><?= esc_html($id ?? 'n/a') ?></strong>
             | <em>Date/Time</em>&nbsp;<strong><?= esc_html($datetime ?? 'n/a') ?></strong>
             | <em>WP Env</em>&nbsp;<strong><?= esc_html(determineWpEnv()) ?></strong>
             | <em>VIP Env</em>&nbsp;<strong><?= esc_html(determineVipEnv()) ?></strong>
-        </span>
-        <span>
+        </p>
         <?php
-        return (string) ob_get_clean();
     },
     PHP_INT_MAX - 1
 );
