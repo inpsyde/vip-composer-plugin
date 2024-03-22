@@ -81,6 +81,15 @@ declare(strict_types=1);
 
 namespace Inpsyde\Vip;
 
+/**
+ * @psalm-type config-item = array{
+ *     "target":string,
+ *     "redirect":bool,
+ *     "preservePath":bool,
+ *     "preserveQuery":bool,
+ *     "status":int
+ * }
+ */
 class SunriseRedirects
 {
     private static bool $done = false;
@@ -180,7 +189,7 @@ class SunriseRedirects
     /**
      * Do the redirect when the configuration for current domain tell us to do it.
      *
-     * @param array{'target':string, 'preservePath':bool, 'preserveQuery':bool} $config
+     * @param config-item $config
      * @return void
      */
     private static function handleRedirect(array $config): void
@@ -227,7 +236,7 @@ class SunriseRedirects
      * `alternative.com/something`, but only to `alternative.com`
      *
      *
-     * @param array{'target': string} $config
+     * @param config-item $config
      * @return non-empty-string|null
      */
     private static function determineTargetHost(

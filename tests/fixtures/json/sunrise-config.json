@@ -16,7 +16,8 @@
         "www.production.example.com": "production.example.com",
         "www.acme.com": {
             "target": "acme.com",
-            "preservePath": true
+            "preservePath": true,
+            "status": 302
         }
     }
 }

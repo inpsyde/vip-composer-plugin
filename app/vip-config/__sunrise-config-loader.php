@@ -6,11 +6,12 @@ namespace Inpsyde\Vip;
 
 /**
  * @psalm-type config-item = array{
- *       'target': string,
- *       'redirect': bool,
- *       'preservePath': bool,
- *       'preserveQuery': bool
- *   }
+ *     "target":string,
+ *     "redirect":bool,
+ *     "preservePath":bool,
+ *     "preserveQuery":bool,
+ *     "status":int
+ * }
  */
 class SunriseConfigLoader
 {
@@ -19,7 +20,8 @@ class SunriseConfigLoader
      *        'target': string,
      *        'redirect': bool,
      *        'preservePath': bool,
-     *        'preserveQuery': bool
+     *        'preserveQuery': bool,
+     *        'status':int
      *    }>
      */
     private array|null $config = null;
@@ -49,6 +51,7 @@ class SunriseConfigLoader
             'redirect' => false,
             'preservePath' => false,
             'preserveQuery' => false,
+            'status' => 301,
         ];
     }
 
@@ -112,6 +115,7 @@ class SunriseConfigLoader
                 'redirect' => true,
                 'preservePath' => true,
                 'preserveQuery' => true,
+                'status' => 301,
             ];
         }
 
@@ -127,8 +131,10 @@ class SunriseConfigLoader
         $redirect = (bool) ($value['redirect'] ?? true);
         $preservePath = ((bool) ($value['preservePath'] ?? true)) && $redirect;
         $preserveQuery = ((bool) ($value['preserveQuery'] ?? true)) && $redirect;
+        $statusValue = $value['status'] ?? 301;
+        $status = is_numeric($statusValue) ? (int) $statusValue : 301;
 
-        return compact('target', 'redirect', 'preservePath', 'preserveQuery');
+        return compact('target', 'redirect', 'preservePath', 'preserveQuery', 'status');
     }
 
     /**

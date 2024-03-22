@@ -225,6 +225,7 @@ class HelpersTest extends UnitTestCase
                 'redirect' => true,
                 'preservePath' => true,
                 'preserveQuery' => true,
+                'status' => 301,
             ],
             Vip\loadSunriseConfigForDomain('example.com')
         );
@@ -235,6 +236,7 @@ class HelpersTest extends UnitTestCase
                 'redirect' => true,
                 'preservePath' => false,
                 'preserveQuery' => true,
+                'status' => 301,
             ],
             Vip\loadSunriseConfigForDomain('www.acme.com')
         );
@@ -245,6 +247,7 @@ class HelpersTest extends UnitTestCase
                 'redirect' => false,
                 'preservePath' => false,
                 'preserveQuery' => false,
+                'status' => 301,
             ],
             Vip\loadSunriseConfigForDomain('alternative-domain.com')
         );
@@ -255,6 +258,7 @@ class HelpersTest extends UnitTestCase
                 'redirect' => false,
                 'preservePath' => false,
                 'preserveQuery' => false,
+                'status' => 301,
             ],
             Vip\loadSunriseConfigForDomain('www.production.example.com')
         );
@@ -275,6 +279,7 @@ class HelpersTest extends UnitTestCase
                 'redirect' => true,
                 'preservePath' => true,
                 'preserveQuery' => true,
+                'status' => 301,
             ],
             Vip\loadSunriseConfigForDomain('example.com')
         );
@@ -285,6 +290,7 @@ class HelpersTest extends UnitTestCase
                 'redirect' => true,
                 'preservePath' => true,
                 'preserveQuery' => true,
+                'status' => 302,
             ],
             Vip\loadSunriseConfigForDomain('www.acme.com')
         );
@@ -295,6 +301,7 @@ class HelpersTest extends UnitTestCase
                 'redirect' => false,
                 'preservePath' => false,
                 'preserveQuery' => false,
+                'status' => 301,
             ],
             Vip\loadSunriseConfigForDomain('alternative-domain.com')
         );
@@ -305,6 +312,7 @@ class HelpersTest extends UnitTestCase
                 'redirect' => true,
                 'preservePath' => true,
                 'preserveQuery' => true,
+                'status' => 301,
             ],
             Vip\loadSunriseConfigForDomain('www.production.example.com')
         );
@@ -324,6 +332,7 @@ class HelpersTest extends UnitTestCase
                 'redirect' => true,
                 'preservePath' => true,
                 'preserveQuery' => true,
+                'status' => 301,
             ],
             Vip\loadSunriseConfigForDomain('example.com')
         );
@@ -334,6 +343,7 @@ class HelpersTest extends UnitTestCase
                 'redirect' => true,
                 'preservePath' => false,
                 'preserveQuery' => true,
+                'status' => 301,
             ],
             Vip\loadSunriseConfigForDomain('www.acme.com')
         );
@@ -344,6 +354,7 @@ class HelpersTest extends UnitTestCase
                 'redirect' => false,
                 'preservePath' => false,
                 'preserveQuery' => false,
+                'status' => 301,
             ],
             Vip\loadSunriseConfigForDomain('alternative-domain.com')
         );
@@ -354,6 +365,7 @@ class HelpersTest extends UnitTestCase
                 'redirect' => false,
                 'preservePath' => false,
                 'preserveQuery' => false,
+                'status' => 301,
             ],
             Vip\loadSunriseConfigForDomain('www.production.example.com')
         );
@@ -374,6 +386,7 @@ class HelpersTest extends UnitTestCase
                 'redirect' => true,
                 'preservePath' => true,
                 'preserveQuery' => true,
+                'status' => 301,
             ],
             Vip\loadSunriseConfigForDomain('example.com')
         );
@@ -384,6 +397,7 @@ class HelpersTest extends UnitTestCase
                 'redirect' => true,
                 'preservePath' => true,
                 'preserveQuery' => true,
+                'status' => 302,
             ],
             Vip\loadSunriseConfigForDomain('www.acme.com')
         );
@@ -394,6 +408,7 @@ class HelpersTest extends UnitTestCase
                 'redirect' => false,
                 'preservePath' => false,
                 'preserveQuery' => false,
+                'status' => 301,
             ],
             Vip\loadSunriseConfigForDomain('alternative-domain.com')
         );
@@ -404,6 +419,7 @@ class HelpersTest extends UnitTestCase
                 'redirect' => true,
                 'preservePath' => true,
                 'preserveQuery' => true,
+                'status' => 301,
             ],
             Vip\loadSunriseConfigForDomain('www.production.example.com')
         );
