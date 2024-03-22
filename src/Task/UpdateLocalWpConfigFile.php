@@ -202,5 +202,20 @@ final class UpdateLocalWpConfigFile implements Task
 
         $this->filesystem->copy($sourcePath, $targetPath);
         $io->infoLine('client-sunrise.php copied.');
+
+        $overridePath = $this->directories->phpConfigDir() . '/client-sunrise.override.php';
+        if (!file_exists($overridePath)) {
+            return;
+        }
+
+        $io->commentLine('Copying client-sunrise.override.php to ABSPATH...');
+        $targetPath = "{$targetDir}/client-sunrise.override.php";
+        if (file_exists($targetPath)) {
+            $io->verboseCommentLine("{$targetPath} exists, replacing...");
+            $this->filesystem->unlink($targetPath);
+        }
+
+        $this->filesystem->copy($overridePath, $targetPath);
+        $io->infoLine('client-sunrise.override.php copied.');
     }
 }
