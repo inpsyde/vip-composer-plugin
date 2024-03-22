@@ -274,6 +274,17 @@ function currentUrlPath(): string
 }
 
 /**
+ * Return current host based on HTTP header, removing any port information.
+ * Don't trust it: might be changed by clients.
+ *
+ * @return string
+ */
+function currentUrlHost(): string
+{
+    return (string) strtok($_SERVER['HTTP_HOST'] ?? '', ':');
+}
+
+/**
  * @param string $base
  * @param bool $preservePath
  * @param bool $preserveQuery
@@ -409,7 +420,13 @@ function deployVersion(): ?string
  * Load the configuration for redirections and domain mapping for a specific domain.
  *
  * @param string $domain
- * @return array{'target':string, 'redirect':bool, 'preservePath':bool, 'preserveQuery':bool}
+ * @return array{
+ *     'target': string,
+ *     'redirect': bool,
+ *     'preservePath': bool,
+ *     'preserveQuery': bool,
+ *     'status': int
+ * }
  */
 function loadSunriseConfigForDomain(string $domain): array
 {

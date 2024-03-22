@@ -2,8 +2,6 @@
 
 declare(strict_types=1);
 
-// phpcs:disable
-
 /*
  * Helpers functions used in this file.
  */
@@ -18,7 +16,7 @@ if (file_exists(__DIR__ . '/vip-config.override.php')) {
     require_once __DIR__ . '/vip-config.override.php';
 }
 $wpEnv = Inpsyde\Vip\determineWpEnv();
-$vipEnv =  Inpsyde\Vip\determineVipEnv();
+$vipEnv = Inpsyde\Vip\determineVipEnv();
 if (file_exists(__DIR__ . "/vip-config.{$vipEnv}.php")) {
     require_once __DIR__ . "/vip-config.{$vipEnv}.php";
 }
@@ -63,8 +61,9 @@ switch ($wpEnv) {
 }
 unset($wpEnv);
 
+/** @psalm-suppress RedundantCondition */
 if ((defined('WP_ALLOW_MULTISITE') && WP_ALLOW_MULTISITE) || (defined('MULTISITE') && MULTISITE)) {
-    $domain = (string) strtok($_SERVER['HTTP_HOST'] ?? '', ':');
+    $domain = Inpsyde\Vip\currentUrlHost();
     defined('MULTISITE') or define('MULTISITE', true);
     defined('SUBDOMAIN_INSTALL') or define('SUBDOMAIN_INSTALL', false);
     defined('DOMAIN_CURRENT_SITE') or define('DOMAIN_CURRENT_SITE', $domain);
@@ -80,6 +79,8 @@ if ((defined('WP_ALLOW_MULTISITE') && WP_ALLOW_MULTISITE) || (defined('MULTISITE
 
 /*
  * Some other generic WP constants that might be too late to define in MU plugin.
+ *
+ * phpcs:disable Inpsyde.CodeQuality.NoTopLevelDefine
  */
 defined('DISALLOW_FILE_EDIT') or define('DISALLOW_FILE_EDIT', true);
 defined('DISALLOW_FILE_MODS') or define('DISALLOW_FILE_MODS', true);

@@ -10,15 +10,14 @@
     findUnusedCode="false"
     hideExternalErrors="true"
     allowNamedArgumentCalls="false"
+    autoloader="./app/vip-config/__helpers.php"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xmlns="https://getpsalm.org/schema/config"
     xsi:schemaLocation="https://getpsalm.org/schema/config vendor/vimeo/psalm/config.xsd"
 >
     <projectFiles>
         <directory name="src"/>
-        <file name="app/vip-config/__automated-test-checker.php"/>
-        <file name="app/vip-config/__sunrise-config-loader.php"/>
-        <file name="app/vip-config/__helpers.php"/>
+        <directory name="app/vip-config"/>
         <ignoreFiles>
             <directory name="vendor" />
         </ignoreFiles>

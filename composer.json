@@ -52,12 +52,12 @@
         }
     },
     "scripts": {
-        "phpcs": "@php ./vendor/squizlabs/php_codesniffer/bin/phpcs",
+        "cs": "@php ./vendor/squizlabs/php_codesniffer/bin/phpcs",
         "psalm": "@php ./vendor/vimeo/psalm/psalm --no-suggestions --report-show-info=false --find-unused-psalm-suppress --no-diff --no-cache --no-file-cache --output-format=compact",
         "tests": "@php ./vendor/phpunit/phpunit/phpunit --no-coverage",
         "tests:coverage": "@php ./vendor/phpunit/phpunit/phpunit --coverage-clover",
         "qa": [
-            "@phpcs",
+            "@cs",
             "@psalm",
             "@tests"
         ]

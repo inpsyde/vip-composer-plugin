@@ -25,12 +25,6 @@
         </properties>
     </rule>
 
-    <rule ref="Inpsyde.CodeQuality.ElementNameMinimalLength">
-        <properties>
-            <property name="additionalAllowedNames" type="array" value="cd"/>
-        </properties>
-    </rule>
-
     <rule ref="PSR1.Files.SideEffects">
         <exclude-pattern>./app/vip-config/*</exclude-pattern>
     </rule>

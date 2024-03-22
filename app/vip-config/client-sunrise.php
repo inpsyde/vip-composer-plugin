@@ -118,9 +118,6 @@ class SunriseRedirects
         if (
             !doing_action('parse_site_query')
             || !function_exists(__NAMESPACE__ . '\\isWebRequest')
-            || !function_exists(__NAMESPACE__ . '\\loadSunriseConfigForDomain')
-            || !function_exists(__NAMESPACE__ . '\\buildFullRedirectUrlFor')
-            || !function_exists(__NAMESPACE__ . '\\earlyRedirect')
         ) {
             return;
         }
@@ -136,7 +133,7 @@ class SunriseRedirects
             return;
         }
 
-        $sourceHost = (string) strtok($_SERVER['HTTP_HOST'], ':');
+        $sourceHost = currentUrlHost();
         if (!in_array($sourceHost, $domains, true)) {
             return;
         }
@@ -200,7 +197,9 @@ class SunriseRedirects
             $config['preserveQuery']
         );
 
-        earlyRedirect($targetUrl);
+        if ($targetUrl !== null) {
+            earlyRedirect($targetUrl, $config['status']);
+        }
     }
 
     /**
