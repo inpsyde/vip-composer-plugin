@@ -41,7 +41,7 @@
  * When redirect is `true` (default), the current path and query are, by-default, forwarded.
  * That is, if the current URL visited is `https://example.dev/foo?x=y`, with the config above, the
  * user is redirected to: `https://www.example.dev/foo?x=y`. To prevent the forwarding of path or
- * query, it is possible to use the `preservePath`/`preserveQuery` option, for example:
+ * query, it is possible to use the `preservePath`/`preserveQuery` options, for example:
  *
  * ```php
  *  return [
@@ -73,95 +73,168 @@
  * If no environment key is found, the configuration will be applied to all environments.
  *
  * Env-specific configuration and "generic" configuration can co-exist in the same file.
- * if the same domain is used as key in both env-specific and "generic" configuration the latter
- * takes precedence and the former is discarded when in that environment.
+ * If the same domain is used as key in both env-specific and "generic" configuration, the latter
+ * takes precedence and the "generic" configuration is discarded when in that environment.
  */
 
 declare(strict_types=1);
 
 namespace Inpsyde\Vip;
 
-if (
-    !function_exists(__NAMESPACE__ . '\\isWebRequest')
-    || !function_exists(__NAMESPACE__ . '\\loadSunriseConfigForDomain')
-    || !function_exists(__NAMESPACE__ . '\\buildFullRedirectUrlFor')
-    || !function_exists(__NAMESPACE__ . '\\earlyRedirect')
-) {
-    return;
-}
-
-/**
- * @param mixed $url
- * @param string $search
- * @param string $replace
- * @return mixed
- */
-function replaceAltUrl(mixed $url, string $search, string $replace): mixed
+class SunriseRedirects
 {
-    if (is_string($url)) {
-        $url = preg_replace("~^(https?://){$search}([/?]?.*)?$~", '$1' . $replace . '$2', $url);
-    }
+    private static bool $done = false;
 
-    return $url;
-}
+    /** @var list{string, string} */
+    private static array $hosts = ['', ''];
 
-/**
- * @param \WP_Site_Query $query
- * @return void
- *
- * phpcs:disable Generic.Metrics.CyclomaticComplexity
- * phpcs:disable Inpsyde.CodeQuality.FunctionLength
- */
-function parseSiteQueryOnMultisiteLoad(\WP_Site_Query $query): void
-{
-    if (!doing_action('parse_site_query')) {
-        return;
-    }
-
-    remove_action('parse_site_query', __FUNCTION__);
-
-    static $done;
-    if ($done || did_action('ms_loaded') || !isWebRequest()) {
-        return;
-    }
-
-    $done = true;
-    $queryDomain = $query->query_vars['domain'] ?? null;
-    $queryDomains = $query->query_vars['domain__in'] ?? null;
-
-    if (
-        (($queryDomain === '') || !is_string($queryDomain))
-        && (($queryDomains === []) || !is_array($queryDomains))
-    ) {
-        return;
-    }
-
-    $host = (string) strtok($_SERVER['HTTP_HOST'], ':');
-    if (is_array($queryDomains) && in_array($host, $queryDomains, true)) {
-        $first = $queryDomains[0] ?? '';
-        $second = $queryDomains[1] ?? '';
-        if (($first === "www.{$second}") || ("www.{$first}" === $second)) {
-            $queryDomains = [$host];
+    /**
+     * By looking at currently queried domain, the current host and any configuration for it,
+     * determines if we have to redirect to another domain, adjust the query arguments to query an
+     * alternative domain, or do nothing.
+     *
+     * This method is called once, very early, filtering the site query triggered by
+     * `get_site_by_path()` (via `get_sites()`) called inside `ms_load_current_site_and_network()`.
+     *
+     * @param \WP_Site_Query $query
+     * @return void
+     *
+     * @see https://developer.wordpress.org/reference/functions/get_site_by_path/
+     * @see https://developer.wordpress.org/reference/functions/ms_load_current_site_and_network/
+     * @see https://developer.wordpress.org/reference/functions/get_sites/
+     * @wp-hook parse_site_query
+     */
+    public static function handleQuery(\WP_Site_Query $query): void
+    {
+        if (
+            !doing_action('parse_site_query')
+            || !function_exists(__NAMESPACE__ . '\\isWebRequest')
+            || !function_exists(__NAMESPACE__ . '\\loadSunriseConfigForDomain')
+            || !function_exists(__NAMESPACE__ . '\\buildFullRedirectUrlFor')
+            || !function_exists(__NAMESPACE__ . '\\earlyRedirect')
+        ) {
+            return;
         }
-    }
 
-    $domains = is_array($queryDomains) ? $queryDomains : [$queryDomain];
-    foreach ($domains as $domain) {
-        $config = loadSunriseConfigForDomain($domain);
+        remove_action('parse_site_query', [static::class, 'handleQuery']);
+        if (static::$done || did_action('ms_loaded') || !isWebRequest()) {
+            return;
+        }
+
+        static::$done = true;
+        $domains = static::queryDomains($query);
+        if ($domains === []) {
+            return;
+        }
+
+        $sourceHost = (string) strtok($_SERVER['HTTP_HOST'], ':');
+        if (!in_array($sourceHost, $domains, true)) {
+            return;
+        }
+
+        $config = loadSunriseConfigForDomain($sourceHost);
         if ($config['target'] === '') {
-            continue;
+            return;
         }
 
         if ($config['redirect']) {
-            $targetUrl = buildFullRedirectUrlFor(
-                $config['target'],
-                $config['preservePath'],
-                $config['preserveQuery']
-            );
-
-            earlyRedirect($targetUrl);
-            break;
+            static::handleRedirect($config);
+            return;
         }
+
+        $targetHost = static::determineTargetHost($config, $sourceHost, $query);
+        if ($targetHost === null) {
+            return;
+        }
+
+        static::$hosts = [$targetHost, $sourceHost];
+        static::handleQueryRewrite($query);
+    }
+
+    /**
+     * Filters generated URLs on the website.
+     *
+     * When rewriting the site query to query an alternative domain, all the URL on the site
+     * would still be using the target URL, creating issues, especially for assets loading.
+     * This method filter pretty much all URLs generated on the site, to target domain in the URL,
+     * so that we can (almost) transparently visit the site with another domain.
+     * This has some performance implications, and if not wanted it can be disabled by setting the
+     * `Inpsyde\Vip\SUNRISE_FILTER_ALT_DOMAIN_URLS` constant to false, or even removing this filter,
+     * and that si why this is a public static function that is easy to remove.
+     *
+     * @param mixed $url
+     * @return mixed
+     *
+     * @wp-hook set_url_scheme
+     */
+    public static function maybeReplaceUrl(mixed $url): mixed
+    {
+        [$search, $replace] = static::$hosts;
+        if (($search !== '') && ($replace !== '') && is_string($url)) {
+            $url = preg_replace("~^(https?://){$search}([?/#]?.*)?$~", "$1{$replace}$2", $url);
+        }
+
+        return $url;
+    }
+
+    /**
+     * Do the redirect when the configuration for current domain tell us to do it.
+     *
+     * @param array{'target':string, 'preservePath':bool, 'preserveQuery':bool} $config
+     * @return void
+     */
+    private static function handleRedirect(array $config): void
+    {
+        $targetUrl = buildFullRedirectUrlFor(
+            $config['target'],
+            $config['preservePath'],
+            $config['preserveQuery']
+        );
+
+        earlyRedirect($targetUrl);
+    }
+
+    /**
+     * Adjust site query args when the configuration for current domain tell us to not redirect.
+     *
+     * @param \WP_Site_Query $query
+     * @return void
+     */
+    private static function handleQueryRewrite(\WP_Site_Query $query): void
+    {
+        [$targetHost] = static::$hosts;
+        if ($targetHost === '') {
+            return;
+        }
+
+        $query->query_vars['domain__in'] = '';
+        $query->query_vars['domain'] = $targetHost;
+
+        if (
+            !defined(__NAMESPACE__ . '\\SUNRISE_FILTER_ALT_DOMAIN_URLS')
+            || SUNRISE_FILTER_ALT_DOMAIN_URLS
+        ) {
+            add_filter('set_url_scheme', [static::class, 'maybeReplaceUrl']);
+        }
+    }
+
+    /**
+     * Based on configuration, determine the domain to replace in site query.
+     *
+     * This does not work for www to non-www queries and vice-versa, as we don't want to support
+     * both variants for the same site (use redirect instead).
+     * It also does not work for changes in path, e.g. it is not possible to rewrite `main.com` with
+     * `alternative.com/something`, but only to `alternative.com`
+     *
+     *
+     * @param array{'target': string} $config
+     * @return non-empty-string|null
+     */
+    private static function determineTargetHost(
+        array $config,
+        string $sourceDomain,
+        \WP_Site_Query $query
+    ): ?string {
 
         $url = $config['target'];
         if (preg_match('~^(?:https?:)?//~i', $url) !== 1) {
@@ -170,11 +243,12 @@ function parseSiteQueryOnMultisiteLoad(\WP_Site_Query $query): void
         $parsed = parse_url($url);
         if (
             !isset($parsed['host'])
-            || ($parsed['host'] === $domain)
-            || ($parsed['host'] === "www.{$domain}")
-            || ("www.{$parsed['host']}" === $domain)
+            || ($parsed['host'] === '')
+            || ($parsed['host'] === $sourceDomain)
+            || ($parsed['host'] === "www.{$sourceDomain}")
+            || ("www.{$parsed['host']}" === $sourceDomain)
         ) {
-            continue;
+            return null;
         }
 
         $targetPath = '/' . trim($parsed['path'] ?? '', '/');
@@ -182,21 +256,35 @@ function parseSiteQueryOnMultisiteLoad(\WP_Site_Query $query): void
         $queriedPaths = (array) ($query->query_vars['path__in'] ?? []);
         is_string($queriedPath) and $queriedPaths[] = $queriedPath;
         if (($queriedPaths !== []) && !in_array($targetPath, $queriedPaths, true)) {
-            continue;
+            return null;
         }
 
-        add_filter(
-            'set_url_scheme',
-            static fn (mixed $url): mixed => replaceAltUrl($url, $parsed['host'], $domain)
-        );
+        return $parsed['host'];
+    }
 
-        $query->query_vars['domain__in'] = '';
-        $query->query_vars['domain'] = $parsed['host'];
-        break;
+    /**
+     * Determine all domains currently queried.
+     *
+     * Because this is done very early, during `ms_load_current_site_and_network()`, this query only
+     * happens because of `get_site_path()` called inside that function, which means there will be
+     * just one domain, or both "www" and "non-www" variants of the same domain.
+     * This method normalizes the input and returns an array which should have one or two items.
+     *
+     * @param \WP_Site_Query $query
+     * @return array
+     */
+    private static function queryDomains(\WP_Site_Query $query): array
+    {
+        $domains = $query->query_vars['domain__in'] ?? [];
+        is_array($domains) or $domains = [];
+        $domain = $query->query_vars['domain'] ?? null;
+        ($domain !== null) and $domains[] = $domain;
+
+        return $domains;
     }
 }
 
-add_action('parse_site_query', __NAMESPACE__ . '\\parseSiteQueryOnMultisiteLoad');
+add_action('parse_site_query', [SunriseRedirects::class, 'handleQuery']);
 
 if (file_exists(__DIR__ . '\\client-sunrise.override.php')) {
     require_once __DIR__ . '\\client-sunrise.override.php';
