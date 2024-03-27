@@ -155,9 +155,41 @@ final class TaskConfig
     /**
      * @return bool
      */
+    public function isVipDevEnv(): bool
+    {
+        return $this->data[self::VIP_DEV_ENV];
+    }
+
+    /**
+     * @return bool
+     */
+    public function isAnyLocal(): bool
+    {
+        return $this->isLocal() || $this->isVipDevEnv();
+    }
+
+    /**
+     * @return bool
+     */
+    public function isFullMode(): bool
+    {
+        return $this->isAnyLocal() || $this->isDeploy();
+    }
+
+    /**
+     * @return bool
+     */
     public function isOnlyLocal(): bool
     {
-        return $this->isLocal() && !$this->isGit();
+        return $this->isAnyLocal() && !$this->isGit();
+    }
+
+    /**
+     * @return bool
+     */
+    public function isProdAutoloadOnly(): bool
+    {
+        return !$this->isFullMode() && !$this->syncDevPaths() && $this->data[self::PROD_AUTOLOAD];
     }
 
     /**
@@ -181,7 +213,7 @@ final class TaskConfig
      */
     public function isGitPush(): bool
     {
-        return $this->isDeploy() || ($this->isLocal() && $this->data[self::GIT_PUSH]);
+        return $this->isDeploy() || $this->data[self::GIT_PUSH];
     }
 
     /**
@@ -189,7 +221,7 @@ final class TaskConfig
      */
     public function isGitNoPush(): bool
     {
-        return $this->isLocal() && $this->data[self::GIT_NO_PUSH];
+        return $this->data[self::GIT_NO_PUSH];
     }
 
     /**
@@ -221,7 +253,7 @@ final class TaskConfig
      */
     public function generateProdAutoload(): bool
     {
-        return $this->data[self::PROD_AUTOLOAD];
+        return $this->isGit() || $this->data[self::PROD_AUTOLOAD];
     }
 
     /**
@@ -257,14 +289,6 @@ final class TaskConfig
     }
 
     /**
-     * @return bool
-     */
-    public function isVipDevEnv(): bool
-    {
-        return $this->data[self::VIP_DEV_ENV];
-    }
-
-    /**
      * @return void
      */
     private function validate(): void
@@ -273,52 +297,73 @@ final class TaskConfig
         $this->data[self::GIT_URL] = $this->validateUrl();
         $this->validateBooleans();
 
-        if (
-            !$this->isLocal()
-            && !$this->isDeploy()
-            && !$this->syncDevPaths()
-            && !$this->forceCoreUpdate()
-            && !$this->forceVipMuPlugins()
-            && !$this->isVipDevEnv()
-        ) {
-            $this->data[self::LOCAL] = true;
-        }
+        $this->validateBaseMode();
 
         if (
-            $this->isVipDevEnv()
-            && (
-                $this->isLocal()
-                || $this->isGit()
-                || $this->syncDevPaths()
-                || $this->forceCoreUpdate()
-                || $this->forceVipMuPlugins()
-                || $this->generateProdAutoload()
-            )
+            ($this->data[self::GIT_BRANCH] || $this->data[self::GIT_URL])
+            && !$this->isFullMode()
         ) {
-            throw new \LogicException('VIP dev-env preparation must be the *only* operation.');
-        }
-
-        if ($this->generateProdAutoload() && !$this->isLocal()) {
             throw new \LogicException(
-                'Explicit production autoload generation task can only be used '
-                . 'in combination with *local* task.'
+                'Please use custom Git branch or URL only with --local, --vip-dev-env '
+                . 'or --deploy flags.'
             );
         }
 
-        if ($this->syncDevPaths() && ($this->isLocal() || $this->isDeploy())) {
-            throw new \LogicException('Sync dev paths must be the *only* operation.');
+        if (
+            ($this->isGitNoPush() || $this->data[self::GIT_PUSH])
+            && !$this->isAnyLocal()
+        ) {
+            throw new \LogicException(
+                'Please use Git flags only with --local or --vip-dev-env operations.'
+            );
         }
 
-        if ($this->isLocal() && $this->isDeploy()) {
-            throw new \LogicException('Can\'t run both *local* and *deploy* tasks.');
+        if ($this->forceVipMuPlugins() || $this->skipVipMuPlugins()) {
+            if (!$this->isAnyLocal()) {
+                throw new \LogicException(
+                    'Force and skip VIP MU plugins update are --local or --vip-dev-env operations.'
+                );
+            }
+            if ($this->forceVipMuPlugins() && $this->skipVipMuPlugins()) {
+                throw new \LogicException('Can\'t both *skip* and *force* VIP MU plugins.');
+            }
         }
 
-        if ($this->skipCoreUpdate() && $this->forceCoreUpdate()) {
-            throw new \LogicException('Can\'t both *skip* and *force* core update.');
+        if ($this->forceCoreUpdate() || $this->skipCoreUpdate()) {
+            if (!$this->isLocal()) {
+                throw new \LogicException('Force and skip core update are --local operations.');
+            }
+            if ($this->forceCoreUpdate() && $this->skipCoreUpdate()) {
+                throw new \LogicException('Can\'t both *skip* and *force* core update.');
+            }
+        }
+    }
+
+    /**
+     * @return void
+     */
+    private function validateBaseMode(): void
+    {
+        $modes = $this->isLocal() ? 1 : 0;
+        $this->isVipDevEnv() and $modes++;
+        $this->isDeploy() and $modes++;
+
+        $devPaths = $this->syncDevPaths();
+        $autoload = $this->data[self::PROD_AUTOLOAD];
+        $devPaths and $modes++;
+
+        if (($modes === 0) && $autoload) {
+            return;
         }
 
-        if ($this->skipVipMuPlugins() && $this->forceVipMuPlugins()) {
-            throw new \LogicException('Can\'t both *skip* and *force* VIP GO MU plugins update.');
+        if ($modes !== 1) {
+            throw new \LogicException(
+                'Please provide exactly one execution mode via command flags.'
+            );
+        }
+
+        if ($devPaths && $autoload) {
+            throw new \LogicException('Please use --sync-dev-paths as only option.');
         }
     }
 

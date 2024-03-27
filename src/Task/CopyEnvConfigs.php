@@ -51,7 +51,7 @@ final class CopyEnvConfigs implements Task
      */
     public function enabled(TaskConfig $taskConfig): bool
     {
-        return $this->findPackages() !== [];
+        return !$taskConfig->isProdAutoloadOnly() && ($this->findPackages() !== []);
     }
 
     /**

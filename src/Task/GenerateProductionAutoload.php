@@ -17,7 +17,7 @@ final class GenerateProductionAutoload implements Task
     /**
      * @param Config $config
      * @param Composer $composer
-     * @param InstalledPackages $devPackages
+     * @param InstalledPackages $installedPackages
      * @param VipDirectories $directories
      */
     public function __construct(
@@ -42,9 +42,7 @@ final class GenerateProductionAutoload implements Task
      */
     public function enabled(TaskConfig $taskConfig): bool
     {
-        return $taskConfig->isGit()
-            || $taskConfig->generateProdAutoload()
-            || $taskConfig->isVipDevEnv();
+        return $taskConfig->generateProdAutoload() || $taskConfig->isVipDevEnv();
     }
 
     /**

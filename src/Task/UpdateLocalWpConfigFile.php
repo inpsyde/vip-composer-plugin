@@ -37,9 +37,7 @@ final class UpdateLocalWpConfigFile implements Task
      */
     public function enabled(TaskConfig $taskConfig): bool
     {
-        return $taskConfig->isLocal()
-            || $taskConfig->forceVipMuPlugins()
-            || $taskConfig->forceCoreUpdate();
+        return $taskConfig->isLocal();
     }
 
     /**

@@ -41,8 +41,7 @@ final class DownloadVipGoMuPlugins implements Task
      */
     public function enabled(TaskConfig $taskConfig): bool
     {
-        return ($taskConfig->isLocal() || $taskConfig->forceVipMuPlugins())
-            && !$taskConfig->skipVipMuPlugins();
+        return $taskConfig->isAnyLocal() && !$taskConfig->skipVipMuPlugins();
     }
 
     /**

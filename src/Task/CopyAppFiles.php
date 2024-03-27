@@ -51,7 +51,7 @@ final class CopyAppFiles implements Task
      */
     public function enabled(TaskConfig $taskConfig): bool
     {
-        return true;
+        return !$taskConfig->isProdAutoloadOnly();
     }
 
     /**

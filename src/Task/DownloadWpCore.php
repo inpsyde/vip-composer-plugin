@@ -92,8 +92,7 @@ final class DownloadWpCore implements Task
      */
     public function enabled(TaskConfig $taskConfig): bool
     {
-        return ($taskConfig->isLocal() || $taskConfig->forceCoreUpdate())
-            && !$taskConfig->skipCoreUpdate();
+        return $taskConfig->isLocal() && !$taskConfig->skipCoreUpdate();
     }
 
     /**

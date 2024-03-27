@@ -52,8 +52,7 @@ final class GenerateMuPluginsLoader implements Task
      */
     public function enabled(TaskConfig $taskConfig): bool
     {
-        return $this->packages
-            && ($taskConfig->isLocal() || $taskConfig->isDeploy() || $taskConfig->isVipDevEnv());
+        return $this->packages && $taskConfig->isFullMode();
     }
 
     /**
