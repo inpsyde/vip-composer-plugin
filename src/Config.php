@@ -79,6 +79,26 @@ final class Config implements \ArrayAccess
         self::CUSTOM_ENV_NAMES_KEY => [],
     ];
 
+    /**
+     *  WordPress supports by default: `local`, `development`, `staging`, and `production`.
+     *  VIP supports by default several environments, see:
+     *  https://github.com/Automattic/vip-go-mu-plugins/blob/5241ac59dd8c826848f5614f73761e806567c954/000-vip-init.php#L280-L288
+     *  This list targets both for larger by-default compatibility.
+     */
+    private const CUSTOM_ENV_DEFAULTS = [
+        'local',
+        'dev',
+        'develop',
+        'development',
+        'staging',
+        'stage',
+        'testing',
+        'uat',
+        'preprod',
+        'production',
+        'all',
+    ];
+
     private array $config;
     private ComposerConfig $composerConfig;
 
@@ -133,7 +153,6 @@ final class Config implements \ArrayAccess
      */
     public function composerLockPath(): string
     {
-        /** @var ComposerConfig\ConfigSourceInterface $configSource */
         $configSource = $this->composerConfig->getConfigSource();
         $composerJsonSource = $configSource->getName();
 
@@ -187,12 +206,7 @@ final class Config implements \ArrayAccess
     {
         $customEnvs = (array) $this->offsetGet(self::CUSTOM_ENV_NAMES_KEY);
         if ($customEnvs === []) {
-            /*
-             * WordPress supports by default: `local`, `development`, `staging`, and `production`.
-             * VIP supports by default: `develop`, `preprod`, and `production`.
-             * This list targets both for larger by-default compatibility.
-             */
-            return ['local', 'develop', 'development', 'staging', 'preprod', 'production', 'all'];
+            return self::CUSTOM_ENV_DEFAULTS;
         }
         $envNames = [];
         foreach ($customEnvs as $envName) {
@@ -209,6 +223,14 @@ final class Config implements \ArrayAccess
         }
         /** @var list<non-empty-string> $envNames */
         return $envNames;
+    }
+
+    /**
+     * @return string
+     */
+    public function pluginPath(): string
+    {
+        return dirname(__DIR__);
     }
 
     /**

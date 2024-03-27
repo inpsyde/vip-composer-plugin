@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Inpsyde\VipComposer\Utils;
 
 use Composer\Downloader\DownloaderInterface;
-use Composer\Downloader\FileDownloader;
 use Composer\Package\PackageInterface;
 use Composer\Util\Filesystem;
 use Composer\Util\Loop;

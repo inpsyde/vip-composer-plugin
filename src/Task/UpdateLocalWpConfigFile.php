@@ -37,7 +37,9 @@ final class UpdateLocalWpConfigFile implements Task
      */
     public function enabled(TaskConfig $taskConfig): bool
     {
-        return $taskConfig->isLocal() || $taskConfig->forceVipMuPlugins();
+        return $taskConfig->isLocal()
+            || $taskConfig->forceVipMuPlugins()
+            || $taskConfig->forceCoreUpdate();
     }
 
     /**
@@ -47,9 +49,8 @@ final class UpdateLocalWpConfigFile implements Task
      */
     public function run(Io $io, TaskConfig $taskConfig): void
     {
-        $wpDir = $this->config->wpConfig()[Config::WP_LOCAL_DIR_KEY];
-        $abspath = dirname($this->config->basePath() . "/{$wpDir}");
-        $wpConfigPath = "{$abspath}/wp-config.php";
+        $wpDir = (string) $this->config->wpConfig()[Config::WP_LOCAL_DIR_KEY];
+        $wpConfigPath = dirname($this->config->basePath() . "/{$wpDir}") . '/wp-config.php';
         if (!file_exists($wpConfigPath)) {
             return;
         }
@@ -59,7 +60,6 @@ final class UpdateLocalWpConfigFile implements Task
         [$contentStart, $contentEnd] = $this->parseCurrentContent($wpConfigPath, $io);
         if ($contentStart === null) {
             $io->errorLine("Can't update 'wp-config.php', it seems custom.");
-
             return;
         }
 
@@ -96,6 +96,8 @@ final class UpdateLocalWpConfigFile implements Task
         $content .= $contentEnd;
 
         $this->saveFile($wpConfigPath, $this->ensureDebug($content), $io);
+
+        $this->copyClientSunrise($wpDir, $io);
     }
 
     /**
@@ -178,5 +180,43 @@ final class UpdateLocalWpConfigFile implements Task
         }
 
         return rtrim($parsed) . "\n";
+    }
+
+    /**
+     * @param string $abspath
+     * @param Io $io
+     * @return void
+     */
+    private function copyClientSunrise(string $abspath, Io $io): void
+    {
+        $io->commentLine('Copying client-sunrise.php to ABSPATH...');
+        $sourcePath = $this->config->pluginPath() . '/app/vip-config/client-sunrise.php';
+        $targetDir = "{$abspath}/vip-config";
+        $targetPath = "{$targetDir}/client-sunrise.php";
+
+        $this->filesystem->ensureDirectoryExists($targetDir);
+
+        if (file_exists($targetPath)) {
+            $io->verboseCommentLine("{$targetPath} exists, replacing...");
+            $this->filesystem->unlink($targetPath);
+        }
+
+        $this->filesystem->copy($sourcePath, $targetPath);
+        $io->infoLine('client-sunrise.php copied.');
+
+        $overridePath = $this->directories->phpConfigDir() . '/client-sunrise.override.php';
+        if (!file_exists($overridePath)) {
+            return;
+        }
+
+        $io->commentLine('Copying client-sunrise.override.php to ABSPATH...');
+        $targetPath = "{$targetDir}/client-sunrise.override.php";
+        if (file_exists($targetPath)) {
+            $io->verboseCommentLine("{$targetPath} exists, replacing...");
+            $this->filesystem->unlink($targetPath);
+        }
+
+        $this->filesystem->copy($overridePath, $targetPath);
+        $io->infoLine('client-sunrise.override.php copied.');
     }
 }

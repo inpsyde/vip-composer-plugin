@@ -27,12 +27,12 @@ final class CopyDevPaths implements Task
     ];
 
     private const RESERVED_MU_PLUGINS = [
-        '__loader.php',
+        GenerateMuPluginsLoader::LOADER_FILE,
     ];
 
     private const RESERVED_PRIVATE = [
-        'deploy-id',
-        'deploy-ver',
+        GenerateDeployVersion::DEPLOY_ID_FILE,
+        GenerateDeployVersion::DEPLOY_VER_FILE,
     ];
 
     /**
@@ -41,13 +41,15 @@ final class CopyDevPaths implements Task
      * @param PackageFinder $packageFinder
      * @param InstallationManager $installationManager
      * @param Filesystem $filesystem
+     * @param CopyAppFiles $copyAppFiles
      */
     public function __construct(
         private Config $config,
         private VipDirectories $directories,
         private PackageFinder $packageFinder,
         private InstallationManager $installationManager,
-        private Filesystem $filesystem
+        private Filesystem $filesystem,
+        private CopyAppFiles $copyAppFiles
     ) {
     }
 
@@ -183,16 +185,7 @@ final class CopyDevPaths implements Task
             case Config::DEV_PATHS_PHP_CONFIG_DIR_KEY:
                 $what = 'PHP config files';
                 $target = $this->directories->phpConfigDir();
-                if ($finder) {
-                    $finder = $finder->ignoreDotFiles(true)->exclude('env');
-                    $envs = Finder::create()
-                        ->in("{$source}/env")
-                        ->depth('== 0')
-                        ->ignoreUnreadableDirs()
-                        ->ignoreVCS(true)
-                        ->ignoreDotFiles(true);
-                    $finder = $finder->append($envs);
-                }
+                $finder and $finder = $this->pathInfoForPhpConfigDir($finder, $source);
                 break;
             case Config::DEV_PATHS_YAML_CONFIG_DIR_KEY:
                 $what = 'Yaml config files';
@@ -215,6 +208,28 @@ final class CopyDevPaths implements Task
         }
 
         return [$what, $source, $target, $finder];
+    }
+
+    /**
+     * @param Finder $finder
+     * @param string $source
+     * @return Finder
+     */
+    private function pathInfoForPhpConfigDir(Finder $finder, string $source): Finder
+    {
+        $finder = $finder->ignoreDotFiles(true)->exclude('env');
+        if (!is_dir("{$source}/env")) {
+            return $finder;
+        }
+
+        $envs = Finder::create()
+            ->in("{$source}/env")
+            ->depth('== 0')
+            ->ignoreUnreadableDirs()
+            ->ignoreVCS(true)
+            ->ignoreDotFiles(true);
+
+        return $finder->append($envs);
     }
 
     /**
@@ -268,7 +283,6 @@ final class CopyDevPaths implements Task
 
         $targets = Finder::create()->in($target)->ignoreUnreadableDirs()->depth('== 0');
 
-        /** @var SplFileInfo $item */
         foreach ($targets as $item) {
             if ($isVipConfig) {
                 $this->cleanupPhpConfigPath($item);
@@ -306,17 +320,26 @@ final class CopyDevPaths implements Task
     private function cleanupPhpConfigPath(\SplFileInfo $item): void
     {
         $pathName = $item->getPathname();
-        if (!$item->isDir() || ($item->getBasename() !== 'env')) {
-            $this->filesystem->remove($pathName);
+        $basename = $item->getBasename();
+
+        if (!$item->isDir()) {
+            if (!in_array($basename, $this->copyAppFiles->vipConfigNames(), true)) {
+                $this->filesystem->unlink($pathName);
+            }
+
+            return;
+        }
+
+        if ($basename !== 'env') {
+            $this->filesystem->removeDirectory($pathName);
 
             return;
         }
 
         $envs = Finder::create()->in($pathName)->ignoreUnreadableDirs()->depth('== 0');
-        /** @var SplFileInfo $env */
         foreach ($envs as $env) {
-            if (!$this->isReservedVipConfig($env->getBasename())) {
-                $this->filesystem->unlink($env->getPathname());
+            if (!$env->isFile() || !$this->isReservedVipConfig($env->getBasename())) {
+                $this->filesystem->remove($env->getPathname());
             }
         }
     }
@@ -341,6 +364,7 @@ final class CopyDevPaths implements Task
                 return true;
             }
         }
+
         return false;
     }
 
@@ -350,7 +374,8 @@ final class CopyDevPaths implements Task
      */
     private function isReservedMuPlugin(string $basename): bool
     {
-        return in_array($basename, self::RESERVED_MU_PLUGINS, true);
+        return in_array($basename, self::RESERVED_MU_PLUGINS, true)
+            || in_array($basename, $this->copyAppFiles->muPluginNames(), true);
     }
 
     /**
@@ -375,7 +400,6 @@ final class CopyDevPaths implements Task
             $sourceDirs = $sourceDirs->exclude('env');
         }
 
-        /** @var SplFileInfo $sourceDir */
         foreach ($sourceDirs as $sourceDir) {
             $sourceBasename = $sourceDir->getBasename();
             if (is_dir("{$target}/{$sourceBasename}")) {
@@ -400,7 +424,6 @@ final class CopyDevPaths implements Task
 
         $errors = 0;
 
-        /** @var SplFileInfo $sourcePathInfo */
         foreach ($sourcePaths as $sourcePathInfo) {
             $sourcePath = $this->filesystem->normalizePath($sourcePathInfo->getPathname());
             $basename = $sourcePathInfo->getBasename();

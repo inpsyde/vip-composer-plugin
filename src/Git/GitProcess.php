@@ -51,9 +51,12 @@ class GitProcess
     /**
      * @param string $workingDir
      * @return GitProcess
+     *
+     * phpcs:disable Inpsyde.CodeQuality.ElementNameMinimalLength
      */
     public function cd(string $workingDir): GitProcess
     {
+        // phpcs:disable Inpsyde.CodeQuality.ElementNameMinimalLength
         if (!$workingDir || !is_dir($workingDir)) {
             throw new \RuntimeException('Invalid working dir for Git operation.');
         }

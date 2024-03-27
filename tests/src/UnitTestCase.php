@@ -4,16 +4,21 @@ declare(strict_types=1);
 
 namespace Inpsyde\VipComposer\Tests;
 
+use Brain\Monkey;
+use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use PHPUnit\Framework\TestCase;
 
 class UnitTestCase extends TestCase
 {
+    use MockeryPHPUnitIntegration;
+
     /**
      * @return void
      */
     protected function setUp(): void
     {
         parent::setUp();
+        Monkey\setUp();
     }
 
     /**
@@ -21,6 +26,7 @@ class UnitTestCase extends TestCase
      */
     protected function tearDown(): void
     {
+        Monkey\tearDown();
         parent::tearDown();
     }
 }

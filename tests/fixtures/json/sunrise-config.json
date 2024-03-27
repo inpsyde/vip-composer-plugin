@@ -1,0 +1,23 @@
+{
+    "example.com": "example.com/es",
+    "www.acme.com": {
+        "target": "acme.com",
+        "redirect": true,
+        "preservePath": false,
+        "meh": "meh"
+    },
+    "alternative-domain.com": {
+        "target": "main-domain.com",
+        "redirect": false,
+        "preserveQuery": true
+    },
+    "env:production": {
+        "example.com": "example.com/production",
+        "www.production.example.com": "production.example.com",
+        "www.acme.com": {
+            "target": "acme.com",
+            "preservePath": true,
+            "status": 302
+        }
+    }
+}

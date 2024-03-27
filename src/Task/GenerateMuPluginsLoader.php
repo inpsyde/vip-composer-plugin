@@ -13,6 +13,8 @@ use Inpsyde\VipComposer\VipDirectories;
 
 final class GenerateMuPluginsLoader implements Task
 {
+    public const LOADER_FILE = '__loader.php';
+
     /** @var list<PackageInterface> $packages */
     private array $packages;
 
@@ -64,7 +66,7 @@ final class GenerateMuPluginsLoader implements Task
         $io->verboseCommentLine('Start with Composer loader...');
 
         $muPluginsPath = $this->directories->muPluginsDir();
-        $loaderPath = "{$muPluginsPath}/__loader.php";
+        $loaderPath = "{$muPluginsPath}/" . self::LOADER_FILE;
 
         $autoloadCode = $this->autoloadCode();
 
@@ -219,7 +221,7 @@ PHP;
     {
         $wpDirName = $this->config->wpConfig()[Config::WP_LOCAL_DIR_KEY];
         $folder = $type === 'wordpress-plugin' ? 'plugins' : 'client-mu-plugins';
-        $fromPath = $this->directories->muPluginsDir() . '/__loader.php';
+        $fromPath = $this->directories->muPluginsDir() . '/' . self::LOADER_FILE;
         $toFolder = "/{$wpDirName}/wp-content/{$folder}/{$path}";
         $toPath = $this->filesystem->normalizePath($this->config->basePath() . $toFolder);
         $relative = $this->filesystem->findShortestPathCode($fromPath, $toPath, false);

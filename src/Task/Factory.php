@@ -9,7 +9,7 @@ use Inpsyde\VipComposer\Tasks;
 
 class Factory
 {
-    /** @var array<string, object> */
+    /** @var array<class-string<Task|Tasks>, Task|Tasks> */
     private array $services = [];
 
     /**
@@ -27,8 +27,8 @@ class Factory
      */
     public function tasks(): Tasks
     {
-        /** @var Tasks $tasks */
-        $tasks = $this->service(
+        /** @psalm-suppress InvalidArgument */
+        return $this->service(
             Tasks::class,
             function (): Tasks {
                 return new Tasks(
@@ -38,8 +38,23 @@ class Factory
                 );
             }
         );
+    }
 
-        return $tasks;
+    /**
+     * @return CopyAppFiles
+     */
+    public function copyAppFiles(): CopyAppFiles
+    {
+        return $this->service(
+            CopyAppFiles::class,
+            function (): CopyAppFiles {
+                return new CopyAppFiles(
+                    $this->factory->config(),
+                    $this->factory->vipDirectories(),
+                    $this->factory->filesystem()
+                );
+            }
+        );
     }
 
     /**
@@ -47,8 +62,7 @@ class Factory
      */
     public function copyDevPaths(): CopyDevPaths
     {
-        /** @var CopyDevPaths $copyDevPaths */
-        $copyDevPaths = $this->service(
+        return $this->service(
             CopyDevPaths::class,
             function (): CopyDevPaths {
                 return new CopyDevPaths(
@@ -56,12 +70,11 @@ class Factory
                     $this->factory->vipDirectories(),
                     $this->factory->packageFinder(),
                     $this->factory->composer()->getInstallationManager(),
-                    $this->factory->filesystem()
+                    $this->factory->filesystem(),
+                    $this->copyAppFiles()
                 );
             }
         );
-
-        return $copyDevPaths;
     }
 
     /**
@@ -69,8 +82,7 @@ class Factory
      */
     public function copyEnvConfig(): CopyEnvConfigs
     {
-        /** @var CopyEnvConfigs $copyEnvConfigs */
-        $copyEnvConfigs = $this->service(
+        return $this->service(
             CopyEnvConfigs::class,
             function (): CopyEnvConfigs {
                 return new CopyEnvConfigs(
@@ -82,8 +94,6 @@ class Factory
                 );
             }
         );
-
-        return $copyEnvConfigs;
     }
 
     /**
@@ -91,8 +101,7 @@ class Factory
      */
     public function downloadVipGoMuPlugins(): DownloadVipGoMuPlugins
     {
-        /** @var DownloadVipGoMuPlugins $downloadVipGoMuPlugins */
-        $downloadVipGoMuPlugins = $this->service(
+        return $this->service(
             DownloadVipGoMuPlugins::class,
             function (): DownloadVipGoMuPlugins {
                 return new DownloadVipGoMuPlugins(
@@ -102,8 +111,6 @@ class Factory
                 );
             }
         );
-
-        return $downloadVipGoMuPlugins;
     }
 
     /**
@@ -111,8 +118,7 @@ class Factory
      */
     public function downloadWpCore(): DownloadWpCore
     {
-        /** @var DownloadWpCore $downloadWpCore */
-        $downloadWpCore = $this->service(
+        return $this->service(
             DownloadWpCore::class,
             function (): DownloadWpCore {
                 return new DownloadWpCore(
@@ -124,8 +130,6 @@ class Factory
                 );
             }
         );
-
-        return $downloadWpCore;
     }
 
     /**
@@ -133,8 +137,7 @@ class Factory
      */
     public function generateMuPluginsLoader(): GenerateMuPluginsLoader
     {
-        /** @var GenerateMuPluginsLoader $generateMuPluginsLoader */
-        $generateMuPluginsLoader = $this->service(
+        return $this->service(
             GenerateMuPluginsLoader::class,
             function (): GenerateMuPluginsLoader {
                 $packages = $this->factory->composer()
@@ -151,8 +154,6 @@ class Factory
                 );
             }
         );
-
-        return $generateMuPluginsLoader;
     }
 
     /**
@@ -160,8 +161,7 @@ class Factory
      */
     public function generateProductionAutoload(): GenerateProductionAutoload
     {
-        /** @var GenerateProductionAutoload $generateProductionAutoload */
-        $generateProductionAutoload = $this->service(
+        return $this->service(
             GenerateProductionAutoload::class,
             function (): GenerateProductionAutoload {
                 return new GenerateProductionAutoload(
@@ -172,8 +172,6 @@ class Factory
                 );
             }
         );
-
-        return $generateProductionAutoload;
     }
 
     /**
@@ -181,8 +179,7 @@ class Factory
      */
     public function handleGit(): HandleGit
     {
-        /** @var HandleGit $handleGit */
-        $handleGit = $this->service(
+        return $this->service(
             HandleGit::class,
             function (): HandleGit {
                 return new HandleGit(
@@ -194,8 +191,6 @@ class Factory
                 );
             }
         );
-
-        return $handleGit;
     }
 
     /**
@@ -203,8 +198,7 @@ class Factory
      */
     public function symlinkVipGoDir(): SymlinkVipGoDir
     {
-        /** @var SymlinkVipGoDir $symlinkVipGoDir */
-        $symlinkVipGoDir = $this->service(
+        return $this->service(
             SymlinkVipGoDir::class,
             function (): SymlinkVipGoDir {
                 return new SymlinkVipGoDir(
@@ -214,8 +208,6 @@ class Factory
                 );
             }
         );
-
-        return $symlinkVipGoDir;
     }
 
     /**
@@ -223,8 +215,7 @@ class Factory
      */
     public function updateLocalWpConfigFile(): UpdateLocalWpConfigFile
     {
-        /** @var UpdateLocalWpConfigFile $updateLocalWpConfigFile */
-        $updateLocalWpConfigFile = $this->service(
+        return $this->service(
             UpdateLocalWpConfigFile::class,
             function (): UpdateLocalWpConfigFile {
                 return new UpdateLocalWpConfigFile(
@@ -234,8 +225,6 @@ class Factory
                 );
             }
         );
-
-        return $updateLocalWpConfigFile;
     }
 
     /**
@@ -243,15 +232,12 @@ class Factory
      */
     public function generateDeployVersion(): GenerateDeployVersion
     {
-        /** @var GenerateDeployVersion $deployVersion */
-        $deployVersion = $this->service(
+        return $this->service(
             GenerateDeployVersion::class,
             function (): GenerateDeployVersion {
                 return new GenerateDeployVersion($this->factory->vipDirectories());
             }
         );
-
-        return $deployVersion;
     }
 
     /**
@@ -259,8 +245,7 @@ class Factory
      */
     public function ensureGitKeep(): EnsureGitKeep
     {
-        /** @var EnsureGitKeep $gitKeep */
-        $gitKeep = $this->service(
+        return $this->service(
             EnsureGitKeep::class,
             function (): EnsureGitKeep {
                 return new EnsureGitKeep(
@@ -269,21 +254,21 @@ class Factory
                 );
             }
         );
-
-        return $gitKeep;
     }
 
     /**
-     * @param string $class
-     * @param callable():object $factory
-     * @return object
+     * @template T of (Task|Tasks)
+     *
+     * @param class-string<T> $class
+     * @param callable():T $factory
+     * @return T
      */
-    private function service(string $class, callable $factory): object
+    private function service(string $class, callable $factory): Task|Tasks
     {
         if (!array_key_exists($class, $this->services)) {
             $this->services[$class] = $factory();
         }
-
+        /** @var T */
         return $this->services[$class];
     }
 }
