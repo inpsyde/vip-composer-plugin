@@ -294,29 +294,11 @@ final class TaskConfig
     private function validate(): void
     {
         $this->data[self::GIT_BRANCH] = $this->validateBranchName();
-        $this->data[self::GIT_URL] = $this->validateUrl();
+        $this->data[self::GIT_URL] = $this->validateGitUrl();
+
         $this->validateBooleans();
-
         $this->validateBaseMode();
-
-        if (
-            ($this->data[self::GIT_BRANCH] || $this->data[self::GIT_URL])
-            && !$this->isFullMode()
-        ) {
-            throw new \LogicException(
-                'Please use custom Git branch or URL only with --local, --vip-dev-env '
-                . 'or --deploy flags.'
-            );
-        }
-
-        if (
-            ($this->isGitNoPush() || $this->data[self::GIT_PUSH])
-            && !$this->isAnyLocal()
-        ) {
-            throw new \LogicException(
-                'Please use Git flags only with --local or --vip-dev-env operations.'
-            );
-        }
+        $this->validateGitConfig();
 
         if ($this->forceVipMuPlugins() || $this->skipVipMuPlugins()) {
             if (!$this->isAnyLocal()) {
@@ -365,6 +347,35 @@ final class TaskConfig
         if ($devPaths && $autoload) {
             throw new \LogicException('Please use --sync-dev-paths as only option.');
         }
+
+        if ($this->isVipDevEnv() && !$this->skipVipMuPlugins() && !$this->forceVipMuPlugins()) {
+            $this->data[self::SKIP_VIP_MU] = true;
+        }
+    }
+
+    /**
+     * @return void
+     */
+    private function validateGitConfig(): void
+    {
+        if (
+            (($this->data[self::GIT_BRANCH] !== null) || ($this->data[self::GIT_URL] !== null))
+            && !$this->isFullMode()
+        ) {
+            throw new \LogicException(
+                'Please use custom Git branch or URL only with --local, --vip-dev-env '
+                . 'or --deploy flags.'
+            );
+        }
+
+        if (
+            ($this->isGitNoPush() || $this->data[self::GIT_PUSH])
+            && !$this->isAnyLocal()
+        ) {
+            throw new \LogicException(
+                'Please use Git flags only with --local or --vip-dev-env operations.'
+            );
+        }
     }
 
     /**
@@ -388,7 +399,7 @@ final class TaskConfig
     /**
      * @return non-empty-string|null
      */
-    private function validateUrl(): ?string
+    private function validateGitUrl(): ?string
     {
         $url = $this->data[self::GIT_URL] ?? null;
         if ($url === null) {

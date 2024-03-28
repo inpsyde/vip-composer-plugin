@@ -16,6 +16,7 @@ class TaskConfigTest extends UnitTestCase
     {
         $config = new TaskConfig(
             [
+                'local' => 'true',
                 'git' => 'true',
                 'git-branch' => 'master',
                 'git-url' => 'https://github.com/foo/bar',
@@ -37,6 +38,7 @@ class TaskConfigTest extends UnitTestCase
     {
         $config = new TaskConfig(
             [
+                'local' => 'true',
                 'git' => 'true',
                 'git-url' => 'https://github.com/foo/bar/',
             ]
@@ -58,6 +60,7 @@ class TaskConfigTest extends UnitTestCase
 
         $config = new TaskConfig(
             [
+                'local' => 'true',
                 'git' => 'true',
                 'git-branch' => $name,
                 'git-url' => 'https://github.com/foo/bar.git',
@@ -80,6 +83,7 @@ class TaskConfigTest extends UnitTestCase
     {
         $config = new TaskConfig(
             [
+                'local' => 'true',
                 'git' => 'true',
                 'git-branch' => 'master',
             ]
@@ -101,6 +105,7 @@ class TaskConfigTest extends UnitTestCase
 
         $config = new TaskConfig(
             [
+                'local' => 'true',
                 'git' => 'true',
                 'git-branch' => 'master',
                 'git-url' => $url,
@@ -125,6 +130,7 @@ class TaskConfigTest extends UnitTestCase
 
         new TaskConfig(
             [
+                'local' => 'true',
                 'git' => 'avaja',
                 'git-branch' => 'master',
                 'git-url' => 'https://github.com/foo/bar.git',
