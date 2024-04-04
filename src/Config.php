@@ -58,7 +58,7 @@ final class Config implements \ArrayAccess
             self::GIT_BRANCH_KEY => '',
         ],
         self::WP_CONFIG_KEY => [
-            self::WP_VERSION_KEY => '4.9.*',
+            self::WP_VERSION_KEY => 'latest',
             self::WP_LOCAL_DIR_KEY => 'public',
             self::WP_LOCAL_UPLOADS_DIR_KEY => 'uploads',
         ],
