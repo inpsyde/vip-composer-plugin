@@ -7,10 +7,7 @@ namespace Inpsyde\VipComposer;
 use Composer\Composer;
 use Composer\Config as ComposerConfig;
 
-/**
- * @template-implements \ArrayAccess<mixed, mixed>
- */
-final class Config implements \ArrayAccess
+final class Config
 {
     public const CONFIG_KEY = 'vip-composer';
 
@@ -111,16 +108,16 @@ final class Config implements \ArrayAccess
         $extra = (array) ($composer->getPackage()->getExtra()[self::CONFIG_KEY] ?? []);
         $this->composerConfig = $composer->getConfig();
 
-        $this->config = [];
+        $this->config = [
+            self::BASE_PATH_KEY => $basePath,
+            self::PROD_AUTOLOAD_DIR_KEY => 'vip-autoload',
+        ];
         $keys = array_keys(self::DEFAULTS);
         foreach ($keys as $key) {
             $this->config[$key] = array_key_exists($key, $extra) && is_array($extra[$key])
                 ? array_merge(self::DEFAULTS[$key], $extra[$key])
                 : self::DEFAULTS[$key];
         }
-
-        $this->config[self::BASE_PATH_KEY] = $basePath;
-        $this->config[self::PROD_AUTOLOAD_DIR_KEY] = 'vip-autoload';
     }
 
     /**
@@ -128,7 +125,7 @@ final class Config implements \ArrayAccess
      */
     public function basePath(): string
     {
-        return (string) $this->offsetGet(self::BASE_PATH_KEY);
+        return $this->readString(self::BASE_PATH_KEY);
     }
 
     /**
@@ -136,7 +133,7 @@ final class Config implements \ArrayAccess
      */
     public function prodAutoloadDir(): string
     {
-        return (string) $this->offsetGet(self::PROD_AUTOLOAD_DIR_KEY);
+        return $this->readString(self::PROD_AUTOLOAD_DIR_KEY);
     }
 
     /**
@@ -145,7 +142,9 @@ final class Config implements \ArrayAccess
      */
     public function composerConfigValue(string $key): string
     {
-        return (string) $this->composerConfig->get($key);
+        $data = $this->composerConfig->get($key);
+
+        return is_string($data) ? $data : '';
     }
 
     /**
@@ -164,7 +163,7 @@ final class Config implements \ArrayAccess
      */
     public function vipConfig(): array
     {
-        return (array) $this->offsetGet(self::VIP_CONFIG_KEY);
+        return $this->readArray(self::VIP_CONFIG_KEY);
     }
 
     /**
@@ -172,7 +171,7 @@ final class Config implements \ArrayAccess
      */
     public function gitConfig(): array
     {
-        return (array) $this->offsetGet(self::GIT_CONFIG_KEY);
+        return $this->readArray(self::GIT_CONFIG_KEY);
     }
 
     /**
@@ -180,7 +179,7 @@ final class Config implements \ArrayAccess
      */
     public function wpConfig(): array
     {
-        return (array) $this->offsetGet(self::WP_CONFIG_KEY);
+        return $this->readArray(self::WP_CONFIG_KEY);
     }
 
     /**
@@ -188,7 +187,7 @@ final class Config implements \ArrayAccess
      */
     public function pluginsAutoloadConfig(): array
     {
-        return (array) $this->offsetGet(self::PLUGINS_AUTOLOAD_KEY);
+        return $this->readArray(self::PLUGINS_AUTOLOAD_KEY);
     }
 
     /**
@@ -196,7 +195,7 @@ final class Config implements \ArrayAccess
      */
     public function devPathsConfig(): array
     {
-        return (array) $this->offsetGet(self::DEV_PATHS_CONFIG_KEY);
+        return $this->readArray(self::DEV_PATHS_CONFIG_KEY);
     }
 
     /**
@@ -204,13 +203,13 @@ final class Config implements \ArrayAccess
      */
     public function envConfigs(): array
     {
-        $customEnvs = (array) $this->offsetGet(self::CUSTOM_ENV_NAMES_KEY);
+        $customEnvs = $this->readArray(self::CUSTOM_ENV_NAMES_KEY);
         if ($customEnvs === []) {
             return self::CUSTOM_ENV_DEFAULTS;
         }
         $envNames = [];
         foreach ($customEnvs as $envName) {
-            if (!is_string($envName)) {
+            if (($envName === '') || !is_string($envName)) {
                 continue;
             }
             $envName = trim(strtolower($envName));
@@ -234,25 +233,34 @@ final class Config implements \ArrayAccess
     }
 
     /**
-     * @inheritdoc
+     * @param non-empty-string $key
+     * @return string
      */
-    public function offsetExists($offset): bool
+    private function readString(string $key): string
     {
-        return $this->offsetGet($offset) !== null;
+        $data = $this->read($key);
+
+        return is_string($data) ? $data : '';
     }
 
     /**
-     * @param mixed $offset
+     * @param non-empty-string $key
+     * @return array
+     */
+    private function readArray(string $key): array
+    {
+        $data = $this->read($key);
+
+        return is_array($data) ? $data : [];
+    }
+
+    /**
+     * @param non-empty-string $key
      * @return mixed
      */
-    #[\ReturnTypeWillChange]
-    public function offsetGet(mixed $offset): mixed
+    private function read(string $key): mixed
     {
-        if (!is_string($offset) || !$offset) {
-            return null;
-        }
-
-        $keys = explode('.', $offset);
+        $keys = explode('.', $key);
         $target = $this->config;
         while ($keys) {
             $key = array_shift($keys);
@@ -264,33 +272,5 @@ final class Config implements \ArrayAccess
         }
 
         return $target;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function offsetSet($offset, $value): void
-    {
-        throw new \BadMethodCallException(
-            sprintf(
-                "Can't execute %s: %s is read-only",
-                __METHOD__,
-                __CLASS__
-            )
-        );
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function offsetUnset($offset): void
-    {
-        throw new \BadMethodCallException(
-            sprintf(
-                "Can't execute %s: %s is read-only",
-                __METHOD__,
-                __CLASS__
-            )
-        );
     }
 }

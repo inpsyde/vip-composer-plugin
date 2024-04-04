@@ -140,8 +140,7 @@ final class CopyDevPaths implements Task
         // phpcs:enable Inpsyde.CodeQuality.NestingLevel
         // phpcs:enable Generic.Metrics.CyclomaticComplexity
 
-        /** @psalm-suppress MixedArrayAccess */
-        $sourceDir = (string) $this->config[Config::DEV_PATHS_CONFIG_KEY][$key];
+        $sourceDir = (string) $this->config->devPathsConfig()[$key];
         $source = $this->filesystem->normalizePath($this->config->basePath() . "/{$sourceDir}");
 
         $finder = null;
