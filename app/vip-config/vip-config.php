@@ -15,15 +15,12 @@ require_once __DIR__ . '/__helpers.php';
 if (file_exists(__DIR__ . '/vip-config.override.php')) {
     require_once __DIR__ . '/vip-config.override.php';
 }
-$wpEnv = Inpsyde\Vip\determineWpEnv();
 $vipEnv = Inpsyde\Vip\determineVipEnv();
 if (file_exists(__DIR__ . "/vip-config.{$vipEnv}.php")) {
     require_once __DIR__ . "/vip-config.{$vipEnv}.php";
 }
-if (($vipEnv !== $wpEnv) && file_exists(__DIR__ . "/vip-config.{$wpEnv}.php")) {
-    require_once __DIR__ . "/vip-config.{$wpEnv}.php";
-}
 unset($vipEnv);
+$wpEnv = Inpsyde\Vip\determineWpEnv();
 
 /*
  * Default environment-specific constants.
