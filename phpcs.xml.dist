@@ -9,9 +9,7 @@
 	<arg name="colors"/>
 	<config name="testVersion" value="8.0-"/>
 
-    <rule ref="Inpsyde">
-        <exclude name="WordPress.Security"/>
-    </rule>
+    <rule ref="Inpsyde" />
 
     <rule ref="Inpsyde.CodeQuality.Psr4">
         <properties>
@@ -25,11 +23,19 @@
         </properties>
     </rule>
 
+    <rule ref="WordPress.Security">
+        <include-pattern>./src/app/*</include-pattern>
+    </rule>
+
     <rule ref="PSR1.Files.SideEffects">
         <exclude-pattern>./app/vip-config/*</exclude-pattern>
     </rule>
     <rule ref="Inpsyde.CodeQuality.Psr4">
         <exclude-pattern>./app/vip-config/*</exclude-pattern>
+    </rule>
+
+    <rule ref="Inpsyde.CodeQuality.FunctionLength">
+        <exclude-pattern>./tests/unit/*</exclude-pattern>
     </rule>
 
 </ruleset>

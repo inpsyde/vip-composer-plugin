@@ -1,9 +1,17 @@
 {
     "example.com": "example.com/es",
+    ":default:": {
+        "status": 302,
+        "preservePath": false,
+        "additionalQueryVars": {
+            "utm_campaign": "internal_redirect",
+            "utm_medium": "Referral"
+        }
+    },
     "www.acme.com": {
         "target": "acme.com",
         "redirect": true,
-        "preservePath": false,
+        "preservePath": true,
         "meh": "meh"
     },
     "alternative-domain.com": {
@@ -12,6 +20,12 @@
         "preserveQuery": true
     },
     "env:production": {
+        ":default:": {
+            "additionalQueryVars": {
+                "utm_campaign": "internal_redirect",
+                "utm_medium": "Production Referral"
+            }
+        },
         "example.com": "example.com/production",
         "www.production.example.com": "production.example.com",
         "www.acme.com": {

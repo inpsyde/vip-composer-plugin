@@ -421,12 +421,14 @@ function deployVersion(): ?string
  *
  * @param string $domain
  * @return array{
- *     'target': string,
- *     'redirect': bool,
- *     'preservePath': bool,
- *     'preserveQuery': bool,
- *     'status': int
- * }
+ *      "target": string|callable|null,
+ *      "redirect": bool,
+ *      "status": int,
+ *      "preservePath": bool,
+ *      "preserveQuery": bool,
+ *      "additionalQueryVars": array|callable,
+ *      "filterCallback": callable|null
+ *  }
  */
 function loadSunriseConfigForDomain(string $domain): array
 {
