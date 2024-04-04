@@ -223,9 +223,14 @@ class HelpersTest extends UnitTestCase
             [
                 'target' => 'example.com/es',
                 'redirect' => true,
-                'preservePath' => true,
+                'status' => 302,
+                'preservePath' => false,
                 'preserveQuery' => true,
-                'status' => 301,
+                'additionalQueryVars' => [
+                    "utm_campaign" => "internal_redirect",
+                    "utm_medium" => "Referral",
+                ],
+                'filterCallback' => null,
             ],
             Vip\loadSunriseConfigForDomain('example.com')
         );
@@ -234,9 +239,14 @@ class HelpersTest extends UnitTestCase
             [
                 'target' => 'acme.com',
                 'redirect' => true,
-                'preservePath' => false,
+                'status' => 302,
+                'preservePath' => true,
                 'preserveQuery' => true,
-                'status' => 301,
+                'additionalQueryVars' => [
+                    "utm_campaign" => "internal_redirect",
+                    "utm_medium" => "Referral",
+                ],
+                'filterCallback' => null,
             ],
             Vip\loadSunriseConfigForDomain('www.acme.com')
         );
@@ -245,20 +255,24 @@ class HelpersTest extends UnitTestCase
             [
                 'target' => 'main-domain.com',
                 'redirect' => false,
+                'status' => 0,
                 'preservePath' => false,
                 'preserveQuery' => false,
-                'status' => 301,
+                'additionalQueryVars' => [],
+                'filterCallback' => null,
             ],
             Vip\loadSunriseConfigForDomain('alternative-domain.com')
         );
 
         static::assertSame(
             [
-                'target' => '',
+                'target' => null,
                 'redirect' => false,
+                'status' => 0,
                 'preservePath' => false,
                 'preserveQuery' => false,
-                'status' => 301,
+                'additionalQueryVars' => [],
+                'filterCallback' => null,
             ],
             Vip\loadSunriseConfigForDomain('www.production.example.com')
         );
@@ -277,9 +291,14 @@ class HelpersTest extends UnitTestCase
             [
                 'target' => 'example.com/production',
                 'redirect' => true,
+                'status' => 301,
                 'preservePath' => true,
                 'preserveQuery' => true,
-                'status' => 301,
+                'additionalQueryVars' => [
+                    'utm_campaign' => 'internal_redirect',
+                    'utm_medium' => 'Production Referral',
+                ],
+                'filterCallback' => null,
             ],
             Vip\loadSunriseConfigForDomain('example.com')
         );
@@ -288,9 +307,14 @@ class HelpersTest extends UnitTestCase
             [
                 'target' => 'acme.com',
                 'redirect' => true,
+                'status' => 302,
                 'preservePath' => true,
                 'preserveQuery' => true,
-                'status' => 302,
+                'additionalQueryVars' => [
+                    'utm_campaign' => 'internal_redirect',
+                    'utm_medium' => 'Production Referral',
+                ],
+                'filterCallback' => null,
             ],
             Vip\loadSunriseConfigForDomain('www.acme.com')
         );
@@ -299,9 +323,11 @@ class HelpersTest extends UnitTestCase
             [
                 'target' => 'main-domain.com',
                 'redirect' => false,
+                'status' => 0,
                 'preservePath' => false,
                 'preserveQuery' => false,
-                'status' => 301,
+                'additionalQueryVars' => [],
+                'filterCallback' => null,
             ],
             Vip\loadSunriseConfigForDomain('alternative-domain.com')
         );
@@ -310,9 +336,14 @@ class HelpersTest extends UnitTestCase
             [
                 'target' => 'production.example.com',
                 'redirect' => true,
+                'status' => 301,
                 'preservePath' => true,
                 'preserveQuery' => true,
-                'status' => 301,
+                'additionalQueryVars' => [
+                    'utm_campaign' => 'internal_redirect',
+                    'utm_medium' => 'Production Referral',
+                ],
+                'filterCallback' => null,
             ],
             Vip\loadSunriseConfigForDomain('www.production.example.com')
         );
@@ -330,9 +361,14 @@ class HelpersTest extends UnitTestCase
             [
                 'target' => 'example.com/es',
                 'redirect' => true,
-                'preservePath' => true,
+                'status' => 302,
+                'preservePath' => false,
                 'preserveQuery' => true,
-                'status' => 301,
+                'additionalQueryVars' => [
+                    "utm_campaign" => "internal_redirect",
+                    "utm_medium" => "Referral",
+                ],
+                'filterCallback' => null,
             ],
             Vip\loadSunriseConfigForDomain('example.com')
         );
@@ -341,9 +377,14 @@ class HelpersTest extends UnitTestCase
             [
                 'target' => 'acme.com',
                 'redirect' => true,
-                'preservePath' => false,
+                'status' => 302,
+                'preservePath' => true,
                 'preserveQuery' => true,
-                'status' => 301,
+                'additionalQueryVars' => [
+                    "utm_campaign" => "internal_redirect",
+                    "utm_medium" => "Referral",
+                ],
+                'filterCallback' => null,
             ],
             Vip\loadSunriseConfigForDomain('www.acme.com')
         );
@@ -352,20 +393,24 @@ class HelpersTest extends UnitTestCase
             [
                 'target' => 'main-domain.com',
                 'redirect' => false,
+                'status' => 0,
                 'preservePath' => false,
                 'preserveQuery' => false,
-                'status' => 301,
+                'additionalQueryVars' => [],
+                'filterCallback' => null,
             ],
             Vip\loadSunriseConfigForDomain('alternative-domain.com')
         );
 
         static::assertSame(
             [
-                'target' => '',
+                'target' => null,
                 'redirect' => false,
+                'status' => 0,
                 'preservePath' => false,
                 'preserveQuery' => false,
-                'status' => 301,
+                'additionalQueryVars' => [],
+                'filterCallback' => null,
             ],
             Vip\loadSunriseConfigForDomain('www.production.example.com')
         );
@@ -384,9 +429,14 @@ class HelpersTest extends UnitTestCase
             [
                 'target' => 'example.com/production',
                 'redirect' => true,
+                'status' => 301,
                 'preservePath' => true,
                 'preserveQuery' => true,
-                'status' => 301,
+                'additionalQueryVars' => [
+                    'utm_campaign' => 'internal_redirect',
+                    'utm_medium' => 'Production Referral',
+                ],
+                'filterCallback' => null,
             ],
             Vip\loadSunriseConfigForDomain('example.com')
         );
@@ -395,9 +445,14 @@ class HelpersTest extends UnitTestCase
             [
                 'target' => 'acme.com',
                 'redirect' => true,
+                'status' => 302,
                 'preservePath' => true,
                 'preserveQuery' => true,
-                'status' => 302,
+                'additionalQueryVars' => [
+                    'utm_campaign' => 'internal_redirect',
+                    'utm_medium' => 'Production Referral',
+                ],
+                'filterCallback' => null,
             ],
             Vip\loadSunriseConfigForDomain('www.acme.com')
         );
@@ -406,9 +461,11 @@ class HelpersTest extends UnitTestCase
             [
                 'target' => 'main-domain.com',
                 'redirect' => false,
+                'status' => 0,
                 'preservePath' => false,
                 'preserveQuery' => false,
-                'status' => 301,
+                'additionalQueryVars' => [],
+                'filterCallback' => null,
             ],
             Vip\loadSunriseConfigForDomain('alternative-domain.com')
         );
@@ -417,12 +474,108 @@ class HelpersTest extends UnitTestCase
             [
                 'target' => 'production.example.com',
                 'redirect' => true,
+                'status' => 301,
                 'preservePath' => true,
                 'preserveQuery' => true,
-                'status' => 301,
+                'additionalQueryVars' => [
+                    'utm_campaign' => 'internal_redirect',
+                    'utm_medium' => 'Production Referral',
+                ],
+                'filterCallback' => null,
             ],
             Vip\loadSunriseConfigForDomain('www.production.example.com')
         );
+    }
+
+    /**
+     * @test
+     */
+    public function testSunriseConfigPhp2ProdEnv(): void
+    {
+        define('VIP_GO_APP_ENVIRONMENT', 'production');
+        $_SERVER['REQUEST_URI'] = '/foo';
+        $dir = ((string) getenv('VIP_COMPOSER_PLUGIN_TESTS_BASE_PATH')) . '/fixtures/php2';
+        Monkey\Functions\when('Inpsyde\\Vip\\vipConfigPath')->justReturn($dir);
+
+        $exampleCom = Vip\loadSunriseConfigForDomain('www.example.com');
+        static::assertSame('example.com', $exampleCom['target']);
+        static::assertTrue($exampleCom['redirect']);
+        static::assertSame(301, $exampleCom['status']);
+        static::assertTrue($exampleCom['preservePath']);
+        static::assertTrue($exampleCom['preserveQuery']);
+        static::assertNull($exampleCom['filterCallback']);
+        static::assertIsCallable($exampleCom['additionalQueryVars']);
+        static::assertSame(
+            [
+                'utm_campaign' => 'internal-redirect-production',
+                'utm_source' => 'www.example.com',
+                'utm_medium' => 'Referral',
+                'utm_content' => 'www.example.com/foo',
+            ],
+            $exampleCom['additionalQueryVars']('www.example.com', [])
+        );
+
+        $exampleDev = Vip\loadSunriseConfigForDomain('example.dev');
+        static::assertSame('www.example.dev', $exampleDev['target']);
+        static::assertTrue($exampleDev['redirect']);
+        static::assertSame(301, $exampleDev['status']);
+        static::assertTrue($exampleDev['preservePath']);
+        static::assertTrue($exampleDev['preserveQuery']);
+        static::assertNull($exampleDev['filterCallback']);
+        static::assertIsCallable($exampleDev['additionalQueryVars']);
+        static::assertSame(
+            [
+                'utm_campaign' => 'internal-redirect-production',
+                'utm_source' => 'example.dev',
+                'utm_medium' => 'Referral',
+                'utm_content' => 'example.dev/foo',
+            ],
+            $exampleDev['additionalQueryVars']('example.dev', [])
+        );
+    }
+
+    /**
+     * @test
+     */
+    public function testSunriseConfigPhp2LocalEnv(): void
+    {
+        $_SERVER['REQUEST_URI'] = '/foo';
+        $dir = ((string) getenv('VIP_COMPOSER_PLUGIN_TESTS_BASE_PATH')) . '/fixtures/php2';
+        Monkey\Functions\when('Inpsyde\\Vip\\vipConfigPath')->justReturn($dir);
+
+        $_GET['utm_campaign'] = 'product';
+        $exampleDev = Vip\loadSunriseConfigForDomain('example.dev');
+        static::assertIsCallable($exampleDev['target']);
+        static::assertSame(
+            '//www.example.dev/product-campaign',
+            $exampleDev['target']('example.dev')
+        );
+        static::assertTrue($exampleDev['redirect']);
+        static::assertSame(301, $exampleDev['status']);
+        static::assertFalse($exampleDev['preservePath']);
+        static::assertFalse($exampleDev['preserveQuery']);
+        static::assertSame([], $exampleDev['additionalQueryVars']);
+        static::assertNull($exampleDev['filterCallback']);
+    }
+
+    /**
+     * @test
+     */
+    public function testSunriseConfigPhp2StagingEnv(): void
+    {
+        define('WP_ENVIRONMENT_TYPE', 'staging');
+        $_SERVER['REQUEST_URI'] = '/foo';
+        $dir = ((string) getenv('VIP_COMPOSER_PLUGIN_TESTS_BASE_PATH')) . '/fixtures/php2';
+        Monkey\Functions\when('Inpsyde\\Vip\\vipConfigPath')->justReturn($dir);
+
+        $exampleCom = Vip\loadSunriseConfigForDomain('www.example.com');
+        static::assertSame('example.com', $exampleCom['target']);
+        static::assertTrue($exampleCom['redirect']);
+        static::assertSame(301, $exampleCom['status']);
+        static::assertTrue($exampleCom['preservePath']);
+        static::assertTrue($exampleCom['preserveQuery']);
+        static::assertNull($exampleCom['filterCallback']);
+        static::assertSame(['env' => 'staging'], $exampleCom['additionalQueryVars']);
     }
 
     /**

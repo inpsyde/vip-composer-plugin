@@ -6,25 +6,48 @@ namespace Inpsyde\Vip;
 
 /**
  * @psalm-type config-item = array{
- *     "target":string,
- *     "redirect":bool,
- *     "preservePath":bool,
- *     "preserveQuery":bool,
- *     "status":int
+ *     "target": string|callable|null,
+ *     "redirect": bool,
+ *     "status": int,
+ *     "preservePath": bool,
+ *     "preserveQuery": bool,
+ *     "additionalQueryVars": array|callable,
+ *     "filterCallback": callable|null
  * }
  */
 class SunriseConfigLoader
 {
     /**
      * @var null|array<non-empty-string, array{
-     *        'target': string,
-     *        'redirect': bool,
-     *        'preservePath': bool,
-     *        'preserveQuery': bool,
-     *        'status':int
+     *      "target": string|callable|null,
+     *      "redirect": bool,
+     *      "status": int,
+     *      "preservePath": bool,
+     *      "preserveQuery": bool,
+     *      "additionalQueryVars": array|callable,
+     *      "filterCallback": callable|null
      *    }>
      */
     private array|null $config = null;
+
+    /**
+     * @var array{
+     *    "redirect": bool,
+     *    "status": int,
+     *    "preservePath": bool,
+     *    "preserveQuery": bool,
+     *    "additionalQueryVars": array|callable,
+     *    "filterCallback": callable|null
+     *  }
+     */
+    private array $defaultConfig = [
+        'redirect' => true,
+        'status' => 301,
+        'preservePath' => true,
+        'preserveQuery' => true,
+        'additionalQueryVars' => [],
+        'filterCallback' => null,
+    ];
 
     /**
      * @param string $dir
@@ -47,11 +70,13 @@ class SunriseConfigLoader
     public function loadForDomain(string $domain): array
     {
         return $this->load()[$domain] ?? [
-            'target' => '',
+            'target' => null,
             'redirect' => false,
+            'status' => 0,
             'preservePath' => false,
             'preserveQuery' => false,
-            'status' => 301,
+            'additionalQueryVars' => [],
+            'filterCallback' => null,
         ];
     }
 
@@ -70,26 +95,71 @@ class SunriseConfigLoader
         $this->config = [];
 
         $data = $this->loadFile();
-        $envConfig = $data["env:{$this->vipEnv}"] ?? $data["env:{$this->wpEnv}"] ?? [];
+        $envConfig = $this->loadDefaultConfig($data);
 
         foreach ($envConfig as $key => $value) {
-            /** @var array-key $key */
-            $value = $this->isValidKey($key) ? $this->normalizeValue($value) : null;
-            if ($value !== null) {
+            if ($this->loadValue($key, $value)) {
                 unset($data[$key]);
-                /** @var non-empty-string $key */
-                $this->config[$key] = $value;
             }
         }
         foreach ($data as $key => $value) {
-            $value = $this->isValidKey($key) ? $this->normalizeValue($value) : null;
-            if ($value !== null) {
-                /** @var non-empty-string $key */
-                $this->config[$key] = $value;
-            }
+            $this->loadValue($key, $value);
         }
 
         return $this->config;
+    }
+
+    /**
+     * @param array $configData
+     * @return array
+     */
+    private function loadDefaultConfig(array $configData): array
+    {
+        $envConfig = $configData["env:{$this->vipEnv}"] ?? $configData["env:{$this->wpEnv}"] ?? [];
+        try {
+            is_callable($envConfig) and $envConfig = $envConfig();
+        } catch (\Throwable) {
+            $envConfig = [];
+        }
+        is_array($envConfig) or $envConfig = [];
+
+        $defaultConfig = $envConfig[':default:'] ?? $configData[':default:'] ?? null;
+        unset($envConfig[':default:'], $configData[':default:']);
+
+        try {
+            is_callable($defaultConfig) and $defaultConfig = $defaultConfig();
+        } catch (\Throwable) {
+            $defaultConfig = [];
+        }
+        if (($defaultConfig !== []) && is_array($defaultConfig)) {
+            // Adding 'target' key or `$this->normalizeValue()` will fail
+            $defaultConfig['target'] = 'default';
+            $defaultConfig = $this->normalizeValue($defaultConfig);
+            if ($defaultConfig !== null) {
+                unset($defaultConfig['target']);
+                $this->defaultConfig = $defaultConfig;
+            }
+        }
+
+        return $envConfig;
+    }
+
+    /**
+     * @param array-key $key
+     * @param mixed $value
+     * @return bool
+     */
+    private function loadValue(int|string $key, mixed $value): bool
+    {
+        $value = $this->isValidKey($key) ? $this->normalizeValue($value) : null;
+        if ($value !== null) {
+            /** @var non-empty-string $key */
+            $this->config[$key] = $value;
+
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -109,13 +179,20 @@ class SunriseConfigLoader
      */
     private function normalizeValue(mixed $value): ?array
     {
+        try {
+            is_callable($value) and $value = $value();
+        } catch (\Throwable) {
+            return null;
+        }
         if (is_string($value)) {
             $value = [
                 'target' => $value,
-                'redirect' => true,
-                'preservePath' => true,
-                'preserveQuery' => true,
-                'status' => 301,
+                'redirect' => $this->defaultConfig['redirect'],
+                'status' => $this->defaultConfig['status'],
+                'preservePath' => $this->defaultConfig['preservePath'],
+                'preserveQuery' => $this->defaultConfig['preserveQuery'],
+                'additionalQueryVars' => $this->defaultConfig['additionalQueryVars'],
+                'filterCallback' => $this->defaultConfig['filterCallback'],
             ];
         }
 
@@ -124,17 +201,53 @@ class SunriseConfigLoader
         }
 
         $target = $value['target'] ?? null;
-        if (($target === '') || !is_string($target)) {
+        if ((($target === '') || !is_string($target)) && !is_callable($target)) {
             return null;
         }
 
-        $redirect = (bool) ($value['redirect'] ?? true);
-        $preservePath = ((bool) ($value['preservePath'] ?? true)) && $redirect;
-        $preserveQuery = ((bool) ($value['preserveQuery'] ?? true)) && $redirect;
-        $statusValue = $value['status'] ?? 301;
-        $status = is_numeric($statusValue) ? (int) $statusValue : 301;
+        $redirect = (bool) ($value['redirect'] ?? $this->defaultConfig['redirect']);
 
-        return compact('target', 'redirect', 'preservePath', 'preserveQuery', 'status');
+        [
+            $status,
+            $preservePath,
+            $preserveQuery,
+            $additionalQueryVars,
+            $filterCallback,
+        ] = $redirect ? $this->normalizeRedirectOptions($value) : [0, false, false, [], null];
+
+        return compact(
+            'target',
+            'redirect',
+            'status',
+            'preservePath',
+            'preserveQuery',
+            'additionalQueryVars',
+            'filterCallback'
+        );
+    }
+
+    /**
+     * @return list{int, bool, bool, array|callable, callable|null}
+     */
+    private function normalizeRedirectOptions(array $input): array
+    {
+        $statusRaw = $input['status'] ?? $this->defaultConfig['status'];
+        $status = is_numeric($statusRaw) ? (int) $statusRaw : 301;
+
+        $preservePath = (bool) ($input['preservePath'] ?? $this->defaultConfig['preservePath']);
+
+        $preserveQuery = (bool) ($input['preserveQuery'] ?? $this->defaultConfig['preserveQuery']);
+
+        $queryVarsRaw = $input['additionalQueryVars']
+            ?? $this->defaultConfig['additionalQueryVars'];
+        $queryVars = (is_array($queryVarsRaw) || is_callable($queryVarsRaw))
+            ? $queryVarsRaw
+            : [];
+
+        $filterCallbackRaw = $input['filterCallback'] ?? $this->defaultConfig['filterCallback'];
+        $filterCallback = is_callable($filterCallbackRaw) ? $filterCallbackRaw : null;
+
+        return [$status, $preservePath, $preserveQuery, $queryVars, $filterCallback];
     }
 
     /**
