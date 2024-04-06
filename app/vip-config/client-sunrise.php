@@ -221,6 +221,8 @@ class SunriseRedirects
 
         $target = $config['target'];
         if (is_callable($target)) {
+            $configCopy = $config;
+            unset($configCopy['target']);
             $target = $target($sourceHost, $config);
         }
         if (!is_string($target) || ($target === '')) {
@@ -287,14 +289,7 @@ class SunriseRedirects
             return;
         }
 
-        if ($config['additionalQueryVars'] !== []) {
-            $targetUrl = static::mergeQueryVars(
-                $targetUrl,
-                $config['additionalQueryVars'],
-                $sourceHost,
-                $config
-            );
-        }
+        $targetUrl = static::mergeQueryVars($targetUrl, $sourceHost, $config);
 
         if ($config['filterCallback'] !== null) {
             try {
@@ -336,21 +331,22 @@ class SunriseRedirects
 
     /**
      * @param string $url
-     * @param array|callable $vars
      * @param string $sourceHost
      * @param config-item $config
      * @return string
      */
-    private static function mergeQueryVars(
-        string $url,
-        array|callable $vars,
-        string $sourceHost,
-        array $config
-    ): string {
+    private static function mergeQueryVars(string $url, string $sourceHost, array $config): string
+    {
+        $vars = $config['additionalQueryVars'];
+        if ($vars === []) {
+            return $url;
+        }
+
+        unset($config['additionalQueryVars']);
 
         try {
             is_callable($vars) and $vars = $vars($sourceHost, $config);
-            if (!is_array($vars)) {
+            if (($vars === []) || !is_array($vars)) {
                 return $url;
             }
         } catch (\Throwable) {
