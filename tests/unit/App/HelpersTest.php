@@ -133,6 +133,74 @@ class HelpersTest extends UnitTestCase
 
     /**
      * @test
+     * @dataProvider provideMergeQueryVars
+     */
+    public function testMergeQueryVars(string $input, array $vars, string $expectedOutput): void
+    {
+        static::assertSame($expectedOutput, Vip\mergeQueryVars($input, $vars));
+    }
+
+    /**
+     * @return \Generator
+     */
+    public static function provideMergeQueryVars(): \Generator
+    {
+        yield from [
+            [
+                'https://example.com?',
+                [],
+                'https://example.com',
+            ],
+            [
+                'https://example.com',
+                [],
+                'https://example.com',
+            ],
+            [
+                'https://example.com',
+                ['foo', 'bar'],
+                'https://example.com',
+            ],
+            [
+                'https://example.com',
+                ['foo' => 'bar bar'],
+                'https://example.com?foo=bar%20bar',
+            ],
+            [
+                'https://example.com?',
+                ['foo' => 'bar bar'],
+                'https://example.com?foo=bar%20bar',
+            ],
+            [
+                'https://example.com?x=y&foo=foo&a=b',
+                ['foo' => 'bar bar'],
+                'https://example.com?x=y&foo=bar%20bar&a=b',
+            ],
+            [
+                'https://example.com?x=y&foo=foo&a=b',
+                ['foo' => null],
+                'https://example.com?x=y&a=b',
+            ],
+            [
+                'https://example.com?%E5%AD%97=%E6%B1%89',
+                ['汉' => '字'],
+                'https://example.com?%E5%AD%97=%E6%B1%89&%E6%B1%89=%E5%AD%97',
+            ],
+            [
+                'https://example.com?%E6%B1%89=1',
+                ['汉' => null],
+                'https://example.com',
+            ],
+            [
+                'https://example.com?x=y',
+                ['foo' => ['a' => 'b', 'b' => '汉']],
+                'https://example.com?x=y&foo%5Ba%5D=b&foo%5Bb%5D=%E6%B1%89',
+            ],
+        ];
+    }
+
+    /**
+     * @test
      */
     public function testDeployIdFileNotExists(): void
     {

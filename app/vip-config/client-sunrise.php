@@ -288,12 +288,12 @@ class SunriseRedirects
         }
 
         if ($config['additionalQueryVars'] !== []) {
-            $queryVars = static::normalizeQueryVars(
+            $targetUrl = static::mergeQueryVars(
+                $targetUrl,
                 $config['additionalQueryVars'],
                 $sourceHost,
                 $config
             );
-            ($queryVars !== []) and $targetUrl = add_query_arg($queryVars, $targetUrl);
         }
 
         if ($config['filterCallback'] !== null) {
@@ -335,44 +335,29 @@ class SunriseRedirects
     }
 
     /**
+     * @param string $url
      * @param array|callable $vars
      * @param string $sourceHost
      * @param config-item $config
-     * @return array<string, string|false>
+     * @return string
      */
-    private static function normalizeQueryVars(
+    private static function mergeQueryVars(
+        string $url,
         array|callable $vars,
         string $sourceHost,
         array $config
-    ): array {
+    ): string {
 
         try {
             is_callable($vars) and $vars = $vars($sourceHost, $config);
             if (!is_array($vars)) {
-                return [];
+                return $url;
             }
         } catch (\Throwable) {
-            return [];
+            return $url;
         }
 
-        $normalized = [];
-        foreach ($vars as $key => $value) {
-            if (($key === '') || !is_string($key)) {
-                continue;
-            }
-            // Using `false` as value is used to remove a query var. This way it is possible to
-            // generically preserve query vars, but excluding some of them.
-            // To use literal `"false"` in query vars be sure to provide that as string.
-            if (($value === false) || ($value === null)) {
-                $normalized[$key] = false;
-                continue;
-            }
-            if (is_scalar($value)) {
-                $normalized[$key] = (string) $value;
-            }
-        }
-
-        return $normalized;
+        return mergeQueryVars($url, $vars);
     }
 
     /**
