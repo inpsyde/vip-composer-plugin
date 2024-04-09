@@ -179,17 +179,17 @@ final class TaskConfig
     /**
      * @return bool
      */
-    public function isOnlyLocal(): bool
+    public function isUtilsOnly(): bool
     {
-        return $this->isAnyLocal() && !$this->isGit();
+        return !$this->isFullMode();
     }
 
     /**
      * @return bool
      */
-    public function isProdAutoloadOnly(): bool
+    public function isOnlyLocal(): bool
     {
-        return !$this->isFullMode() && !$this->syncDevPaths() && $this->data[self::PROD_AUTOLOAD];
+        return $this->isAnyLocal() && !$this->isGit();
     }
 
     /**
@@ -298,27 +298,9 @@ final class TaskConfig
 
         $this->validateBooleans();
         $this->validateBaseMode();
+        $this->validateMuPlugins();
         $this->validateGitConfig();
-
-        if ($this->forceVipMuPlugins() || $this->skipVipMuPlugins()) {
-            if (!$this->isAnyLocal()) {
-                throw new \LogicException(
-                    'Force and skip VIP MU plugins update are --local or --vip-dev-env operations.'
-                );
-            }
-            if ($this->forceVipMuPlugins() && $this->skipVipMuPlugins()) {
-                throw new \LogicException('Can\'t both *skip* and *force* VIP MU plugins.');
-            }
-        }
-
-        if ($this->forceCoreUpdate() || $this->skipCoreUpdate()) {
-            if (!$this->isLocal()) {
-                throw new \LogicException('Force and skip core update are --local operations.');
-            }
-            if ($this->forceCoreUpdate() && $this->skipCoreUpdate()) {
-                throw new \LogicException('Can\'t both *skip* and *force* core update.');
-            }
-        }
+        $this->validateWp();
     }
 
     /**
@@ -326,30 +308,81 @@ final class TaskConfig
      */
     private function validateBaseMode(): void
     {
-        $modes = $this->isLocal() ? 1 : 0;
-        $this->isVipDevEnv() and $modes++;
-        $this->isDeploy() and $modes++;
+        $mainMode = 0;
 
-        $devPaths = $this->syncDevPaths();
+        $isLocal = $this->isLocal();
+        $isLocal and $mainMode++;
+
+        $isDeploy = $this->isDeploy();
+        $isDeploy and $mainMode++;
+
+        $isVipEnv = $this->isVipDevEnv();
+        $isVipEnv and $mainMode++;
+
+        $muPlugins = $this->forceVipMuPlugins();
         $autoload = $this->data[self::PROD_AUTOLOAD];
-        $devPaths and $modes++;
+        $devPaths = $this->syncDevPaths();
 
-        if (($modes === 0) && $autoload) {
+        if (($mainMode === 0) && ($autoload || $muPlugins || $devPaths)) {
             return;
         }
 
-        if ($modes !== 1) {
+        if ($mainMode !== 1) {
+            throw new \LogicException('Please provide one main execution mode via command flags.');
+        }
+
+        if ($devPaths && !$isLocal) {
             throw new \LogicException(
-                'Please provide exactly one execution mode via command flags.'
+                '--sync-dev-paths can be used as standalone flag or in combination with --local.'
             );
         }
 
-        if ($devPaths && $autoload) {
-            throw new \LogicException('Please use --sync-dev-paths as only option.');
+        if ($isVipEnv && !$muPlugins && !$this->skipVipMuPlugins()) {
+            $this->data[self::SKIP_VIP_MU] = true;
+        }
+    }
+
+    /**
+     * @return void
+     */
+    private function validateMuPlugins(): void
+    {
+        $isForce = $this->forceVipMuPlugins();
+        $isSkip = $this->skipVipMuPlugins();
+
+        if ((!$isForce && !$isSkip) || ($isForce && $this->isUtilsOnly())) {
+            return;
         }
 
-        if ($this->isVipDevEnv() && !$this->skipVipMuPlugins() && !$this->forceVipMuPlugins()) {
-            $this->data[self::SKIP_VIP_MU] = true;
+        if ($isForce && $isSkip) {
+            throw new \LogicException('Can\'t both *skip* and *force* VIP MU plugins.');
+        }
+
+        if (!$this->isAnyLocal()) {
+            throw new \LogicException(
+                'Force and skip VIP MU plugins update are --local or --vip-dev-env operations.'
+            );
+        }
+    }
+
+    /**
+     * @return void
+     */
+    private function validateWp(): void
+    {
+        $force = $this->forceCoreUpdate();
+        $skip = $this->skipCoreUpdate();
+
+        if (!$force && !$skip) {
+            return;
+        }
+
+        if ($force && $skip) {
+            throw new \LogicException('Can\'t both *skip* and *force* core update.');
+        }
+
+        if (!$this->isLocal()) {
+            throw new \LogicException('Force and skip core update are --local operations.');
         }
     }
 

@@ -67,7 +67,7 @@ final class CopyDevPaths implements Task
      */
     public function enabled(TaskConfig $taskConfig): bool
     {
-        return !$taskConfig->isProdAutoloadOnly();
+        return $taskConfig->isLocal() || $taskConfig->syncDevPaths();
     }
 
     /**
@@ -431,6 +431,8 @@ final class CopyDevPaths implements Task
             if (file_exists($targetPath)) {
                 $io->verboseInfoLine("File '{$targetPath}' exists, replacing...");
                 $this->filesystem->remove($targetPath);
+            } elseif (!is_dir(dirname($targetPath))) {
+                $this->filesystem->ensureDirectoryExists(dirname($targetPath));
             }
 
             if ($this->filesystem->copy($sourcePath, $targetPath)) {

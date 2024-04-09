@@ -42,7 +42,7 @@ final class CopyEnvConfigs implements Task
      */
     public function name(): string
     {
-        return 'Copy external environment configuration ';
+        return 'Copy external environment configuration';
     }
 
     /**
@@ -51,7 +51,8 @@ final class CopyEnvConfigs implements Task
      */
     public function enabled(TaskConfig $taskConfig): bool
     {
-        return !$taskConfig->isProdAutoloadOnly() && ($this->findPackages() !== []);
+        return ($taskConfig->isFullMode() || $taskConfig->syncDevPaths())
+            && ($this->findPackages() !== []);
     }
 
     /**

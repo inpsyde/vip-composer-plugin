@@ -34,7 +34,7 @@ final class GenerateDeployVersion implements Task
      */
     public function enabled(TaskConfig $taskConfig): bool
     {
-        return !$taskConfig->isProdAutoloadOnly();
+        return !$taskConfig->isUtilsOnly();
     }
 
     /**
