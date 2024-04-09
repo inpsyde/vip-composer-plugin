@@ -16,21 +16,9 @@ Moreover, modern WordPress development can't ignore Composer exists, and that th
 
 The problem this package aims at solving is: **enable "website projects" Composer packages that can be used for development, while also being suitable for local development environments and, at the same time, to deploy to VIP**.
 
-## Documentation (v3)
+## Documentation
 
-- [Getting Started](https://inpsyde.github.io/vip-composer-plugin/001-getting-started.md)
-- [Environment Initialization](https://inpsyde.github.io/vip-composer-plugin/002-environment-initialization.md)
-- [VIP Local Development Environment](https://inpsyde.github.io/vip-composer-plugin/003-vip-local-dev-env.md)
-- [Custom Local Development Environment](https://inpsyde.github.io/vip-composer-plugin/004-custom-local-dev-env.md)
-- [The `composer vip` Command](https://inpsyde.github.io/vip-composer-plugin/006-vip-command.md)
-- [Plugin Configuration](https://inpsyde.github.io/vip-composer-plugin/007-plugin-configuration.md)
-- [Website Configuration](https://inpsyde.github.io/vip-composer-plugin/008-website-configuration.md)
-- [Application Helpers](https://inpsyde.github.io/vip-composer-plugin/009-application-helpers.md)
-- [Application MU Plugins](https://inpsyde.github.io/vip-composer-plugin/010-application-mu-plugins.md)
-- [Managing Dev Paths](https://inpsyde.github.io/vip-composer-plugin/011-managing-dev-paths.md)
-- [WP and MU Plugins command flags](https://inpsyde.github.io/vip-composer-plugin/012-wp-mu-plugins-command-flags.md)
-- [Sunrise Configuration](https://inpsyde.github.io/vip-composer-plugin/013-sunrise-configuration.md)
-- [Disable 2FA for Automated Tests](https://inpsyde.github.io/vip-composer-plugin/014-disable-2fa-automatest-tests.md)
+- [Read v3 Documentation](https://inpsyde.github.io/vip-composer-plugin)
 
 ## Dependencies and Minimum Requirements
 
