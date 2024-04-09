@@ -1,8 +1,11 @@
+---
+title: Home
+nav_exclude: true
+---
+
 # Syde VIP Composer Plugin
 
-![PHP Quality Assurance](https://github.com/inpsyde/vip-composer-plugin/workflows/PHP%20Quality%20Assurance/badge.svg)
 
----
 
 ## Why Bother
 
@@ -16,21 +19,25 @@ Moreover, modern WordPress development can't ignore Composer exists, and that th
 
 The problem this package aims at solving is: **enable "website projects" Composer packages that can be used for development, while also being suitable for local development environments and, at the same time, to deploy to VIP**.
 
+
+
 ## Documentation (v3)
 
-- [Getting Started](./docs/001-getting-started.md)
-- [Environment Initialization](./docs/002-environment-initialization.md)
-- [VIP Local Development Environment](./docs/003-vip-local-dev-env.md)
-- [Custom Local Development Environment](./docs/004-custom-local-dev-env.md)
-- [The `composer vip` Command](./docs/006-vip-command.md)
-- [Plugin Configuration](./docs/007-plugin-configuration.md)
-- [Website Configuration](./docs/008-website-configuration.md)
-- [Application Helpers](./docs/009-application-helpers.md)
-- [Application MU Plugins](./docs/010-application-mu-plugins.md)
-- [Managing Dev Paths](./docs/011-managing-dev-paths.md)
-- [WP and MU Plugins command flags](./docs/012-wp-mu-plugins-command-flags.md)
-- [Sunrise Configuration](./docs/013-sunrise-configuration.md)
-- [Disable 2FA for Automated Tests](./docs/014-disable-2fa-automatest-tests.md)
+- [Getting Started](./001-getting-started.md)
+- [Environment Initialization](./002-environment-initialization.md)
+- [VIP Local Development Environment](./003-vip-local-dev-env.md)
+- [Custom Local Development Environment](./004-custom-local-dev-env.md)
+- [The `composer vip` Command](./006-vip-command.md)
+- [Plugin Configuration](./007-plugin-configuration.md)
+- [Website Configuration](./008-website-configuration.md)
+- [Application Helpers](./009-application-helpers.md)
+- [Application MU Plugins](./010-application-mu-plugins.md)
+- [Managing Dev Paths](./011-managing-dev-paths.md)
+- [WP and MU Plugins command flags](./012-wp-mu-plugins-command-flags.md)
+- [Sunrise Configuration](./013-sunrise-configuration.md)
+- [Disable 2FA for Automated Tests](./014-disable-2fa-automatest-tests.md)
+
+
 
 ## Dependencies and Minimum Requirements
 
@@ -44,6 +51,8 @@ There are no more production dependencies. When installed as root package with d
 - [Inpsyde WP Stubs](https://github.com/inpsyde/wp-stubs) (MIT)
 - [PHPUnit](https://phpunit.de/index.html) (BSD-3 Clause)
 - [Psalm](https://psalm.dev/) (MIT)
+
+
 
 ## License and Copyright
 
