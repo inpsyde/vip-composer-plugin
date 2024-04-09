@@ -18,7 +18,7 @@ namespace Inpsyde\Vip;
 class SunriseConfigLoader
 {
     /**
-     * @var null|array<non-empty-string, array{
+     * @var null|array<non-empty-string, callable|array{
      *      "target": string|callable|null,
      *      "redirect": bool,
      *      "status": int,
@@ -69,7 +69,17 @@ class SunriseConfigLoader
      */
     public function loadForDomain(string $domain): array
     {
-        return $this->load()[$domain] ?? [
+        $value = $this->load()[$domain] ?? null;
+
+        if (is_callable($value)) {
+            try {
+                $value = $this->normalizeValue($value, resolveCallback: true);
+            } catch (\Throwable) {
+                $value = null;
+            }
+        }
+
+        return $value ?? [
             'target' => null,
             'redirect' => false,
             'status' => 0,
@@ -84,7 +94,7 @@ class SunriseConfigLoader
      * Load the entire configuration for redirections and domain mapping that is placed in a
      * `sunrise-config.php` or `sunrise-config.json` file.
      *
-     * @return array<non-empty-string, config-item>
+     * @return array<non-empty-string, config-item|callable>
      */
     private function load(): array
     {
@@ -134,7 +144,7 @@ class SunriseConfigLoader
         if (($defaultConfig !== []) && is_array($defaultConfig)) {
             // Adding 'target' key or `$this->normalizeValue()` will fail
             $defaultConfig['target'] = 'default';
-            $defaultConfig = $this->normalizeValue($defaultConfig);
+            $defaultConfig = $this->normalizeValue($defaultConfig, resolveCallback: true);
             if ($defaultConfig !== null) {
                 unset($defaultConfig['target']);
                 $this->defaultConfig = $defaultConfig;
@@ -151,7 +161,9 @@ class SunriseConfigLoader
      */
     private function loadValue(int|string $key, mixed $value): bool
     {
-        $value = $this->isValidKey($key) ? $this->normalizeValue($value) : null;
+        $value = $this->isValidKey($key)
+            ? $this->normalizeValue($value, resolveCallback: false)
+            : null;
         if ($value !== null) {
             /** @var non-empty-string $key */
             $this->config[$key] = $value;
@@ -175,15 +187,22 @@ class SunriseConfigLoader
 
     /**
      * @param mixed $value
-     * @return null|config-item
+     * @param bool $resolveCallback
+     * @return ($resolveCallback is true ? config-item|null : config-item|callable|null)
      */
-    private function normalizeValue(mixed $value): ?array
+    private function normalizeValue(mixed $value, bool $resolveCallback = false): array|callable|null
     {
-        try {
-            is_callable($value) and $value = $value();
-        } catch (\Throwable) {
-            return null;
+        if (is_callable($value)) {
+            if (!$resolveCallback) {
+                return $value;
+            }
+            try {
+                $value = $value();
+            } catch (\Throwable) {
+                return null;
+            }
         }
+
         if (is_string($value)) {
             $value = [
                 'target' => $value,

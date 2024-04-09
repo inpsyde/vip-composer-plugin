@@ -353,10 +353,10 @@ function buildFullRedirectUrlFor(
  */
 function mergeQueryVars(string $url, array $vars): string
 {
-    $baseUrl = strtok($url, '?');
+    $baseUrl = (string) strtok($url, '?');
     $query = strtok('?');
     $queryVars = [];
-    (($query !== false) && ($query !== '')) and parse_str($query, $queryVars);
+    ($query !== false) and parse_str($query, $queryVars);
 
     foreach ($vars as $key => $value) {
         if (($key === '') || !is_string($key)) {
