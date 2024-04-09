@@ -72,6 +72,14 @@ if ((defined('WP_ALLOW_MULTISITE') && WP_ALLOW_MULTISITE) || (defined('MULTISITE
     defined('COOKIEPATH') or define('COOKIEPATH', '/');
     defined('SITECOOKIEPATH') or define('SITECOOKIEPATH', '/');
     unset($domain);
+
+    if (!defined('SUNRISE')) {
+        $sunriseConfig = __DIR__ . '/sunrise-config';
+        if (file_exists("{$sunriseConfig}.php") || file_exists("{$sunriseConfig}.json")) {
+            define('SUNRISE', true);
+        }
+        unset($sunriseConfig);
+    }
 }
 
 /*
