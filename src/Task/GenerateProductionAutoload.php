@@ -6,17 +6,11 @@ namespace Inpsyde\VipComposer\Task;
 
 use Composer\Autoload\AutoloadGenerator;
 use Composer\Composer;
-use Composer\EventDispatcher\EventDispatcher;
 use Composer\Filter\PlatformRequirementFilter\PlatformRequirementFilterFactory;
-use Composer\IO\ConsoleIO;
-use Composer\IO\IOInterface;
-use Composer\IO\NullIO;
-use Composer\PartialComposer;
 use Inpsyde\VipComposer\Config;
 use Inpsyde\VipComposer\Utils\InstalledPackages;
 use Inpsyde\VipComposer\Io;
 use Inpsyde\VipComposer\VipDirectories;
-use Seld\JsonLint\ParsingException;
 
 final class GenerateProductionAutoload implements Task
 {
@@ -74,7 +68,6 @@ final class GenerateProductionAutoload implements Task
     /**
      * @param Io $io
      * @return void
-     * @throws ParsingException
      */
     private function doRun(?Io $io): void
     {
@@ -131,10 +124,8 @@ final class GenerateProductionAutoload implements Task
         $autoloader->setClassMapAuthoritative(true);
         $autoloader->setApcu(false);
         $autoloader->setRunScripts(false);
-        if (class_exists(PlatformRequirementFilterFactory::class)) {
-            $filter = PlatformRequirementFilterFactory::ignoreNothing();
-            $autoloader->setPlatformRequirementFilter($filter);
-        }
+        $filter = PlatformRequirementFilterFactory::ignoreNothing();
+        $autoloader->setPlatformRequirementFilter($filter);
 
         return $autoloader;
     }
