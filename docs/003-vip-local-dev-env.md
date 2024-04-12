@@ -32,7 +32,12 @@ We can leverage that option to implement the following workflow:
 
 ## Prerequisites
 
-Having to run `composer vip` command _before_ we build and start the VIP local development environment, likely means **we need PHP and Composer installed on the host machine**. There's no hard requirement for the host PHP context (version and extensions) to match what's in the container, as long  as the this plugin's minimum requirements are met. However, using a different PHP version might cause the installation of undesired dependencies versions. To overcome this issue, there are two possibilities: use the `config.platform` Composer setting to match the container's PHP version, or run `composer update` _again_ from inside the application container as soon as the environment is started.
+First, have a look at:
+
+- [VIP CLI requirements](https://docs.wpvip.com/vip-cli/installing-vip-cli/)
+- [VIP Local Development Environment requirements](https://docs.wpvip.com/vip-local-development-environment/#h-docker-requirements).
+
+As for the plugin, as pointed out above in the "workflow" section, we have to run `composer vip` command _before_ we build and start the VIP local development environment. And that likely means **we need PHP and Composer installed on the host machine**. There's no hard requirement for the host PHP context (version and extensions) to match what's in the container, as long  as the this plugin's minimum requirements are met. However, using a different PHP version might cause the installation of undesired dependencies versions. To overcome this issue, there are two possibilities: use the `config.platform` Composer setting to match the container's PHP version, or run `composer update` _again_ from inside the application container as soon as the environment is started.
 
 
 
