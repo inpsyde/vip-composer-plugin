@@ -9,7 +9,7 @@ The [VIP Local Development Environment](https://docs.wpvip.com/vip-local-develop
 
 There are gotchas and limitations. Please refer to the official documentation.
 
-Besides dealing with the containers and providing useful helper commands, from an aplication perspective it also deals with:
+Besides dealing with the containers and providing useful helper commands, from an application perspective it also deals with:
 
 - Copy/symlink the various folders in the skeleton (and/or setting configuration constants) so that WordPress can find them
 - [VIP platform MU plugins](https://docs.wpvip.com/vip-go-mu-plugins/)
@@ -27,6 +27,12 @@ We can leverage that option to implement the following workflow:
 
 1. Prepare the `vip/` folder locally using the `composer vip` command, so that it will resemble the code we would push to VIP
 2. Build the VIP local development environment using the `--app-code` flag pointing the `/vip` folder we have built.
+
+
+
+## Prerequisites
+
+Having to run `composer vip` command _before_ we build and start the VIP local development environment, likely means **we need PHP and Composer installed on the host machine**. There's no hard requirement for the host PHP context (version and extensions) to match what's in the container, as long  as the this plugin's minimum requirements are met. However, using a different PHP version might cause the installation of undesired dependencies versions. To overcome this issue, there are two possibilities: use the `config.platform` Composer setting to match the container's PHP version, or run `composer update` _again_ from inside the application container as soon as the environment is started.
 
 
 

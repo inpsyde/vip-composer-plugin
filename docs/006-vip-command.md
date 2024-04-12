@@ -48,9 +48,11 @@ However, this command alone won't work. It is necessary to provide one or more f
 
 ### WordPress and MU Plugins Options
 
-All the following flags are intended to be used in combination with `--local`. See the ["WP and MU Plugins Command Flags" chapter](./012-wp-mu-plugins-command-flags.md) for more details.
+All the following flags are mostly intended to be used in combination with `--local` (and on a lesser extend with `--vip-dev-env`).
 
-- `--update-wp` - Force the update of WordPress core.
+See the ["WP and MU Plugins Command Flags" chapter](./012-wp-mu-plugins-command-flags.md) for more details.
+
+- `--update-wp` - Force the update of WordPress core.  Can also be used as standalone flag.
 - `--skip-wp` - Skip the update of WordPress core.
 - `--update-vip-mu-plugins` - Force the update of VIP Go MU plugins. Can also be used as standalone flag.
 - `--skip-vip-mu-plugins` - Skip the update of VIP Go MU plugins.

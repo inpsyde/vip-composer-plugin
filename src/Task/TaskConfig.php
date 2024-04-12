@@ -322,8 +322,9 @@ final class TaskConfig
         $muPlugins = $this->forceVipMuPlugins();
         $autoload = $this->data[self::PROD_AUTOLOAD];
         $devPaths = $this->syncDevPaths();
+        $core = $this->forceCoreUpdate();
 
-        if (($mainMode === 0) && ($autoload || $muPlugins || $devPaths)) {
+        if (($mainMode === 0) && ($autoload || $muPlugins || $devPaths || $core)) {
             return;
         }
 
@@ -335,10 +336,6 @@ final class TaskConfig
             throw new \LogicException(
                 '--sync-dev-paths can be used as standalone flag or in combination with --local.'
             );
-        }
-
-        if ($isVipEnv && !$muPlugins && !$this->skipVipMuPlugins()) {
-            $this->data[self::SKIP_VIP_MU] = true;
         }
     }
 
@@ -381,8 +378,8 @@ final class TaskConfig
             throw new \LogicException('Can\'t both *skip* and *force* core update.');
         }
 
-        if (!$this->isLocal()) {
-            throw new \LogicException('Force and skip core update are --local operations.');
+        if (!$this->isAnyLocal()) {
+            throw new \LogicException('Force and skip core update are local operations.');
         }
     }
 

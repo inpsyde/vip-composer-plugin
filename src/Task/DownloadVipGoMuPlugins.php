@@ -41,7 +41,7 @@ final class DownloadVipGoMuPlugins implements Task
      */
     public function enabled(TaskConfig $taskConfig): bool
     {
-        return ($taskConfig->isAnyLocal() && !$taskConfig->skipVipMuPlugins())
+        return ($taskConfig->isLocal() && !$taskConfig->skipVipMuPlugins())
             || $taskConfig->forceVipMuPlugins();
     }
 
@@ -54,7 +54,7 @@ final class DownloadVipGoMuPlugins implements Task
         $targetDir = $this->vipDirectories->vipMuPluginsDir();
         if (!$taskConfig->forceVipMuPlugins() && $this->alreadyInstalled()) {
             $io->infoLine('VIP Go MU plugins already there, skipping.');
-            $this->copySunrise($io);
+            $taskConfig->isLocal() and $this->copySunrise($io);
 
             return;
         }
@@ -75,7 +75,7 @@ final class DownloadVipGoMuPlugins implements Task
             $io->lines(Io::ERROR, ...$outputs);
         }
 
-        $this->copySunrise($io);
+        $taskConfig->isLocal() and $this->copySunrise($io);
     }
 
     /**

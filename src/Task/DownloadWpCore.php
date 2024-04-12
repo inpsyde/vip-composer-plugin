@@ -92,7 +92,8 @@ final class DownloadWpCore implements Task
      */
     public function enabled(TaskConfig $taskConfig): bool
     {
-        return $taskConfig->isLocal() && !$taskConfig->skipCoreUpdate();
+        return ($taskConfig->isLocal() && !$taskConfig->skipCoreUpdate())
+            || $taskConfig->forceCoreUpdate();
     }
 
     /**
@@ -110,10 +111,9 @@ final class DownloadWpCore implements Task
             return;
         }
 
-        if (
-            !$taskConfig->forceCoreUpdate()
-            && !$this->shouldInstall($targetVersion, $this->discoverInstalledVersion(), $io)
-        ) {
+        $forceUpdate = $taskConfig->forceCoreUpdate();
+        $installed = $this->discoverInstalledVersion();
+        if (!$this->shouldInstall($targetVersion, $installed, $forceUpdate, $io)) {
             $io->infoLine(
                 'No need to download WordPress: installed version matches required version.'
             );
@@ -306,11 +306,17 @@ final class DownloadWpCore implements Task
      *
      * @param string $targetVersion
      * @param string $installedVersion
+     * @param bool $forceUpdate
      * @param Io $io
      * @return bool
      */
-    private function shouldInstall(string $targetVersion, string $installedVersion, Io $io): bool
-    {
+    private function shouldInstall(
+        string $targetVersion,
+        string $installedVersion,
+        bool $forceUpdate,
+        Io $io
+    ): bool {
+
         if (!$installedVersion) {
             return true;
         }
@@ -319,7 +325,7 @@ final class DownloadWpCore implements Task
             return false;
         }
 
-        if (Semver::satisfies($installedVersion, $targetVersion)) {
+        if (Semver::satisfies($installedVersion, $targetVersion) && !$forceUpdate) {
             return false;
         }
 
