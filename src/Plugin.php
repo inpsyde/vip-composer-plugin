@@ -9,6 +9,7 @@ use Composer\IO\IOInterface;
 use Composer\Plugin\Capability\CommandProvider;
 use Composer\Plugin\Capable;
 use Composer\Plugin\PluginInterface;
+use Composer\Script\ScriptEvents;
 
 /*
  * phpcs:disable Inpsyde.CodeQuality.ReturnTypeDeclaration
@@ -46,6 +47,7 @@ class Plugin implements PluginInterface, Capable, CommandProvider
         $manager->addInstaller($factory->installer());
 
         $this->disableWordPressDefaultInstaller($composer);
+        $this->dumpProdAutoload($composer, $factory);
     }
 
     /**
@@ -84,5 +86,30 @@ class Plugin implements PluginInterface, Capable, CommandProvider
         $disabledInstallers[] = 'wordpress'; // phpcs:ignore
         $rootPackageExtra['installer-disable'] = $disabledInstallers;
         $rootPackage->setExtra($rootPackageExtra);
+    }
+
+    /**
+     * @param Composer $composer
+     * @param Factory $factory
+     * @return void
+     */
+    private function dumpProdAutoload(Composer $composer, Factory $factory): void
+    {
+        $dispatcher = $composer->getEventDispatcher();
+
+        $doing = false;
+        $callback = static function () use ($factory, $dispatcher, &$doing, &$callback): void {
+            if ($doing) {
+                $dispatcher->removeListener($callback);
+
+                return;
+            }
+            $doing = true;
+            $config = new Task\TaskConfig([Task\TaskConfig::PROD_AUTOLOAD => true]);
+            $taskFactory = new Task\Factory($factory, $config);
+            $taskFactory->generateProductionAutoload()->autorun();
+        };
+
+        $dispatcher->addListener(ScriptEvents::POST_AUTOLOAD_DUMP, $callback, PHP_INT_MAX);
     }
 }
