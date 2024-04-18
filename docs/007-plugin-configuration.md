@@ -25,7 +25,7 @@ Here's the full list of configuration values alongside their default. As a remin
             },
             "plugins-autoload": {
                 "include": [],
-                "exclude": [],
+                "exclude": []
             },
             "custom-env-names": [],
             "wordpress": {
