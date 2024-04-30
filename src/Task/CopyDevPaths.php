@@ -67,7 +67,7 @@ final class CopyDevPaths implements Task
      */
     public function enabled(TaskConfig $taskConfig): bool
     {
-        return $taskConfig->isLocal() || $taskConfig->syncDevPaths();
+        return $taskConfig->isFullMode() || $taskConfig->syncDevPaths();
     }
 
     /**
