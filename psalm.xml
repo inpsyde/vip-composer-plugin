@@ -23,6 +23,7 @@
 
     <issueHandlers>
         <MixedAssignment errorLevel="suppress" />
+        <MissingClassConstType errorLevel="suppress" />
         <UnresolvableInclude errorLevel="suppress" />
     </issueHandlers>
 </psalm>

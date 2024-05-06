@@ -96,7 +96,7 @@ class InstalledPackages
         $locker = $this->composer->getLocker();
         $key = spl_object_hash($locker);
 
-        if (!empty(self::$cache[$key])) {
+        if (isset(self::$cache[$key])) {
             /** @var array<string, array|InstalledArrayRepository> $cache */
             $cache = self::$cache[$key];
 
