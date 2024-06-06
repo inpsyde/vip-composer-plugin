@@ -48,7 +48,8 @@
         "class": "Inpsyde\\VipComposer\\Plugin",
         "branch-alias": {
             "dev-v1.x": "1.x-dev",
-            "dev-master": "2.x-dev"
+            "dev-master": "2.x-dev",
+            "dev-development": "3.x-dev"
         }
     },
     "scripts": {
