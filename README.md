@@ -688,9 +688,7 @@ composer vip --vip-dev-env
 vip dev-env create --app-code="./vip"
 ```
 
-## License and Copyright
+## Copyright and License
 
-_VIP Composer Plugin_ is a free software, and is released under the terms of the MIT license.
-See [LICENSE](./LICENSE) for complete license.
+Good news, this library is free for everyone! Since it's released under the MIT License you can use it free of charge on your personal or commercial website.
 
-The team at Syde is engineering the Web since 2006.

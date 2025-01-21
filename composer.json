@@ -6,9 +6,9 @@
     "minimum-stability": "stable",
     "authors": [
         {
-            "name": "Inpsyde GmbH",
-            "email": "hello@inpsyde.com",
-            "homepage": "https://inpsyde.com",
+            "name": "Syde GmbH",
+            "homepage": "https://syde.com/",
+            "email": "hello@syde.com",
             "role": "Company"
         },
         {
@@ -35,7 +35,10 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "Inpsyde\\VipComposer\\Tests\\": ["tests/src/", "tests/unit/"]
+            "Inpsyde\\VipComposer\\Tests\\": [
+                "tests/src/",
+                "tests/unit/"
+            ]
         }
     },
     "extra": {
