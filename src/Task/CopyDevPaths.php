@@ -171,7 +171,7 @@ final class CopyDevPaths implements Task
             case Config::DEV_PATHS_LANGUAGES_DIR_KEY:
                 $what = 'Languages';
                 $target = $this->directories->languagesDir();
-                $finder and $finder->files()->ignoreDotFiles(true);
+                $finder and $finder->ignoreDotFiles(true);
                 break;
             case Config::DEV_PATHS_IMAGES_DIR_KEY:
                 $what = 'Images';
