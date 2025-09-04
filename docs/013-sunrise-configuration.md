@@ -25,8 +25,8 @@ This plugins ships **a pre-defined `client-sunrise.php`** which handles early re
 
 The `client-sunrise.php` included in this plugin expects a configuration file in the `vip-config/` folder. It can be either:
 
-- a `sunrise-configuration.json` JSON file
-- a `sunrise-configuration.php` PHP file.
+- a `sunrise-config.json` JSON file
+- a `sunrise-config.php` PHP file.
 
 The data "schema" is the same, as the PHP file is expected to return an associative array. The JSON file might be easier to read, or parse programmatically, the PHP file has more flexibility.
 
