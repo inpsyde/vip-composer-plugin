@@ -240,7 +240,7 @@ class SunriseRedirects
         }
 
         static::$hosts = [$targetHost, $sourceHost];
-        static::handleQueryRewrite($query);
+        static::handleQueryRewrite($query, $target);
     }
 
     /**
@@ -311,7 +311,7 @@ class SunriseRedirects
      * @param \WP_Site_Query $query
      * @return void
      */
-    private static function handleQueryRewrite(\WP_Site_Query $query): void
+    private static function handleQueryRewrite(\WP_Site_Query $query, string $target): void
     {
         [$targetHost] = static::$hosts;
         if ($targetHost === '') {
@@ -320,6 +320,17 @@ class SunriseRedirects
 
         $query->query_vars['domain__in'] = '';
         $query->query_vars['domain'] = $targetHost;
+
+        $url = $target;
+
+        if (preg_match('~^(?:https?:)?//~i', $url) !== 1) {
+            $url = "//{$url}";
+        }
+
+        $parsed = parse_url($url);
+        $sitePath = trailingslashit($parsed['path']);
+        $query->query_vars['path__in'] = [$sitePath];
+        $query->query_vars['path'] = $sitePath;
 
         if (
             defined(__NAMESPACE__ . '\\SUNRISE_FILTER_ALT_DOMAIN_URLS')
@@ -381,6 +392,7 @@ class SunriseRedirects
             $url = "//{$url}";
         }
         $parsed = parse_url($url);
+
         if (
             !isset($parsed['host'])
             || ($parsed['host'] === '')
@@ -388,14 +400,6 @@ class SunriseRedirects
             || ($parsed['host'] === "www.{$sourceDomain}")
             || ("www.{$parsed['host']}" === $sourceDomain)
         ) {
-            return null;
-        }
-
-        $targetPath = '/' . trim($parsed['path'] ?? '', '/');
-        $queriedPath = $query->query_vars['path'] ?? null;
-        $queriedPaths = (array) ($query->query_vars['path__in'] ?? []);
-        is_string($queriedPath) and $queriedPaths[] = $queriedPath;
-        if (($queriedPaths !== []) && !in_array($targetPath, $queriedPaths, true)) {
             return null;
         }
 
