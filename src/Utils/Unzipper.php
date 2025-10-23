@@ -12,14 +12,8 @@ use Symfony\Component\Process\ExecutableFinder;
 
 class Unzipper
 {
-    /**
-     * @var bool|null
-     */
     private static ?bool $hasSystemUnzip = null;
 
-    /**
-     * @var bool|null
-     */
     private static ?bool $hasZipArchive = null;
 
     /**
