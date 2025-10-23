@@ -79,6 +79,9 @@ final class Config implements \ArrayAccess
         self::CUSTOM_ENV_NAMES_KEY => [],
     ];
 
+    /**
+     * @var array<array-key, mixed>
+     */
     private array $config;
     private ComposerConfig $composerConfig;
 

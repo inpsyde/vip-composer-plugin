@@ -17,6 +17,9 @@ class VipGit
 {
     private const MIRROR_PREFIX = '.vipgit';
 
+    /**
+     * @var array<array-key, mixed>
+     */
     private array $gitConfig;
     private ?GitProcess $git = null;
 
