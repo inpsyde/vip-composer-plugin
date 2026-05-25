@@ -48,7 +48,7 @@ class VipGit
      * @param string|null $branch
      * @return bool
      */
-    public function push(string $url = null, string $branch = null): bool
+    public function push(?string $url = null, ?string $branch = null): bool
     {
         return $this->syncAndPush(true, $url, $branch);
     }
@@ -58,7 +58,7 @@ class VipGit
      * @param string|null $branch
      * @return bool
      */
-    public function sync(string $url = null, string $branch = null): bool
+    public function sync(?string $url = null, ?string $branch = null): bool
     {
         return $this->syncAndPush(false, $url, $branch);
     }
@@ -89,7 +89,7 @@ class VipGit
      *
      * @psalm-assert GitProcess $this->git
      */
-    private function syncAndPush(bool $push, string $url = null, string $branch = null): bool
+    private function syncAndPush(bool $push, ?string $url = null, ?string $branch = null): bool
     {
         $message = 'Starting Git sync';
         $push or $message .= ' (NO push will happen)';
@@ -139,7 +139,7 @@ class VipGit
      * @param string|null $customBranch
      * @return array{non-empty-string,non-empty-string}|array{null,null}
      */
-    private function init(string $customUrl = null, string $customBranch = null): array
+    private function init(?string $customUrl = null, ?string $customBranch = null): array
     {
         /**
          * @vase string|null $httpsUrl
@@ -306,7 +306,7 @@ class VipGit
      * @param string|null $customUrl
      * @return array{non-empty-string,non-empty-string}|array{null,null}
      */
-    private function gitUrls(string $customUrl = null): array
+    private function gitUrls(?string $customUrl = null): array
     {
         /** @var string $url */
         $url = $customUrl ?? $this->gitConfig[Config::GIT_URL_KEY];

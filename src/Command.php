@@ -213,7 +213,7 @@ class Command extends BaseCommand
      * @param bool|null $default
      * @return mixed
      */
-    private function optionValue(InputInterface $input, string $option, bool $default = null): mixed
+    private function optionValue(InputInterface $input, string $option, ?bool $default = null): mixed
     {
         if (!$input->hasOption($option)) {
             return $default;
