@@ -31,8 +31,8 @@ class GitProcess
      */
     public function __construct(
         private Io $io,
-        string $workingDir = null,
-        ProcessExecutor $executor = null
+        ?string $workingDir = null,
+        ?ProcessExecutor $executor = null
     ) {
 
         $cwd = $workingDir ?? getcwd();
