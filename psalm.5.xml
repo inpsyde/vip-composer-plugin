@@ -4,6 +4,8 @@
     useDocblockPropertyTypes="true"
     usePhpDocMethodsWithoutMagicCall="true"
     hideExternalErrors="true"
+    findUnusedBaselineEntry="true"
+    findUnusedCode="true"
     allowNamedArgumentCalls="false"
     autoloader="./app/vip-config/__helpers.php"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -23,6 +25,13 @@
         <UnresolvableInclude errorLevel="suppress" />
         <RedundantCastGivenDocblockType errorLevel="suppress" />
         <MissingOverrideAttribute errorLevel="suppress" />
+        <UnnecessaryVarAnnotation errorLevel="suppress" />
+        <PossiblyUnusedMethod errorLevel="suppress" />
+        <PossiblyUnusedReturnValue errorLevel="suppress" />
+        <PossiblyUnusedReturnValue errorLevel="suppress" />
+        <UnusedClass errorLevel="suppress" />
+        <UnusedMethod errorLevel="suppress" />
+        <UnusedDocblockParam errorLevel="suppress" />
         <UndefinedClass>
             <errorLevel type="suppress">
                 <referencedClass name="WP_Site_Query" />
