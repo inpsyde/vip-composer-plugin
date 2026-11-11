@@ -31,6 +31,7 @@
         <PossiblyUnusedReturnValue errorLevel="suppress" />
         <UnusedClass errorLevel="suppress" />
         <UnusedMethod errorLevel="suppress" />
+        <UnusedProperty errorLevel="suppress" />
         <UnusedDocblockParam errorLevel="suppress" />
         <UndefinedClass>
             <errorLevel type="suppress">

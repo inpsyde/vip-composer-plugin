@@ -25,6 +25,14 @@
         <ClassMustBeFinal errorLevel="suppress" />
         <MissingClassConstType errorLevel="suppress" />
         <MissingOverrideAttribute errorLevel="suppress" />
+        <UnnecessaryVarAnnotation errorLevel="suppress" />
+        <PossiblyUnusedMethod errorLevel="suppress" />
+        <PossiblyUnusedReturnValue errorLevel="suppress" />
+        <PossiblyUnusedReturnValue errorLevel="suppress" />
+        <UnusedClass errorLevel="suppress" />
+        <UnusedMethod errorLevel="suppress" />
+        <UnusedProperty errorLevel="suppress" />
+        <UnusedDocblockParam errorLevel="suppress" />
         <UndefinedClass>
             <errorLevel type="suppress">
                 <referencedClass name="WP_Site_Query" />
