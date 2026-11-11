@@ -18,11 +18,11 @@
         "composer-plugin-api": "^2.4"
     },
     "require-dev": {
-        "brain/monkey": "^2.6.1",
-        "composer/composer": "^2.4",
+        "brain/monkey": "^2.7.0",
+        "composer/composer": "^2.11.2",
         "inpsyde/php-coding-standards": "^2@dev",
         "phpunit/phpunit": "^9.6.17",
-        "vimeo/psalm": "^7.3.0"
+        "vimeo/psalm": "^5.26.1 || ^7.3.0"
     },
     "autoload": {
         "psr-4": {
