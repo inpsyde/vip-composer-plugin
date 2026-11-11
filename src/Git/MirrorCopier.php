@@ -36,6 +36,7 @@ class MirrorCopier
         'studio.json',
         'tsconfig.json',
         'webpack.config.js',
+        'vip-config.local.php',
     ];
 
     private const EXCLUDED_EXT = [
@@ -83,8 +84,14 @@ class MirrorCopier
     private static function acceptPath(string $path): bool
     {
         $path = str_replace('\\', '/', $path);
-        if (is_file($path) && (basename($path) === '.gitkeep')) {
-            return static::acceptPath(dirname($path));
+
+        if (is_file($path)) {
+            if (basename($path) === '.gitkeep') {
+                return static::acceptPath(dirname($path));
+            }
+            if (str_ends_with($path, 'env/local.php')) {
+                return false;
+            }
         }
 
         return (!str_contains($path, 'node_modules/')) && (!str_contains($path, '/.git'));
