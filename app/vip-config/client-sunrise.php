@@ -424,7 +424,9 @@ class SunriseRedirects
     }
 }
 
-add_action('parse_site_query', [SunriseRedirects::class, 'handleQuery']);
+if (file_exists(__DIR__ . '/sunrise-config.php') || file_exists(__DIR__ . '/sunrise-config.json')) {
+    add_action('parse_site_query', [SunriseRedirects::class, 'handleQuery']);
+}
 
 if (file_exists(__DIR__ . '/client-sunrise.override.php')) {
     require_once __DIR__ . '/client-sunrise.override.php';
