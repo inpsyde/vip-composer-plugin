@@ -12,15 +12,6 @@
             "role": "Company"
         }
     ],
-    "repositories": [
-        {
-            "type": "composer",
-            "url": "https://raw.githubusercontent.com/inpsyde/wp-stubs/main",
-            "only": [
-                "inpsyde/wp-stubs-versions"
-            ]
-        }
-    ],
     "require": {
         "php": ">=8.0",
         "ext-json": "*",
@@ -30,7 +21,6 @@
         "brain/monkey": "^2.6.1",
         "composer/composer": "^2.4",
         "inpsyde/php-coding-standards": "^2@dev",
-        "inpsyde/wp-stubs-versions": "dev-latest",
         "phpunit/phpunit": "^9.6.17",
         "vimeo/psalm": "^7.3.0"
     },
