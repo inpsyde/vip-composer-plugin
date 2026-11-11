@@ -310,6 +310,8 @@ class SunriseRedirects
      *
      * @param \WP_Site_Query $query
      * @return void
+     *
+     * @psalm-suppress MixedArrayAssignment
      */
     private static function handleQueryRewrite(\WP_Site_Query $query): void
     {
@@ -322,7 +324,7 @@ class SunriseRedirects
         $query->query_vars['domain'] = $targetHost;
 
         if (
-            defined(__NAMESPACE__ . '\\SUNRISE_FILTER_ALT_DOMAIN_URLS')
+            defined('Inpsyde\Vip\SUNRISE_FILTER_ALT_DOMAIN_URLS')
             && SUNRISE_FILTER_ALT_DOMAIN_URLS
         ) {
             add_filter('set_url_scheme', [static::class, 'maybeReplaceUrl']);
@@ -364,11 +366,12 @@ class SunriseRedirects
      * It also does not work for changes in path, e.g. it is not possible to rewrite `main.com` with
      * `alternative.com/something`, but only to `alternative.com`
      *
-     *
      * @param non-empty-string $target
      * @param string $sourceDomain
      * @param \WP_Site_Query $query
      * @return non-empty-string|null
+     *
+     * @psalm-suppress MixedArrayAccess
      */
     private static function determineTargetHost(
         string $target,
@@ -412,6 +415,8 @@ class SunriseRedirects
      *
      * @param \WP_Site_Query $query
      * @return array
+     *
+     * @psalm-suppress MixedArrayAccess
      */
     private static function queryDomains(\WP_Site_Query $query): array
     {

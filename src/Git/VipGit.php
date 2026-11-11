@@ -17,6 +17,7 @@ class VipGit
 {
     private const MIRROR_PREFIX = '.vipgit';
 
+    /** @var array<string, mixed> */
     private array $gitConfig;
     private ?GitProcess $git = null;
 
@@ -37,7 +38,9 @@ class VipGit
         private Unzipper $unzipper
     ) {
 
-        $this->gitConfig = $config->gitConfig();
+        /** @var array<string, mixed> $gitConfig */
+        $gitConfig = $config->gitConfig();
+        $this->gitConfig = $gitConfig;
     }
 
     /**

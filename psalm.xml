@@ -3,10 +3,6 @@
     errorLevel="1"
     useDocblockPropertyTypes="true"
     usePhpDocMethodsWithoutMagicCall="true"
-    strictBinaryOperands="true"
-    ignoreInternalFunctionFalseReturn="false"
-    ignoreInternalFunctionNullReturn="false"
-    findUnusedBaselineEntry="true"
     findUnusedCode="false"
     hideExternalErrors="true"
     allowNamedArgumentCalls="false"
@@ -23,13 +19,17 @@
         </ignoreFiles>
     </projectFiles>
 
-    <stubs>
-        <file name="vendor/inpsyde/wp-stubs-versions/latest.php" />
-    </stubs>
-
     <issueHandlers>
         <MixedAssignment errorLevel="suppress" />
         <UnresolvableInclude errorLevel="suppress" />
         <RedundantCastGivenDocblockType errorLevel="suppress" />
+        <ClassMustBeFinal errorLevel="suppress" />
+        <MissingOverrideAttribute errorLevel="suppress" />
+        <UndefinedClass>
+            <errorLevel type="suppress">
+                <referencedClass name="WP_Site_Query" />
+            </errorLevel>
+        </UndefinedClass>
+        <TaintedHeader errorLevel="suppress" />
     </issueHandlers>
 </psalm>

@@ -96,6 +96,7 @@ final class Config
         'all',
     ];
 
+    /** @var array<string, mixed> */
     private array $config;
     private ComposerConfig $composerConfig;
 

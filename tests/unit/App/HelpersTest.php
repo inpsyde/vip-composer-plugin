@@ -13,6 +13,7 @@ use Inpsyde\Vip;
  */
 class HelpersTest extends UnitTestCase
 {
+    /** @var list{array<string, string>, array<string, string>}  */
     private array $globalsBackup = [];
 
     /**

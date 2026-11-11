@@ -13,6 +13,7 @@ use Inpsyde\Vip\AutomatedTestChecker;
  */
 class AutomatedTestCheckerTest extends UnitTestCase
 {
+    /** @var list{array<string, string>, array<string, string>, array<string, string>}  */
     private array $globalsBackup = [];
     private ?string $secretHashed = null;
 
