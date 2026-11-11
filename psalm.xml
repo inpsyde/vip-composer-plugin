@@ -24,6 +24,7 @@
         <UnresolvableInclude errorLevel="suppress" />
         <RedundantCastGivenDocblockType errorLevel="suppress" />
         <ClassMustBeFinal errorLevel="suppress" />
+        <MissingClassConstType errorLevel="suppress" />
         <MissingOverrideAttribute errorLevel="suppress" />
         <UndefinedClass>
             <errorLevel type="suppress">
